@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-haproxy
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: cb-haproxy
+spec:
+  selector:
+    matchLabels:
+      app: cb-haproxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cb-haproxy
+        app.kubernetes.io/name: managed-prom
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - cb-haproxy
+                topologyKey: "topology.kubernetes.io/zone"
+      volumes:
+        - name: haproxy-config-volume
+          secret:
+            secretName: cb-haproxy-config 
+        - name: haproxy-cert-volume
+          emptyDir: {}
+      serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
+      initContainers:
+        - name: init
+          image: google/cloud-sdk:slim
+          command: ["/bin/bash"]
+          args:
+            - -c
+            - |
+              certificates="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_tls-certificates)"
+              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
+              x=0
+              for i in "${certificate_array[@]}"
+              do
+                echo "$i" > /etc/ssl/clearblade-$x.pem
+                ((x=x+1))
+              done
+          volumeMounts:
+           - name: haproxy-cert-volume
+             mountPath: /etc/ssl/
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "2000 65001"
+      containers:
+        - name: cb-haproxy
+          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+          resources:
+            requests:
+              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.resourceRequests.cpu }}
+            limits:
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
+          volumeMounts:
+            - name: haproxy-config-volume
+              mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-cert-volume
+              mountPath: /etc/ssl/
+        - name: haproxy-exporter
+          image: prom/haproxy-exporter:latest
+          command: ["haproxy_exporter"]
+          args: ["--haproxy.scrape-uri=http://{{ .Values.stats_auth }}@localhost:9876/haproxy_stats?stats;csv"]
+          ports:
+            - containerPort: 9101
+              name: metrics
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi

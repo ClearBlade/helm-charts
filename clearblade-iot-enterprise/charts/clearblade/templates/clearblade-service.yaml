@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  {{- if ((.Values.global.advanced.externalHaproxy).loadBalancer) }}
+  type: LoadBalancer
+  ports:
+    - name: mqtt
+      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqtt }}
+      targetPort: 1883
+      protocol: TCP
+    - name: mqtt-ws
+      targetPort: 8903
+      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqttWS }}
+      protocol: TCP
+    - name: mqtt-auth
+      targetPort: 8905
+      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqttAuth }}
+      protocol: TCP
+    - name: mqtt-ws-auth
+      targetPort: 8907
+      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqttWSAuth }}
+      protocol: TCP
+    - name: edge-rpc
+      targetPort: 8950
+      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.edgeRPC }}
+      protocol: TCP
+    - name: api
+      targetPort: 9000
+      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.http }}
+      protocol: TCP
+  {{- else }}
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+      protocol: TCP
+    - name: mqtt-ws
+      targetPort: 8903
+      port: 8903
+      protocol: TCP
+    - name: mqtt-auth
+      targetPort: 8905
+      port: 8905
+      protocol: TCP
+    - name: mqtt-ws-auth
+      targetPort: 8907
+      port: 8907
+      protocol: TCP
+    - name: edge-rpc
+      targetPort: 8950
+      port: 8950
+      protocol: TCP
+    - name: api
+      targetPort: 9000
+      port: 9000
+      protocol: TCP
+    - name: mtls
+      targetPort: 9001
+      port: 9001
+      protocol: TCP
+  {{- end }}
+  selector:
+    app: clearblade
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-cluster-nodes-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: clearblade
+{{ include "clearblade.labels" . | indent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: clearblade-node
+      targetPort: 8952
+      port: 8952
+      protocol: TCP
+  selector:
+    app: clearblade
+{{- if eq .Values.global.GMP false }}
+---
+{{- if .Values.monitoringEnabled }}
+{{- range $i, $e := until (.Values.replicas | int)}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-monitoring-service-{{$i}}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    run: clearblade
+spec:
+  ports:
+  - name: metrics
+    port: 2112
+    protocol: TCP
+  selector:
+    statefulset.kubernetes.io/pod-name: clearblade-{{$i}}
+---
+{{- end}}
+{{- end}}
+{{- end}}
+

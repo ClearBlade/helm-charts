@@ -1,0 +1,114 @@
+global:
+  namespace: REPLACE # Must be unique per deployment/instance in same GCP project area
+  nodeSelector: REPLACE # Optional nodeSelector. Leave blank if not utilizing.
+  tolerations: # Optional taint tolerations. Add as many key blocks as necessary. Leave blank if not utilizing.
+    # - key: "key1"
+    #   operator: "Equal"
+    #   value: "value1"
+    #   effect: "NoSchedule"
+  imagePullerSecret: REPLACE # To be provided by ClearBlade
+  enterprise:
+    version: 9.32.0
+    baseURL: REPLACE
+    registrationKey: REPLACE
+  iotCore:
+    enabled: true
+    version: REPLACE # 9.28.9_1.12
+    regions: REPLACE
+  gcp:
+    project: REPLACE
+    region: REPLACE
+    gsmReadServiceAccount: clearblade-gsm-read
+  advanced:
+    predefinedNamespace: false # Set to true if you manage the namespace outside of helm.
+    memoryStore: # If using GCP Memorystore, be sure to set cb-redis.enabled to "false" below. Requires ClearBlade v9.32.0
+      enabled: false
+      address:
+    cloudSQL: # If using GCP CloudSQL, be sure to set postgres.enabled to "false" below
+      enabled: false
+      databaseConnectionName:
+    secrets:
+      manager: gsm
+  mtlsAuthentication: false
+  GMP: false
+
+clearblade:
+  replicas: 3
+  license:
+    key: "REPLACE" # To be provided by ClearBlade
+    instanceID: "REPLACE" # To be provided by ClearBlade
+    autoRenew:
+      enabled: true
+  resourceRequests:
+    cpu: 1
+    memory: 1G
+  resourceLimits:
+    cpu: 1
+    memory: 1G
+  mqtt:
+    allowDuplicateClientID: true # IoTCore Default Behavior
+
+cb-haproxy:
+  enabled: true
+  monitoringEnabled: false
+  replicas: 1
+  image: haproxy
+  imageTag: 2.6-alpine
+  mqttOver443: true
+  stats_auth: ""
+  ip:
+    primary: REPLACE
+    mqtt: REPLACE
+  resourceRequests:
+    cpu: 1
+    memory: 2G
+  resourceLimits:
+    cpu: 1
+    memory: 2G
+
+cb-postgres:
+  enabled: true
+  monitoringEnabled: false
+  image: timescale/timescaledb
+  imageTag: latest-pg15
+  replicas: 3
+  resourceRequests:
+    cpu: 1
+    memory: 1G
+  resourceLimits:
+    cpu: 1
+    memory: 1G
+
+cb-redis:
+  enabled: true
+  monitoringEnabled: false
+  image: redis
+  imageTag: alpine
+  resourceLimits:
+    cpu: 1
+    memory: 1G
+  resourceRequests:
+    cpu: 1
+    memory: 1G
+
+cb-console:
+  resourceRequests:
+    cpu: 1
+    memory: 1G
+  resourceLimits:
+    cpu: 1
+    memory: 1G
+
+cb-file-hosting:
+  resourceLimits:
+    cpu: 1
+    memory: 1G
+  resourceRequests:
+    cpu: 1
+    memory: 1G
+
+cb-iotcore:
+  checkClearbladeReadiness: false
+  resourceLimits:
+    cpu: 1
+    memory: 2G

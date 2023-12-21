@@ -1,0 +1,5 @@
+    Congratulations ClearBlade IoT Enterprise is deployed!
+    Release name: {{ .Release.Name }}
+    Chart name: {{ .Chart.Name }}
+    Version: {{ .Values.global.enterprise.version }}
+    Namespaces: {{ .Values.global.namespace }}

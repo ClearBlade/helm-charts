@@ -1,0 +1,11 @@
+enabled: true
+monitoringEnabled: true
+replicas: 1
+image: redis
+imageTag: alpine
+resourceRequests:
+  cpu: 1
+  memory: 8G
+resourceLimits:
+  cpu: 1
+  memory: 8G

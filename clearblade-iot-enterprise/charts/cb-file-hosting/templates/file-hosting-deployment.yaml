@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-file-hosting
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: cb-file-hosting
+spec:
+  selector:
+    matchLabels:
+      app: cb-file-hosting
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cb-file-hosting
+        app.kubernetes.io/name: managed-prom
+    spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      containers:
+        - name: cb-file-hosting
+          image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterprise.version }}"
+          ports:
+            - containerPort: 8915
+          resources:
+            requests:
+              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.resourceRequests.cpu }}
+            limits:
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}

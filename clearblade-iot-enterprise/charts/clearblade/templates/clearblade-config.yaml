@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: clearblade-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+{{ include "clearblade.labels" . | indent 4 }}
+data:
+  clearblade.toml: |
+{{ (tpl (.Files.Get "configs/clearblade.toml") .) | b64enc | indent 4 }}

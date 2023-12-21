@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-redis
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: cb-redis
+spec:
+  selector:
+    matchLabels:
+      app: cb-redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cb-redis
+        app.kubernetes.io/name: managed-prom
+    spec:
+      containers:
+        - name: cb-redis
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          resources:
+            requests:
+              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.resourceRequests.cpu }}
+            limits:
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
+        {{- if .Values.monitoringEnabled }}
+        - name: cb-redis-exporter
+          image: oliver006/redis_exporter
+          env:
+            - name: REDIS_ADDR
+              value: "redis://localhost:6379"
+          ports:
+            - containerPort: 9121
+              name: metrics
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+        {{- end }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}

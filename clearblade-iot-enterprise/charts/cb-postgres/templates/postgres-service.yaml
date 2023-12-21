@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-postgres-headless
+  namespace: {{ .Values.global.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.port }}
+      name: postgres
+  clusterIP: None
+  selector:
+    app: cb-postgres
+---
+{{- if eq .Values.global.GMP false}}
+{{- if .Values.monitoringEnabled }}
+{{- range $i, $e := until (.Values.replicas | int)}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-postgres-exporter-service-{{$i}}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: cb-postgres
+spec:
+  ports:
+    - port: 9187
+      protocol: TCP
+  selector:
+    statefulset.kubernetes.io/pod-name: cb-postgres-{{$i}}
+---
+{{- end}}
+{{- end}}
+{{- end}}

@@ -1,0 +1,12 @@
+enabled: true
+grafana:
+  enabled: true
+  clusterName: # Used to filter dashboard queries to this cluster only. Leave blank and all clusters in the project area will show in the dashboard.
+  datasource: "google-managed-prometheus"
+  adminUsername: ""
+  base64password: ""
+alerts:
+  slack:
+    enabled: false
+    url: ""
+monitoringURL: ""

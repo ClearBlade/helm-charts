@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-haproxy-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  haproxy.cfg: |
+{{ (tpl (.Files.Get "configs/haproxy.cfg") .) | b64enc | indent 4 }}

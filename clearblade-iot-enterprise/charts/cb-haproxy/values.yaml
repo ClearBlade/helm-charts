@@ -1,0 +1,27 @@
+replicas: 1
+namespace: clearblade
+monitoringEnabled: false
+image: haproxy
+imageTag: 2.6-alpine
+resourceLimits:
+  cpu: 1
+  memory: 1G
+resourceRequests:
+  cpu: 1
+  memory: 1G
+mqttOver443: true
+mqttOver1883: false
+ip:
+  primary: 0.0.0.0
+  mqtt: 0.0.0.0
+ports:
+  http: 80
+  https: 443
+  mqtt: 1884
+  mqttWS: 8904
+  mqttAuth: 8905
+  mqttWSAuth: 8907
+  edge: 8951
+  farmer: 8765
+  monitoring: 9090
+stats_auth: ""

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: {{ .Values.global.namespace }}
+  labels:    
+{{ include "cb-postgres.labels" . | indent 4 }}
+data:
+{{ (.Files.Glob "scripts/init-db.sh").AsConfig | indent 2 }}
+{{ (.Files.Glob "scripts/start-database.sh").AsConfig | indent 2 }}

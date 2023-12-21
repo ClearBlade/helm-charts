@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-haproxy-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{.Values.ip.primary}}
+  externalTrafficPolicy: Local
+  ports:
+    - name: http
+      targetPort: 8080
+      port: {{ .Values.ports.http }}
+      protocol: TCP
+    - name: https
+      targetPort: 8443
+      port: {{ .Values.ports.https }}
+      protocol: TCP
+    - name: mtls
+      targetPort: 444
+      port: 8444
+      protocol: TCP
+    - name: mqtt
+      targetPort: 1884
+      port: {{ .Values.ports.mqtt }}
+      protocol: TCP
+      {{- if .Values.ports.secondaryMqtt }}
+    - name: secondary-mqtt
+      targetPort: 1884
+      port: {{ .Values.ports.secondaryMqtt }}
+      protocol: TCP
+      {{- end }}
+    - name: mqtt-ws
+      targetPort: 8904
+      port: {{ .Values.ports.mqttWS }}
+      protocol: TCP
+    - name: mqtt-auth
+      targetPort: 8905
+      port: {{ .Values.ports.mqttAuth }}
+      protocol: TCP
+    - name: mqtt-ws-auth
+      targetPort: 8907
+      port: {{ .Values.ports.mqttWSAuth }}
+      protocol: TCP
+    - name: edge-rpc
+      targetPort: 8951
+      port: {{ .Values.ports.edge }}
+      protocol: TCP
+    - name: exporter
+      targetPort: 9876
+      port: 9876
+      protocol: TCP
+    {{- if .Values.mqttOver1883}}
+    - name: mqtt-old
+      targetPort: 1883
+      port: 1883
+      protocol: TCP
+    {{- end }}
+  selector:
+    app: cb-haproxy
+{{- if .Values.mqttOver443 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-haproxy-mqtt-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{.Values.ip.mqtt}}
+  externalTrafficPolicy: Local
+  ports:
+    - name: mqtt
+      targetPort: 1884
+      port: 443
+      protocol: TCP
+    - name: mqtt-secondary
+      targetPort: 1884
+      port: 8883
+      protocol: TCP
+  selector:
+    app: cb-haproxy
+{{- end }}
+{{- if eq .Values.global.GMP false}}
+---
+{{- if .Values.monitoringEnabled }}
+{{- range $i, $e := until (.Values.replicas | int)}}
+apiVersion: v1
+kind: Service
+metadata: 
+  name: cb-haproxy-monitoring-service-{{$i}}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    run: cb-haproxy
+spec:
+  ports:
+  - name: metrics
+    port: 9101
+    protocol: TCP
+  selector:
+    statefulset.kubernetes.io/pod-name: cb-haproxy-{{$i}}
+---
+{{- end}}
+{{- end}}
+{{- end}}

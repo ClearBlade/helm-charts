@@ -1,0 +1,9 @@
+resourceLimits:
+  cpu: 1
+  memory: 2G
+storage:
+  class: premium-rwo
+  size: 10Gi
+  name: cb-iotcore-disk
+  gceDisk_iotcore: iotcore
+checkClearbladeReadiness: true

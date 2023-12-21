@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clearblade
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: clearblade
+spec:
+  selector:
+    matchLabels:
+      app: clearblade
+  serviceName: clearblade-cluster-nodes-service
+  replicas: {{ .Values.replicas }}
+  template:
+    metadata:
+      labels:
+        app: clearblade
+        app.kubernetes.io/name: managed-prom
+    spec:
+      {{- if eq ((.Values.global.advanced.secrets).manager) "gsm" }}
+      serviceAccountName: clearblade-gsm-read
+      {{- end }}
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      initContainers:
+        {{- if not (.Values.global.advanced.cloudSQL).enabled }}
+        - name: check-postgres-readiness
+          image: postgres:9.6.5
+          command: 
+          - sh 
+          - "-c"
+          - |
+            until pg_isready -h cb-postgres-headless.{{ .Values.global.namespace }}.svc.cluster.local -p 5432;
+            do echo waiting for database; sleep 2; done;
+        {{- end }}
+        - name: check-redis-readiness
+          image: redis:latest
+          {{- if (.Values.global.advanced.memoryStore).enabled }}
+          command: 
+          - sh 
+          - "-c"
+          - |
+            set -x;
+            while [ "$(redis-cli -h {{ .Values.global.advanced.memoryStore.address }} ping)" != "PONG" ]
+            do
+              echo waiting for redis
+              sleep 5
+            done
+          {{- else }}
+          command: 
+          - sh 
+          - "-c"
+          - |
+            set -x;
+            while [ "$(redis-cli -h cb-redis-service.{{ .Values.global.namespace }}.svc.cluster.local ping)" != "PONG" ]
+            do
+              echo waiting for redis
+              sleep 5
+            done
+          {{- end }}
+        - name: init
+          image: google/cloud-sdk:slim
+          command: ["/bin/bash"]
+          args:
+            - -c
+            - |
+              set -ex
+              # Generate clearblade host from pod ordinal index.
+              [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+              ordinal=${BASH_REMATCH[1]}
+              # Copy appropriate conf.d files from config-map to emptyDir.
+              cp /config-map/clearblade.toml /etc/clearblade/conf/clearblade/clearblade.toml
+              # Add an offset to avoid reserved server-id=0 value.
+              sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
+              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+              dbpassword=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)
+              {{- end }}
+              {{ if (.Values.global.advanced.cloudSQL).enabled }}
+              sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
+              {{- else }}
+              escaped_dbpassword=$(printf '%s\n' "$dbpassword" | sed -e 's/[\/&]/\\&/g')
+              sed -i 's|{db_password}|'$escaped_dbpassword'|g' /etc/clearblade/conf/clearblade/clearblade.toml
+              {{- end }}
+              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+              gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
+              {{- else }}
+              echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
+              {{- end }}
+          {{- if or (eq .Values.global.advanced.secrets.manager "none") (eq .Values.global.advanced.secrets.manager "kubernetes") }}
+          env:
+            - name: dbpassword
+              valueFrom:
+                secretKeyRef:
+                  name: clearblade-secrets
+                  key: postgresPassword
+            - name: mekfile
+              valueFrom:
+                secretKeyRef:
+                  name: clearblade-secrets
+                  key: mekfile
+          {{- end }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/clearblade/conf/clearblade/
+            - name: config-map
+              mountPath: /config-map/
+            - name: mek
+              mountPath: /etc/clearblade/mek/
+      containers:
+        {{- if (.Values.global.advanced.cloudSQL).enabled }}
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
+          args:
+            - "--private-ip"
+            - "--structured-logs"
+            - "--port=5432"
+            - {{ .Values.global.advanced.cloudSQL.databaseConnectionName }}
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+        {{- end }}
+        - name: clearblade
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.version }}"
+          command: ["clearblade"]
+          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          env:
+            - name: GODEBUG
+              value: netdns=go
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/clearblade/conf/clearblade/
+            - name: mek
+              mountPath: /etc/clearblade/mek/
+          resources:
+            requests:
+              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.resourceRequests.memory }}
+            limits:
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
+          ports:
+            - containerPort: 2112
+              name: metrics
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      volumes:
+        - name: config-volume
+          emptyDir: {}
+        - name: config-map
+          secret:
+            secretName: clearblade-config
+        - name: mek
+          emptyDir: {}

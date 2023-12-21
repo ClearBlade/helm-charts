@@ -1,0 +1,88 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: {{ .Values.global.namespace }}
+data:
+{{ (.Files.Glob "configs/grafana.ini").AsConfig | indent 2 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-deployment
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: grafana-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-server
+  template:
+    metadata:
+      labels:
+        app: grafana-server
+    spec:
+      serviceAccountName: clearblade-gsm-read
+      containers:
+        - name: grafana
+          image: grafana/grafana
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+          - name: GF_SERVER_ROOT_URL
+            value: http://{{ .Values.monitoringURL }}:3000
+          - name: GF_SECURITY_ADMIN_USER
+            value: {{ .Values.grafana.adminUsername }}
+          - name: GF_SECURITY_ADMIN_PASSWORD
+            value: {{ .Values.grafana.base64password | b64dec }}
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512M
+          volumeMounts:
+            - name: grafana-config
+              mountPath: /etc/grafana/
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboards
+              mountPath: /etc/grafana/provisioning/dashboards  
+            - name: plugins
+              mountPath: /etc/grafana/provisioning/plugins
+            - name: notifiers
+              mountPath: /etc/grafana/provisioning/notifiers
+            - name: alerting
+              mountPath: /etc/grafana/provisioning/alerting
+            - name: template
+              mountPath: /etc/grafana/provisioning/template
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      volumes:
+      - name: grafana-config
+        configMap:
+          name: grafana-config
+      - name: datasources
+        configMap:
+          name: datasources
+      - name: dashboards
+        configMap:
+          name: dashboards
+      - name: template
+        configMap:
+          name: template       
+      - name: plugins
+        emptyDir: {}
+      - name: notifiers
+        emptyDir: {} 
+      - name: alerting
+        emptyDir: {}
+{{- end }}
+

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-file-hosting-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  ports:
+    - port: 8915
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: cb-file-hosting

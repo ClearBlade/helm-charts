@@ -1,0 +1,6 @@
+{{- if not .Values.global.advanced.predefinedNamespace }}
+kind: Namespace
+apiVersion: v1  
+metadata:
+  name: {{ .Values.global.namespace }}
+{{- end }}

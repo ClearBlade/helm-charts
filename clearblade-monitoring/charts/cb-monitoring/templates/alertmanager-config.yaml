@@ -1,0 +1,33 @@
+{{- if .Values.alerts.slack.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager
+  namespace: gmp-public
+stringData:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 1m
+
+    route:
+      group_by: ['alertname']
+
+      # how long to wait and see if other alerts get added to the group before firing
+      group_wait: 1m
+
+      # how long to wait for more alerts if one gets added to the group after after initial firing
+      group_interval: 1m
+
+      # how long to wait to re-fire the alert if it's still alerting
+      repeat_interval: 1h
+
+      receiver: 'slack'
+
+    receivers:
+    - name: 'slack'
+      slack_configs:
+      - channel: '#testing-alerts'
+        api_url: '{{ .Values.alerts.slack.url }}'
+        text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
+        send_resolved: true
+{{- end }}

@@ -1,0 +1,36 @@
+monitoringEnabled: true
+namespace: clearblade
+replicas: 3
+logLevel: debug
+storeCodeLogs: true
+storeMessageHistory: true
+license:
+  key: "L77NCVoQo1auwQH7PwfIN1Simdpq+r1qjpc3Id9OljU6TqQmi+2k/NYm3KLQsLXqtw6V8E8mOhxjFnOx6sTuw645zl3Xp32ngzS5Lt4En3TKARp9RdeyW04="
+  instanceID: "michael-ops-testing"
+  autoRenew:
+    enabled: true
+    days: 15
+  reporting:
+    enabled: true
+    reportInterval: 1
+resourceRequests:
+  cpu: 1
+  memory: 2G
+resourceLimits:
+  cpu: 1
+  memory: 2G
+mqtt:
+  allowDuplicateClientID: false
+  maxPublishSize: ":5000000"
+  enforceKeepAlive: false
+  ignorePermissionErrors: true
+  allowRetainedMessages: true
+database:
+  host: "" # optional, defaults to internal postgres service if left empty
+  port: "" # optional, defaults to 5432 if left empty
+iotCore:
+  deviceTimestampCacheSeconds: 300
+  deviceStateCleanup:
+    enabled: true
+    interval: 1440
+    minToKeep: 10

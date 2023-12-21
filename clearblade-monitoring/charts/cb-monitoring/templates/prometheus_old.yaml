@@ -1,0 +1,118 @@
+{{- if eq .Values.global.GMP false}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-frontend
+  namespace: {{ .Values.global.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-frontend
+  template:
+    metadata:
+      labels:
+        app: prometheus-frontend
+    spec:
+      securityContext: 
+        runAsUser: 0
+      nodeSelector:
+        kubernetes.io/os: linux
+        kubernetes.io/arch: amd64
+      containers:
+        - name: prometheus-frontend
+          image: prom/prometheus
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus/"
+          resources:
+            requests:
+              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.resourceRequests.memory }}
+            limits:
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
+          ports:
+            - name: web
+              containerPort: 9090
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: prometheus-storage-volume
+              mountPath: /prometheus/
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: web
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            name: prometheus-server-conf
+        - name: prometheus-storage-volume
+          {{- if .Values.prometheusDisk }}
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodePool }}
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.global.nodePool }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-frontend
+  namespace: {{ .Values.global.namespace }}
+  labels:
+{{ include "cb-monitoring.labels" . | indent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    app: prometheus-frontend
+  ports:
+    - name: web
+      port: 9090
+{{- if .Values.prometheusDisk }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: {{ .Values.global.namespace }}
+spec:
+  storageClassName: premium-rwo
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-pv
+  namespace: {{ .Values.global.namespace }}
+spec:
+  storageClassName: premium-rwo
+  capacity:
+    storage: 200G
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: {{ .Values.global.namespace }}
+    name: prometheus-pvc
+  gcePersistentDisk:
+    pdName: {{ .Values.prometheusDisk}}
+    fsType: ext4
+{{- end }}
+{{- end}}

@@ -1,0 +1,18 @@
+grafanaEnabled: false
+image: haproxy
+imageTag: 2.6-alpine
+resourceLimits:
+  cpu: 1
+  memory: 1G
+resourceRequests:
+  cpu: 1
+  memory: 1G
+ip:
+  primary: 0.0.0.0
+ports:
+  http: 80
+  https: 443
+stats_auth: "clearblade"
+prometheus:
+  user: ""
+  sha256password: ""

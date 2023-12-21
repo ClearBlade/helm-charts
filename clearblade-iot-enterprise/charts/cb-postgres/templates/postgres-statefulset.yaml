@@ -1,0 +1,167 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cb-postgres
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: cb-postgres
+spec:
+  serviceName: cb-postgres-headless
+  replicas: {{ .Values.replicas }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: cb-postgres
+  template:
+    metadata:
+      name: cb-postgres
+      labels:
+        app: cb-postgres
+        app.kubernetes.io/name: managed-prom
+    spec:
+      serviceAccountName: clearblade-gsm-read
+      initContainers:
+        - name: init
+          image: google/cloud-sdk:slim
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                echo "export PRIMARY_PASSWORD=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)" >> /env/db/vars &&
+                echo "export REPLICA_PASSWORD=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-replica-password)" >> /env/db/vars &&
+                echo "export POSTGRES_PASSWORD=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-postgres-password)" >> /env/db/vars
+          volumeMounts:
+            - name: postgres-env-vars-volume
+              mountPath: /env/db
+      containers:
+        - name: cb-postgres
+          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                source /env/db/vars &&
+                /docker-entrypoint/start-database.sh
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/clearblade
+            - name: PGPORT
+              value: "{{ .Values.port }}"
+            - name: PRIMARY_USER
+              value: {{ .Values.user.primary }}
+            - name: REPLICA_USER
+              value: {{ .Values.user.replica }}
+          ports:
+            - containerPort: {{ .Values.port }}
+          resources:
+            requests:
+              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.resourceRequests.cpu }}
+            limits:
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
+
+          volumeMounts:
+            - mountPath: /env/db/
+              name: postgres-env-vars-volume
+
+            - mountPath: /var/lib/postgresql/data/
+              name: pvc-cb-postgres
+
+            - mountPath: /etc/postgresql/
+              name: postgres-config-volume
+
+            - mountPath: /docker-entrypoint/start-database.sh
+              name: postgres-init-volume
+              subPath: start-database.sh
+
+            - mountPath: /docker-entrypoint-initdb.d/start-database.sh
+              name: postgres-init-volume
+              subPath: init-db.sh
+
+            - mountPath: /dev/shm
+              name: dshm
+
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U $REPLICA_USER -d admin -h 127.0.0.1 -p $PGPORT
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U $REPLICA_USER -d admin -h 127.0.0.1 -p $PGPORT
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end}}
+          {{- if .Values.monitoringEnabled }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["kill", "-INT", "`head -1 /var/lib/postgresql/data/postmaster.pid`"]
+        - name: postgres-exporter
+          image: docker.io/prometheuscommunity/postgres-exporter:latest
+          env:
+            - name: DATA_SOURCE_NAME
+              value: "postgresql://{{ .Values.user.primary }}@127.0.0.1:{{ .Values.port }}/postgres?sslmode=disable"
+          ports:
+            - containerPort: 9187
+              name: metrics
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+          {{- end }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      volumes:
+        - name: postgres-config-volume
+          configMap:
+            name: postgres-config
+        - name: postgres-env-vars-volume
+          emptyDir: {}
+        - name: postgres-init-volume
+          configMap:
+            name: postgres-init
+            defaultMode: 0777
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi      
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: pvc-cb-postgres
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.storage.class }}
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}

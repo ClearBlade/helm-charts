@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cb-file-hosting
+description: ClearBlade IoT Enterprise - File Hosting
+type: application
+version: 2.13.1

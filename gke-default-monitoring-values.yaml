@@ -1,0 +1,41 @@
+global:
+  namespace: monitoring # Namespace for the monitoring resources (one per cluster, must be unique per deployment if non-wildcard TLS certificates are used)
+  nodeSelector: REPLACE # Optional nodeSelector. Leave blank if not utilizing.
+  tolerations: # Optional taint tolerations. Add as many key blocks as necessary. Leave blank if not utilizing.
+    # - key: "key1"
+    #   operator: "Equal"
+    #   value: "value1"
+    #   effect: "NoSchedule"
+  gcp:
+    project: REPLACE
+    region: REPLACE
+    gsmReadServiceAccount: clearblade-gsm-read
+  advanced:
+    predefinedNamespace: false # Set to true if you manage the namespace outside of helm.
+    secrets:
+      manager: gsm
+  GMP: false
+
+cb-haproxy:
+  image: haproxy
+  imageTag: 2.6-alpine
+  grafanaEnabled: true # Bundled Grafana
+  ip:
+    primary: REPLACE
+  prometheus:
+    user: REPLACE # Prometheus frontend username
+    sha256password: REPLACE # Generated with: mkpasswd -m sha-256 mypassword123. See: https://www.haproxy.com/documentation/hapee/latest/configuration/config-sections/userlist/#using-encrypted-passwords
+  resourceRequests:
+    cpu: 1
+    memory: 4G
+  resourceLimits:
+    cpu: 1
+    memory: 4G
+
+cb-monitoring:
+  monitoringURL: REPLACE
+  grafana:
+    enabled: true # Bundled Grafana
+    clusterName: REPLACE # Used to filter dashboard queries to this cluster only. Leave blank and all clusters in the project area will show in the dashboard.
+    adminUsername: REPLACE # Grafana frontend login
+    base64password: REPLACE # Base64 Encoded password of your choice

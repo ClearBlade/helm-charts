@@ -1,0 +1,15 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: grafana-server
+  ports:
+    - name: grafana
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+{{- end }}    
