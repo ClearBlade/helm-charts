@@ -54,7 +54,12 @@ DisableTimescale = {{ .Values.global.advanced.externalPostgres.disableTimescale 
 ExpireDevTokens = false
 InsecureAuth = false
 MEKStorageLocation = "/etc/clearblade/mek"
-{{- if .Values.global.mtlsAuthentication }}
+{{- if .Values.global.mtlsClearBlade }}
+# uses first cert in chain if multiple
+Cert = "/etc/clearblade/ssl/clearblade-0.pem"
+EnableMutualTLSAuth = true
+CheckCertificateCNForMTLS = true
+{{- else if .Values.global.mtlsHAProxy }}
 EnableMutualTLSAuth = true
 CheckCertificateCNForMTLS = true
 {{- end}}

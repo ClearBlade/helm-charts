@@ -11,6 +11,7 @@ global:
     version: 9.32.0
     baseURL: REPLACE
     registrationKey: REPLACE
+    tagOverride: OPTIONAL #use an alternate clearblade image such as 9.32.1-alpine
   iotCore:
     enabled: true
     version: REPLACE # 9.28.9_1.12
@@ -29,7 +30,8 @@ global:
       databaseConnectionName:
     secrets:
       manager: gsm
-  mtlsAuthentication: false
+  mtlsHAProxy: false
+  mtlsClearBlade: false
   GMP: false
 
 clearblade:
@@ -55,7 +57,7 @@ cb-haproxy:
   image: haproxy
   imageTag: 2.6-alpine
   mqttOver443: true
-  stats_auth: ""
+  stats_auth: ""     #NEED TO SET
   ip:
     primary: REPLACE
     mqtt: REPLACE

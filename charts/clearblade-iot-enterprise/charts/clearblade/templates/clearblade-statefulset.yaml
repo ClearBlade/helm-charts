@@ -66,6 +66,16 @@ spec:
           args:
             - -c
             - |
+              {{- if .Values.global.mtlsClearBlade}}
+              certificates=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_tls-certificates)
+              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
+              x=0
+              for i in "${certificate_array[@]}"
+              do
+                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
+                ((x=x+1))
+              done
+              {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
               [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
@@ -108,6 +118,10 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
+            {{- if .Values.global.mtlsClearBlade}}
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+            {{- end}}
       containers:
         {{- if (.Values.global.advanced.cloudSQL).enabled }}
         - name: cloud-sql-proxy
@@ -125,7 +139,11 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
+          {{- if .Values.global.enterprise.tagOverride }}
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.tagOverride }}"
+          {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.version }}"
+          {{- end }}
           command: ["clearblade"]
           args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
           env:
@@ -136,6 +154,10 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
+            {{- if .Values.global.mtlsClearBlade}}
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+            {{- end}}
           resources:
             requests:
               cpu: {{ .Values.resourceRequests.cpu }}
@@ -162,3 +184,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
+        {{- if .Values.global.mtlsClearBlade}}
+        - name: mtls-cert-volume
+          emptyDir: {}
+        {{- end}}

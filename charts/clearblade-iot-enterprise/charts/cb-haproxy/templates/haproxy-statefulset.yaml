@@ -36,7 +36,7 @@ spec:
             secretName: cb-haproxy-config 
         - name: haproxy-cert-volume
           emptyDir: {}
-        {{- if .Values.global.mtlsAuthentication}}
+        {{- if .Values.global.mtlsHAProxy}}
         - name: haproxy-mtls-cert-volume
           emptyDir: {}
         {{- end}}
@@ -68,14 +68,14 @@ spec:
                 echo "$i" > /etc/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
-            {{- if .Values.global.mtlsAuthentication}}
+            {{- if .Values.global.mtlsHAProxy}}
               mtls_cert="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_mtls-certificate)"
               echo "$mtls_cert"  > /etc/mtls/sampleCACertificate.pem
             {{- end}}
           volumeMounts:
            - name: haproxy-cert-volume
              mountPath: /etc/ssl/
-          {{- if .Values.global.mtlsAuthentication}}
+          {{- if .Values.global.mtlsHAProxy}}
            - name: haproxy-mtls-cert-volume
              mountPath: /etc/mtls/
            {{- end}}
@@ -101,12 +101,14 @@ spec:
             limits:
               cpu: {{ .Values.resourceLimits.cpu }}
               memory: {{ .Values.resourceLimits.memory }}
+          securityContext:
+            runAsUser: 0
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl/
-            {{- if .Values.global.mtlsAuthentication}}
+            {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/
             {{- end}}
