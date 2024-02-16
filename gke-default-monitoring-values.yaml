@@ -56,3 +56,4 @@ cb-monitoring:
   haproxyreplicas: 1 # Used for prometheus scrape config. Only necessary for Non GMP
   postgresreplicas: 1 # Used for prometheus scrape config. Only necessary for Non GMP
   prometheusDisk: REPLACE #OPTIONAL disk for prometheus data. Leave blank if not using. Not necessary for GMP deployments
+  prometheusDiskSize: REPLACE #OPTIONAL size of disk above, include unit. example: 200G

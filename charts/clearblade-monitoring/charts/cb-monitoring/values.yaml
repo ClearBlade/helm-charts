@@ -16,3 +16,7 @@ resourceRequests:
 resourceLimits:
     cpu: 1
     memory: 4G
+clearbladereplicas: 1
+haproxyreplicas: 1
+postgresreplicas: 1 
+prometheusDiskSize: 200G
