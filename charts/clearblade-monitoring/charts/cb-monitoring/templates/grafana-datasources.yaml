@@ -4,6 +4,7 @@ kind: ConfigMap
 metadata:
   name: datasources
   namespace: {{ .Values.global.namespace }}
+{{- if .Values.global.GMP }}
 data:
   datasources.yaml: |
     apiVersion: 1
@@ -15,7 +16,19 @@ data:
       jsonData:
         manageAlerts: false
         timeout: 60
-
+{{- else }}
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: {{ .Values.grafana.datasource }}
+      type: prometheus
+      url: http://prometheus-frontend.{{ .Values.global.namespace }}.svc.cluster.local:9090
+      isDefault: true
+      jsonData:
+        manageAlerts: false
+        timeout: 60
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

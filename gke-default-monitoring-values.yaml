@@ -1,5 +1,12 @@
+# Required Infrastructure
+# 1. Static external IP address (cb-haproxy.ip.primary below)
+# 2. DNS Record for IP
+# 3. TLS certificate for URL stored in gcloud secret named "<namespace>_tls-certificates" (use monitoring namespace, not clearblade namespace)
+# 4. GCP service account that can access secret (can be same one as clearblade deployment)
+
 global:
   namespace: monitoring # Namespace for the monitoring resources (one per cluster, must be unique per deployment if non-wildcard TLS certificates are used)
+  deploymentnamespace: REPLACE # the namespace that clearblade is deployed in. Only necessary for non GMP
   nodeSelector: REPLACE # Optional nodeSelector. Leave blank if not utilizing.
   tolerations: # Optional taint tolerations. Add as many key blocks as necessary. Leave blank if not utilizing.
     # - key: "key1"
@@ -14,7 +21,7 @@ global:
     predefinedNamespace: false # Set to true if you manage the namespace outside of helm.
     secrets:
       manager: gsm
-  GMP: false
+  GMP: false # Change to true to use Google Managed Prometheus, leave false for standalone Prometheus deployment (standard)
 
 cb-haproxy:
   image: haproxy
@@ -24,7 +31,7 @@ cb-haproxy:
     primary: REPLACE
   prometheus:
     user: REPLACE # Prometheus frontend username
-    sha256password: REPLACE # Generated with: mkpasswd -m sha-256 mypassword123. See: https://www.haproxy.com/documentation/hapee/latest/configuration/config-sections/userlist/#using-encrypted-passwords
+    sha256password: REPLACE # Generated with: mkpasswd -m sha-256 mypassword123. See: https://www.haproxy.com/documentation/haproxy-configuration-tutorials/authentication/basic-authentication/
   resourceRequests:
     cpu: 1
     memory: 4G
@@ -39,3 +46,13 @@ cb-monitoring:
     clusterName: REPLACE # Used to filter dashboard queries to this cluster only. Leave blank and all clusters in the project area will show in the dashboard.
     adminUsername: REPLACE # Grafana frontend login
     base64password: REPLACE # Base64 Encoded password of your choice
+  resourceRequests:
+    cpu: 1
+    memory: 4G
+  resourceLimits:
+    cpu: 1
+    memory: 4G
+  clearbladereplicas: 1 # Used for prometheus scrape config. Only necessary for Non GMP
+  haproxyreplicas: 1 # Used for prometheus scrape config. Only necessary for Non GMP
+  postgresreplicas: 1 # Used for prometheus scrape config. Only necessary for Non GMP
+  prometheusDisk: REPLACE #OPTIONAL disk for prometheus data. Leave blank if not using. Not necessary for GMP deployments

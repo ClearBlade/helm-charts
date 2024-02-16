@@ -2,14 +2,14 @@ apiVersion: v2
 name: clearblade-monitoring
 description: ClearBlade IoT Enterprise monitoring
 type: application
-version: 2.13.0
+version: 2.13.1
 
 dependencies:
   - name: cb-monitoring
-    version: 2.13.0
+    version: 2.13.1
     condition: cb-monitoring.enabled
     repository: file://charts/cb-monitoring
   - name: cb-haproxy
-    version: 2.13.0
+    version: 2.13.1
     condition: cb-haproxy.enabled
     repository: file://charts/cb-haproxy

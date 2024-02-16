@@ -2,4 +2,4 @@ apiVersion: v1
 name: cb-monitoring
 description: ClearBlade IoT Enterprise - Monitoring
 type: application
-version: 2.13.0
+version: 2.13.1

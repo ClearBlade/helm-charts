@@ -4,7 +4,13 @@ kind: ConfigMap
 metadata:
   name: template
   namespace: {{ .Values.global.namespace }}
+{{- if .Values.global.GMP }}
 data:
   dashboards.json: |
 {{ (tpl (.Files.Glob "configs/dashboards.json").AsConfig .) | indent 2 }}
+{{- else }}
+data:
+  dashboards.json: |
+{{ (tpl (.Files.Glob "configs/dashboardsNonGMP.json").AsConfig .) | indent 2 }}
+{{- end }}
 {{- end }}
