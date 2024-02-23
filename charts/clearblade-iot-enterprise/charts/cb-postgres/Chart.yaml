@@ -2,4 +2,4 @@ apiVersion: v2
 name: cb-postgres
 description: ClearBlade IoT Enterprise - Postgres
 type: application
-version: 2.13.2
+version: 2.13.3

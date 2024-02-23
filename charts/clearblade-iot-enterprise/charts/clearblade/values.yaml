@@ -5,8 +5,6 @@ logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
 license:
-  key: "L77NCVoQo1auwQH7PwfIN1Simdpq+r1qjpc3Id9OljU6TqQmi+2k/NYm3KLQsLXqtw6V8E8mOhxjFnOx6sTuw645zl3Xp32ngzS5Lt4En3TKARp9RdeyW04="
-  instanceID: "michael-ops-testing"
   autoRenew:
     enabled: true
     days: 15

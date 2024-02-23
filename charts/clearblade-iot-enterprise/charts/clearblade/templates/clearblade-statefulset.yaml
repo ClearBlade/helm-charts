@@ -36,7 +36,7 @@ spec:
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
-          image: redis:latest
+          image: redis:5.0-alpine
           {{- if (.Values.global.advanced.memoryStore).enabled }}
           command: 
           - sh 

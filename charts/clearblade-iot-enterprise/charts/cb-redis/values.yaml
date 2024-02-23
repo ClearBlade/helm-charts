@@ -2,7 +2,7 @@ enabled: true
 monitoringEnabled: true
 replicas: 1
 image: redis
-imageTag: alpine
+imageTag: 5.0-alpine
 resourceRequests:
   cpu: 1
   memory: 8G
