@@ -4,7 +4,7 @@ Title = "ClearBlade IoT Enterprise Configuration File"
 PKey = "{{ .Values.license.key }}"
 RegistrationKey = "{{ .Values.global.enterprise.registrationKey }}"
 AutoRenewLicense = {{ .Values.license.autoRenew.enabled }}
-LicenseRenewalWebhook = "https://iot.clearblade.com/api/v/4/webhook/execute/fcf281b60ceed3b6bb8ca996da43/request_instance_renewal"
+LicenseRenewalWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal"
 LicenseAutoRenewDays = {{ .Values.license.autoRenew.days }}
 PlatformID = "{{ .Values.license.instanceID }}"
 
