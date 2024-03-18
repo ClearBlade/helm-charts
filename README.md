@@ -7,7 +7,7 @@ The `clearblade-iot-enterprise` Helm chart enables you install an instance of th
 
 ## Kubernetes
 
-To install in your own Kubernetes cluster please use the `default-values.yaml` file in this repo for configuring this instance. This includes the basic configurations required for installing into a normal Kubernetes environment.
+To install in your own Kubernetes cluster please use the `gke-default-values.yaml` file in this repo for configuring this instance. This includes the basic configurations required for installing into a normal Kubernetes environment.
 
 ## Google Cloud
 
@@ -89,3 +89,45 @@ helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts
 ```
 
 # ClearBlade Monitoring
+
+The `clearblade-monitoring` Helm chart is a secondary deployment used to monitor your enterprise instance. To install in your own Kubernetes cluster please use the `gke-default-monitoring-values.yaml` file in this repo for configuring this instance. This includes the basic configurations required for installing into a normal Kubernetes environment.
+
+## GMP
+
+This helm chart is configurable to use either Google Managed Prometheus or a standard Prometheus deployment(reccomended). Be sure that the global value 'GMP' is the same for both monitoring and iot-enterprise deployments in order to ensure the proper exporters and scrape configurations are deployed. Unless you choose to use a Google Managed Prometheus instance, leave GMP set to the default 'false'.
+
+### Required Resources
+
+#### IP Addresses
+
+For monitoring you will need 1 static public IP address provisioned to allow access to your Prometheus and optional Grafana instance from the public internet. This IP address should be created in the same Region as your GKE Cluster.
+
+#### Secrets
+
+You will need one secret, `<monitoring-namespace>_tls-certificates`, containing the TLS Certificate and Key for the monitoring domain you will be accessing your instance at in `.pem` format.
+
+#### Service Account
+
+You will need the same service account credentials as your enterprise deployment. You may reuse that service account for monitoring.
+
+#### Disk
+
+If you are not using GMP, it is reccomended to create a disk for your prometheus data. This is optional, but to use simply include the name of the disk and its size in your monitoring-values yaml file. Create your disk with the following specs
+
+Type: Regional SSD Persistent Disk   
+Zones: Must match the 2 zones configured in the GKE cluster  
+Snapshots: Enabled at your preferred schedule for backup purposes 
+
+### Configuration & Installation
+
+After all above resources exists, using the `gke-default-monitoring-values.yaml` as a starting point, update all configuration values for your specific environment.
+
+Finally, after connecting to your GKE cluster using the gcloud cli, you will be able to install your monitoring instance using the following command, replacing values inside the curly braces to match your environment (the following assumes your monitoring namespace is simply named monitoring):
+
+```
+helm install clearblade-monitoring https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.3/clearblade-monitoring-2.13.3.tgz -f ./my-monitoring-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[monitoring/clearblade-gsm-read]" && kubectl annotate serviceaccount clearblade-gsm-read     --namespace=monitoring     iam.gke.io/gcp-service-account=clearblade-gsm-read@{gcp project id}-os.iam.gserviceaccount.com
+
+```
+
+
+
