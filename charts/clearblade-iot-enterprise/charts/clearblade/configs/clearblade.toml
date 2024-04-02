@@ -20,6 +20,11 @@ StoreMessageHistory = {{ .Values.storeMessageHistory }}
 
 [HTTP]
 HttpURL = "{{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+{{- if .Values.global.enterprise.consoleURL }}
+ConsoleURL = "https://{{ .Values.global.enterprise.consoleURL}}"
+{{- else }}
+ConsoleURL = "{{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+{{- end }}
 
 [MQTT]
 MessagingURL = "{{- include "clearblade-iot-enterprise.wsMqttMessagingURL" . | trim }}"
