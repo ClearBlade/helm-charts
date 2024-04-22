@@ -163,6 +163,19 @@ scrape_configs:
       - clearblade-monitoring-service-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:2112
       {{- end}}
 
+  - job_name: 'clearblade-monitoring-green-{{ $.Values.global.deploymentnamespace }}'
+    scrape_interval: 5s
+    metric_relabel_configs:
+    - source_labels: [instance]
+      regex: '(.*):.*'
+      replacement: '$1'
+      target_label: instance
+    static_configs:
+    - targets:
+      {{- range $i, $e := until (.Values.clearbladereplicas | int)}}
+      - clearblade-monitoring-service-green-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:2112
+      {{- end}}
+
   - job_name: 'haproxy-{{ $.Values.global.deploymentnamespace }}'
     scrape_interval: 5s
     metric_relabel_configs:

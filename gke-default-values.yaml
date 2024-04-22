@@ -9,6 +9,8 @@ global:
   imagePullerSecret: REPLACE # To be provided by ClearBlade
   enterprise:
     version: 9.32.0
+    greenVersion: #Optional, used for blue green updates to clearblade. See Readme
+    slot: blue
     baseURL: REPLACE
     consoleURL: #OPTIONAL only set if console and platform url's are different; do not include https:// or /console
     registrationKey: REPLACE
@@ -37,6 +39,7 @@ global:
 
 clearblade:
   replicas: 3
+  greenReplicas: 0
   license:
     key: "REPLACE" # To be provided by ClearBlade
     instanceID: "REPLACE" # To be provided by ClearBlade
