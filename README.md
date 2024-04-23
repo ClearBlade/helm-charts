@@ -85,7 +85,7 @@ After all above resources exists, using the `gke-default-values.yaml` as a start
 Finally, after connecting to your GKE cluster using the gcloud cli, you will be able to install your instance using the following command, replacing values inside the curly braces to match your environment:
 
 ```
-helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-2.13.3/clearblade-iot-enterprise-2.13.3.tgz -f ./my-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[{kubernetes namespace}/clearblade-gsm-read]"
+helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-2.13.5/clearblade-iot-enterprise-2.13.3.tgz -f ./my-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[{kubernetes namespace}/clearblade-gsm-read]"
 ```
 
 # ClearBlade Monitoring
@@ -125,7 +125,7 @@ After all above resources exists, using the `gke-default-monitoring-values.yaml`
 Finally, after connecting to your GKE cluster using the gcloud cli, you will be able to install your monitoring instance using the following command, replacing values inside the curly braces to match your environment (the following assumes your monitoring namespace is simply named monitoring):
 
 ```
-helm install clearblade-monitoring https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.3/clearblade-monitoring-2.13.3.tgz -f ./my-monitoring-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[monitoring/clearblade-gsm-read]" && kubectl annotate serviceaccount clearblade-gsm-read     --namespace=monitoring     iam.gke.io/gcp-service-account=clearblade-gsm-read@{gcp project id}-os.iam.gserviceaccount.com
+helm install clearblade-monitoring https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.4/clearblade-monitoring-2.13.3.tgz -f ./my-monitoring-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[monitoring/clearblade-gsm-read]" && kubectl annotate serviceaccount clearblade-gsm-read     --namespace=monitoring     iam.gke.io/gcp-service-account=clearblade-gsm-read@{gcp project id}-os.iam.gserviceaccount.com
 
 ```
 
