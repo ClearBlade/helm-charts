@@ -14,7 +14,7 @@ global:
     baseURL: REPLACE
     consoleURL: #OPTIONAL only set if console and platform url's are different; do not include https:// or /console
     registrationKey: REPLACE
-    tagOverride: false #use an alternate clearblade image such as 9.32.1-alpine
+    tagOverride: false #NOT RECOMMENDED to set to true; use an alternate clearblade image such as 9.32.1-alpine
   iotCore:
     enabled: true
     version: REPLACE # 9.28.9_1.12

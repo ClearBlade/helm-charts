@@ -85,7 +85,7 @@ After all above resources exists, using the `gke-default-values.yaml` as a start
 Finally, after connecting to your GKE cluster using the gcloud cli, you will be able to install your instance using the following command, replacing values inside the curly braces to match your environment:
 
 ```
-helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-2.13.5/clearblade-iot-enterprise-2.13.3.tgz -f ./my-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[{kubernetes namespace}/clearblade-gsm-read]"
+helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-2.13.6/clearblade-iot-enterprise-2.13.6.tgz -f ./my-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[{kubernetes namespace}/clearblade-gsm-read]"
 ```
 
 # ClearBlade Monitoring
@@ -128,6 +128,51 @@ Finally, after connecting to your GKE cluster using the gcloud cli, you will be 
 helm install clearblade-monitoring https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.4/clearblade-monitoring-2.13.3.tgz -f ./my-monitoring-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[monitoring/clearblade-gsm-read]" && kubectl annotate serviceaccount clearblade-gsm-read     --namespace=monitoring     iam.gke.io/gcp-service-account=clearblade-gsm-read@{gcp project id}-os.iam.gserviceaccount.com
 
 ```
+
+
+# Blue Green updates
+
+## About
+
+This document describes how to update your ClearBlade platform version in a blue/green style to prevent downtime and forced disconnects. It involves adding new ClearBlade pods/containers to your cluster, running the desired version, and having a transitional period while devices naturally reconnect to the newer pods. This comes at the cost of time and compute but should involve no service interruptions.
+
+In our Kubernetes deployments, traffic is routed from the load balancer to ClearBlade through a Kubernetes service. By using labels in Kubernetes, we can limit the scope of this service to ClearBlade pods running only the desired version. Existing connections will persist, while new connections will only be established with the new ClearBlade version. Eventually, all devices will be connected to the new pods, and you can remove the existing pods.
+
+## Requirements
+
+Helm charts version 3.13.6 or newer
+
+ClearBlade version 9.34.0 or newer (before update)
+
+The following versions are unskippable - meaning you cannot jump from a prior version to a later version in a blue green fashion, without first updating to these versions (i.e. you cannot go directly from 9.34.1 to 9.34.3)
+
+9.34.0
+
+9.34.2
+
+## Steps
+
+These steps assume a blue-to-green transition. To transition from green back to blue for a second update, replace instances of global.enterprise.greenVersion with global.enterprise.version and instances of clearblade.greenReplicas with clearblade.replicas and vice versa. The replica and version values are applied to the blue pod set but are not explicitly named blue. For step 3, change the slot value to blue instead of green.
+
+In your values file used to deploy ClearBlade with helm, set global.enterprise.greenVersion to the platform version you want to upgrade to. Then, in the ClearBlade section, set clearblade.greenReplicas to the desired number of pods.
+
+Run 
+
+helm upgrade <deployment name> -f <path to values file> <path to clearblade-iot-enterprise tgz file>
+
+This will start your green pod set running the desired version. Wait for them to run, and optionally wait for them to finish autobalancing (see logs).
+
+A useful helm plugin is helm-diff. With it installed, you can run the above command with ‘diff’ added (helm diff upgrade ….). This will not upgrade your deployment but instead show you the changes that will be made so you can be sure you are only making intended changes.
+
+Update your values file to set global.enterprise.slot to green. If not set, this value defaults to blue.
+
+Run the upgrade command above again. This will update your clearblade-service to route new connections to the new green set of ClearBlade pods instead of the existing old set. Before updating the service, your green pods must be running to establish new connections immediately.
+
+You are now in a transitional state and running two versions of ClearBlade simultaneously. Existing connections to the old ClearBlade set will persist while new connections connect to the new set. Stay in this state until all devices have reconnected to the new set for minimal interruption.
+
+You may change the clearblade.replicas value to 0, run the upgrade command, and exclusively run the new version and be done with your update.
+
+
 
 
 

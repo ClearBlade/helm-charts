@@ -334,10 +334,12 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterprise.tagOverride }}
+          {{- if .Values.global.enterprise.greenVersion }}
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.greenVersion }}"
+          {{- else if .Values.global.enterprise.tagOverride }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.tagOverride }}"
           {{- else }}
-          image: "gcr.io/api-project-320446546234/clearblade:9.34.2"
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.version }}"
           {{- end }}
           command: ["clearblade"]
           args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
