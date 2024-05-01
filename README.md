@@ -140,7 +140,7 @@ In our Kubernetes deployments, traffic is routed from the load balancer to Clear
 
 ## Requirements
 
-Helm charts version 3.13.6 or newer
+Helm charts version 2.13.6 or newer
 
 ClearBlade version 9.34.0 or newer (before update)
 
