@@ -35,7 +35,7 @@ spec:
       {{- end }}
       containers:
         - name: cb-ia
-          image: gcr.io/api-project-320446546234/ia:9.34.2_test5
+          image: gcr.io/api-project-320446546234/ia:9.34.2_test6
           command:  ["ia-sidecar"]
           args: ["-reg-key={{ .Values.global.enterprise.registrationKey }}", "-url=https://{{ .Values.global.enterprise.baseURL }}", "-message-url=https://{{ .Values.global.enterprise.baseURL }}", "-instance-id=cb85988d-4c77-4755-9266-1485d1523e48"]
           volumeMounts:
