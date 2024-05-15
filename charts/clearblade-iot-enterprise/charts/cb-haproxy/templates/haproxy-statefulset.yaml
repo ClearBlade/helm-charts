@@ -116,7 +116,7 @@ spec:
         - name: haproxy-exporter
           image: prom/haproxy-exporter:latest
           command: ["haproxy_exporter"]
-          args: ["--haproxy.scrape-uri=http://{{ .Values.stats_auth }}@localhost:9876/haproxy_stats?stats;csv"]
+          args: ["--haproxy.scrape-uri=http://{{ .Values.stats_auth }}@cb-haproxy-metrics-service.{{ .Values.global.namespace }}.svc.cluster.local:9876/haproxy_stats?stats;csv"]
           ports:
             - containerPort: 9101
               name: metrics

@@ -76,7 +76,7 @@ DisablePprof = false
 RPCTimeout = 120
 
 [Cluster]
-HostAddress = "clearblade-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ .Values.global.namespace }}.svc.cluster.local"
+HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ .Values.global.namespace }}.svc.cluster.local"
 
 [FileHosting]
 URL = "http://cb-file-hosting-service.{{ .Values.global.namespace }}.svc.cluster.local:80"

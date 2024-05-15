@@ -24,4 +24,4 @@ ports:
   edge: 8951
   farmer: 8765
   monitoring: 9090
-stats_auth: ""
+stats_auth: clearblade
