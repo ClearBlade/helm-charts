@@ -2,6 +2,41 @@ apiVersion: v1
 entries:
   clearblade-iot-enterprise:
   - apiVersion: v2
+    created: "2024-05-15T18:55:18.716064425Z"
+    dependencies:
+    - condition: cb-postgres.enabled
+      name: cb-postgres
+      repository: file://charts/cb-postgres
+      version: 2.14.1
+    - condition: cb-haproxy.enabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 2.14.1
+    - name: clearblade
+      repository: file://charts/clearblade
+      version: 2.14.1
+    - name: cb-console
+      repository: file://charts/cb-console
+      version: 2.14.1
+    - name: cb-file-hosting
+      repository: file://charts/cb-file-hosting
+      version: 2.14.1
+    - condition: cb-redis.enabled
+      name: cb-redis
+      repository: file://charts/cb-redis
+      version: 2.14.1
+    - condition: global.iotCore.enabled
+      name: cb-iotcore
+      repository: file://charts/cb-iotcore
+      version: 2.14.1
+    description: ClearBlade IoT Enterprise
+    digest: 5395015a5014053362d45f4b51b5a92d5b2d093d8b1415f9d82cff9d3e077127
+    name: clearblade-iot-enterprise
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-2.14.1/clearblade-iot-enterprise-2.14.1.tgz
+    version: 2.14.1
+  - apiVersion: v2
     created: "2024-05-08T18:01:38.86047229Z"
     dependencies:
     - condition: cb-postgres.enabled
@@ -337,4 +372,4 @@ entries:
     urls:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.0/clearblade-monitoring-2.13.0.tgz
     version: 2.13.0
-generated: "2024-05-08T18:01:38.860514318Z"
+generated: "2024-05-15T18:55:18.716090605Z"
