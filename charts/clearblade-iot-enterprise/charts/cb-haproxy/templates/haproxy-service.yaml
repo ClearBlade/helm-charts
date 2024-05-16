@@ -46,16 +46,28 @@ spec:
       targetPort: 8951
       port: {{ .Values.ports.edge }}
       protocol: TCP
-    - name: exporter
-      targetPort: 9876
-      port: 9876
-      protocol: TCP
     {{- if .Values.mqttOver1883}}
     - name: mqtt-old
       targetPort: 1883
       port: 1883
       protocol: TCP
     {{- end }}
+  selector:
+    app: cb-haproxy
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: cb-haproxy-metrics-service
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    run: cb-haproxy
+spec:
+  ports:
+  - name: exporter
+    targetPort: 9876
+    port: 9876
+    protocol: TCP
   selector:
     app: cb-haproxy
 {{- if .Values.mqttOver443 }}

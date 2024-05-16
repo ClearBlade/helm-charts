@@ -13,11 +13,11 @@ license:
     enabled: true
     reportInterval: 1
 resourceRequests:
-  cpu: 1
-  memory: 2G
+  cpu: 2
+  memory: 8G
 resourceLimits:
-  cpu: 1
-  memory: 2G
+  cpu: 2
+  memory: 8G
 mqtt:
   allowDuplicateClientID: false
   maxPublishSize: ":5000000"

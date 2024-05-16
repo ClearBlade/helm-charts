@@ -152,7 +152,13 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 1Gi      
+            sizeLimit: 1Gi
+        {{- if eq .Values.replicas 1.0 }}
+        - name: pvc-cb-postgres
+          persistentVolumeClaim:
+            claimName: pvc-cb-postgres-cb-postgres-0
+        {{- end }}
+  {{- if gt .Values.replicas 1.0 }}      
   volumeClaimTemplates:
     - apiVersion: v1
       kind: PersistentVolumeClaim
@@ -165,3 +171,4 @@ spec:
         resources:
           requests:
             storage: {{ .Values.storage.size }}
+  {{- end }}

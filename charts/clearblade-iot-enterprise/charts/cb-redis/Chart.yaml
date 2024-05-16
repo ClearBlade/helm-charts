@@ -2,4 +2,4 @@ apiVersion: v2
 name: cb-redis
 description: ClearBlade IoT Enterprise - Redis
 type: application
-version: 2.13.5
+version: 2.14.1

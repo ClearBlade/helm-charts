@@ -8,5 +8,3 @@ metadata:
 data:
   clearblade.toml: |
 {{ (tpl (.Files.Get "configs/clearblade.toml") .) | b64enc | indent 4 }}
-  clearblade-green.toml: |
-{{ (tpl (.Files.Get "configs/clearblade-green.toml") .) | b64enc | indent 4 }}
