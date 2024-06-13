@@ -37,7 +37,7 @@ spec:
         - name: cb-ia
           image: gcr.io/api-project-320446546234/ia:{{ .Values.global.IA.version}}
           command:  ["ia-sidecar"]
-          args: ["-reg-key={{ .Values.global.enterprise.registrationKey }}", "-url=https://{{ .Values.global.enterprise.baseURL }}", "-message-url=https://{{ .Values.global.enterprise.baseURL }}", "-instance-id={{ .Values.global.enterprise.instanceID }}"]
+          args: ["-reg-key={{ .Values.global.enterprise.registrationKey }}", "-url=https://{{ .Values.global.enterprise.baseURL }}", "-message-url={{ .Values.global.enterprise.baseURL }}", "-instance-id={{ .Values.global.enterprise.instanceID }}"]
           volumeMounts:
           - name: ia
             mountPath: /etc/clearblade/conf/ia
