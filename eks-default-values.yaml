@@ -1,0 +1,121 @@
+global:
+  namespace: clearblade # Must be unique per deployment/instance in same GCP project area
+  #nodeSelector: "" # Optional nodeSelector. Leave blank if not utilizing.
+  #tolerations:# Optional taint tolerations. Add as many key blocks as necessary. Leave blank if not utilizing.
+  # - key: "key1"
+  #   operator: "Equal"
+  #   value: "value1"
+  #   effect: "NoSchedule"
+  imagePullerSecret: REPLACE # Use ClearBlade provided value
+  enterprise:
+    version: 9.36.2
+    greenVersion: #Optional, used for blue green updates to clearblade. See Readme
+    slot: blue
+    baseURL: REPLACE # example.clearblade.com
+    consoleURL: #OPTIONAL only set if console and platform url's are different; do not include https:// or /console
+    registrationKey: REPLACE # recommended to change to a unique value, this key is required for a developer to register on the instance
+    tagOverride: false #NOT RECOMMENDED to set to true; use an alternate clearblade image such as 9.32.1-alpine
+    instanceID: REPLACE # Use ClearBlade provided value
+  iotCore:
+    enabled: false
+  IA:
+    enabled: false
+  gcp: none
+  eks:
+    ebs:
+      postgresVolumeHandle: REPLACE # volume ID for EBS volume for postgres to use for storage, example: vol-xxxxx
+      postgresVolumeAZ: REPLACE # specific AZ the above volume is in, example: us-east-1a
+  cloud: aws
+  advanced:
+    predefinedNamespace: false # Set to true if you manage the namespace outside of helm.
+    memoryStore: # If using GCP Memorystore, be sure to set cb-redis.enabled to "false" below. Requires ClearBlade v9.32.0
+      enabled: false
+    cloudSQL: # If using GCP CloudSQL, be sure to set postgres.enabled to "false" below
+      enabled: false
+    secrets:
+      manager: none
+      postgresPassword: REPLACE
+      mekfile: "REPLACE" # mek JSON object to be provided by ClearBlade
+      tlsCertificate: | # TLS certificate/key in .pem format
+        REPLACE
+  mtlsHAProxy: false
+  mtlsClearBlade: false
+  GMP: false
+
+clearblade:
+  replicas: 2
+  greenReplicas: 0
+  resourceRequests:
+    cpu: .25
+    memory: .25G
+  resourceLimits:
+    cpu: .25
+    memory: .25G
+  mqtt:
+    allowDuplicateClientID: true # IoTCore Default Behavior
+
+cb-haproxy:
+  enabled: true
+  monitoringEnabled: false
+  replicas: 1
+  image: haproxy
+  imageTag: 2.6-alpine
+  mqttOver443: false
+  ip:
+    primary: REPLACE # comma seperated list of EIP Allocation ID: eipalloc-000,eipalloc-111
+  resourceRequests:
+    cpu: .25
+    memory: .25G
+  resourceLimits:
+    cpu: .25
+    memory: .25G
+
+cb-postgres:
+  enabled: true
+  monitoringEnabled: false
+  image: timescale/timescaledb
+  imageTag: latest-pg15
+  replicas: 1
+  storage:
+    size: 10G
+    class: ""
+  resourceRequests:
+    cpu: .25
+    memory: .5G
+  resourceLimits:
+    cpu: .25
+    memory: .5G
+
+cb-redis:
+  enabled: true
+  monitoringEnabled: false
+  image: redis
+  imageTag: alpine
+  resourceLimits:
+    cpu: .25
+    memory: .5G
+  resourceRequests:
+    cpu: .25
+    memory: .5G
+
+cb-console:
+  resourceRequests:
+    cpu: .2
+    memory: .2G
+  resourceLimits:
+    cpu: .2
+    memory: .2G
+
+cb-file-hosting:
+  resourceLimits:
+    cpu: .2
+    memory: .2G
+  resourceRequests:
+    cpu: .2
+    memory: .2G
+
+cb-iotcore:
+  checkClearbladeReadiness: false
+  resourceLimits:
+    cpu: 1
+    memory: 2G

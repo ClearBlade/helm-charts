@@ -3,9 +3,18 @@ kind: Service
 metadata:
   name: cb-haproxy-service
   namespace: {{ .Values.global.namespace }}
+  {{- if eq .Values.global.cloud "aws" }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .Values.ip.primary }}
+  {{- end }}
 spec:
   type: LoadBalancer
+  {{- if eq .Values.global.cloud "gcp" }}
   loadBalancerIP: {{.Values.ip.primary}}
+  {{- end }}
   externalTrafficPolicy: Local
   ports:
     - name: http

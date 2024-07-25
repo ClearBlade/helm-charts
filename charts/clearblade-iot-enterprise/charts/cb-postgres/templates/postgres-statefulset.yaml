@@ -20,7 +20,12 @@ spec:
         app: cb-postgres
         app.kubernetes.io/name: managed-prom
     spec:
-      serviceAccountName: clearblade-gsm-read
+      {{- if eq .Values.global.cloud "aws"}}
+      nodeSelector:
+        topology.kubernetes.io/zone: {{ .Values.global.eks.ebs.postgresVolumeAZ }}
+      {{- end }}
+      {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+      serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
       initContainers:
         - name: init
           image: google/cloud-sdk:slim
@@ -34,16 +39,23 @@ spec:
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db
+      {{- end}}
       containers:
         - name: cb-postgres
           image: "{{ .Values.image }}:{{ .Values.imageTag }}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args:
+            {{- if eq .Values.global.advanced.secrets.manager "none"}}
+            - -c
+            - >-
+                /docker-entrypoint/start-database.sh
+            {{- else }}
             - -c
             - >-
                 source /env/db/vars &&
                 /docker-entrypoint/start-database.sh
+            {{- end }}
           env:
             - name: PGDATA
               value: /var/lib/postgresql/data/clearblade
@@ -53,6 +65,24 @@ spec:
               value: {{ .Values.user.primary }}
             - name: REPLICA_USER
               value: {{ .Values.user.replica }}
+              env:
+            {{- if eq .Values.global.advanced.secrets.manager "none"}}
+            - name: PRIMARY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cb-postgres-secrets
+                  key: primary-password
+            - name: REPLICA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cb-postgres-secrets
+                  key: replica-password
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cb-postgres-secrets
+                  key: postgres-password
+            {{- end }}
           ports:
             - containerPort: {{ .Values.port }}
           resources:
@@ -64,9 +94,10 @@ spec:
               memory: {{ .Values.resourceLimits.memory }}
 
           volumeMounts:
+            {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
             - mountPath: /env/db/
               name: postgres-env-vars-volume
-
+            {{- end}}
             - mountPath: /var/lib/postgresql/data/
               name: pvc-cb-postgres
 
@@ -143,8 +174,10 @@ spec:
         - name: postgres-config-volume
           configMap:
             name: postgres-config
+        {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
         - name: postgres-env-vars-volume
           emptyDir: {}
+        {{- end }}
         - name: postgres-init-volume
           configMap:
             name: postgres-init

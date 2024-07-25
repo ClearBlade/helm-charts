@@ -35,12 +35,15 @@ spec:
           secret:
             secretName: cb-haproxy-config 
         - name: haproxy-cert-volume
-          emptyDir: {}
+          secret:
+            secretName: cb-haproxy-secrets
         {{- if .Values.global.mtlsHAProxy}}
         - name: haproxy-mtls-cert-volume
           emptyDir: {}
         {{- end}}
+      {{- if eq ((.Values.global.advanced.secrets).manager) "gsm" }}
       serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
+      {{- end}}
       initContainers:
         - name: check-clearblade-readiness
           image: ellerbrock/alpine-bash-curl-ssl
@@ -54,6 +57,7 @@ spec:
             done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
+        {{- if eq ((.Values.global.advanced.secrets).manager) "gsm" }}
         - name: init
           image: google/cloud-sdk:slim
           command: ["/bin/bash"]
@@ -74,11 +78,14 @@ spec:
             {{- end}}
           volumeMounts:
            - name: haproxy-cert-volume
-             mountPath: /etc/ssl/
+             mountPath: /etc/ssl/cert.pem
+             subPath: cert.pem
+             
           {{- if .Values.global.mtlsHAProxy}}
            - name: haproxy-mtls-cert-volume
              mountPath: /etc/mtls/
            {{- end}}
+        {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
@@ -107,7 +114,7 @@ spec:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
             - name: haproxy-cert-volume
-              mountPath: /etc/ssl/
+              mountPath: /etc/ssl
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/

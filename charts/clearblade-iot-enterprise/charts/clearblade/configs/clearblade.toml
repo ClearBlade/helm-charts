@@ -6,7 +6,7 @@ RegistrationKey = "{{ .Values.global.enterprise.registrationKey }}"
 AutoRenewLicense = {{ .Values.license.autoRenew.enabled }}
 LicenseRenewalWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal"
 LicenseAutoRenewDays = {{ .Values.license.autoRenew.days }}
-PlatformID = "{{ .Values.license.instanceID }}"
+PlatformID = "{{ .Values.global.enterprise.instanceID }}"
 
 [Logging]
 LogLevel = "{{ .Values.logLevel }}"

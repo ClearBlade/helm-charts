@@ -1,3 +1,4 @@
+{{- if eq .Values.global.cloud "gcp" }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -54,3 +55,4 @@ spec:
     driver: pd.csi.storage.gke.io
     volumeHandle: projects/{{ .Values.global.gcp.project }}/regions/{{ .Values.global.gcp.region }}/disks/{{ .Values.global.namespace }}-{{ .Values.storage.gceDisk_postgres2 }}
     fsType: ext4
+{{- end }}
