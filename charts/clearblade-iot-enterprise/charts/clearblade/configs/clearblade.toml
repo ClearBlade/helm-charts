@@ -79,7 +79,7 @@ RPCTimeout = 120
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ .Values.global.namespace }}.svc.cluster.local"
 
 [FileHosting]
-URL = "http://cb-file-hosting-service.{{ .Values.global.namespace }}.svc.cluster.local:80"
+URL = "http://cb-file-hosting-service.{{ .Values.global.namespace }}.svc.cluster.local:8915"
 
 [Triage]
 PerformTriage = true
@@ -103,6 +103,7 @@ Store = "redis"
 
 [IotCore]
 DeviceTimestampCacheSeconds = {{ .Values.iotCore.deviceTimestampCacheSeconds }}
+CloudLoggingResourceType = "global"
 
 [MessageHistory]
 EnableDeviceStateHistoryCleanup = {{ .Values.iotCore.deviceStateCleanup.enabled }}
@@ -113,3 +114,8 @@ MinDeviceStatesToKeep = {{ .Values.iotCore.deviceStateCleanup.minToKeep }}
 ReportMetrics = {{ .Values.license.reporting.enabled }}
 ReportIntervalHours = {{ .Values.license.reporting.reportInterval }}
 MetricWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage"
+
+{{- if .Values.global.IA.enabled }}
+[Buckets]
+QueueEmptyIntervalSecs = 157248000
+{{- end }}

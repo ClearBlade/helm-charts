@@ -2,4 +2,4 @@ apiVersion: v2
 name: clearblade
 description: ClearBlade IoT Enterprise - ClearBlade Node
 type: application
-version: 2.14.2
+version: 2.14.3

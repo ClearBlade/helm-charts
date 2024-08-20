@@ -2,4 +2,4 @@ apiVersion: v2
 name: cb-ia
 description: ClearBlade IoT Enterprise - Intelligent Assets sidecar
 type: application
-version: 2.14.2
+version: 2.14.3
