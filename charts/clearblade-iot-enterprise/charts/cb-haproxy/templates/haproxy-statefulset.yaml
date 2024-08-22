@@ -36,6 +36,8 @@ spec:
             secretName: cb-haproxy-config 
         - name: haproxy-cert-volume
           emptyDir: {}
+        - name: haproxy-controller-volume
+          emptyDir: {}
         {{- if .Values.global.mtlsHAProxy}}
         - name: haproxy-mtls-cert-volume
           emptyDir: {}
@@ -68,6 +70,9 @@ spec:
                 echo "$i" > /etc/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
+              apk add ca-certificates
+              mkdir -p /etc/ssl/certs
+              update-ca-certificates
             {{- if .Values.global.mtlsHAProxy}}
               mtls_cert="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_mtls-certificate)"
               echo "$mtls_cert"  > /etc/mtls/sampleCACertificate.pem
@@ -108,10 +113,52 @@ spec:
               mountPath: /usr/local/etc/haproxy/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl/
+            - name: haproxy-controller-volume
+              mountPath: /var/run
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/
             {{- end}}
+        - name: haproxy-controller
+          image: "gcr.io/api-project-320446546234/cb_controller:latest"
+          env: 
+            - name: PLATFORM_URL
+              value: "michael-scale-test.clearblade.com"
+            - name: TESTING_MODE
+              value: "false"
+            - name: CERT_PATH
+              value: etc/ssl/clearblade-0.pem
+            - name: CONFIG_PATH
+              value: usr/local/etc/haproxy/haproxy.cfg
+            - name: ADDRESS
+              value: "/var/run/cb-haproxy.sock" #"cb-haproxy-service.michael-scale-test.svc.cluster.local:9999"
+            - name: PROJECT
+              value: {{ .Values.global.gcp.project }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: EMAIL
+              value: "serversupport@clearblade.com"
+            - name: RENEWAL_DAYS
+              value: "89"
+          ports:
+            - containerPort: 9999
+              name: controller
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: haproxy-config-volume
+              mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-cert-volume
+              mountPath: /etc/ssl/
+            - name: haproxy-controller-volume
+              mountPath: /var/run
 {{- if .Values.monitoringEnabled }}
         - name: haproxy-exporter
           image: prom/haproxy-exporter:latest

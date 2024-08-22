@@ -115,3 +115,19 @@ spec:
 {{- end}}
 {{- end}}
 {{- end}}
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: cb-haproxy-controller-service
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    run: cb-haproxy
+spec:
+  ports:
+  - name: controller
+    targetPort: 5001
+    port: 5001
+    protocol: TCP
+  selector:
+    app: cb-haproxy
