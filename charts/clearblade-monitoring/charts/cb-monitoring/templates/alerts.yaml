@@ -1,93 +1,93 @@
-apiVersion: monitoring.googleapis.com/v1
-kind: Rules
-metadata:
-  name: clearblade-rules
-  namespace: {{ .Values.global.namespace }}
-spec:
-  groups:
-    - name: Alerts
-      interval: 5s
-      rules:
-        - alert: ContainerRestart
-          expr: time() - kube_pod_start_time{pod=~"cb-postgres.*|clearblade.*|cb-console.*|cb-haproxy.*|cb-redis.*"} < 300
-          for: 1m
-          annotations:
-            summary: "{{ "{{" }}$labels.pod }} container on node{{ "{{" }}$labels.cluster }} restarted"
+# apiVersion: monitoring.googleapis.com/v1
+# kind: Rules
+# metadata:
+#   name: clearblade-rules
+#   namespace: {{ .Values.global.namespace }}
+# spec:
+#   groups:
+#     - name: Alerts
+#       interval: 5s
+#       rules:
+#         - alert: ContainerRestart
+#           expr: time() - kube_pod_start_time{pod=~"cb-postgres.*|clearblade.*|cb-console.*|cb-haproxy.*|cb-redis.*"} < 300
+#           for: 1m
+#           annotations:
+#             summary: "{{ "{{" }}$labels.pod }} container on node{{ "{{" }}$labels.cluster }} restarted"
 
-        - alert: HighCPU
-          expr: round(100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) * on(instance) group_left(nodename) (node_uname_info), 0.1) > 80
-          for: 10m
-          annotations:
-            summary: "Node{{ "{{" }}$labels.nodename }} cpu is too high:{{ "{{" }}$value }}%"
+#         - alert: HighCPU
+#           expr: round(100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) * on(instance) group_left(nodename) (node_uname_info), 0.1) > 80
+#           for: 10m
+#           annotations:
+#             summary: "Node{{ "{{" }}$labels.nodename }} cpu is too high:{{ "{{" }}$value }}%"
 
-        - alert: DiskUsageDB
-          expr: round(100-(node_filesystem_avail_bytes{mountpoint=~'/mnt/disks/.*',device!='rootfs'}*100) / node_filesystem_size_bytes{mountpoint=~'/mnt/disks/.*',device!='rootfs'} * on(instance) group_left(nodename) (node_uname_info), 1) > 80
-          for: 2m
-          annotations:
-            summary: "Node{{ "{{" }}$labels.nodename }} memory usage is too high:{{ "{{" }}$value }}%"
+#         - alert: DiskUsageDB
+#           expr: round(100-(node_filesystem_avail_bytes{mountpoint=~'/mnt/disks/.*',device!='rootfs'}*100) / node_filesystem_size_bytes{mountpoint=~'/mnt/disks/.*',device!='rootfs'} * on(instance) group_left(nodename) (node_uname_info), 1) > 80
+#           for: 2m
+#           annotations:
+#             summary: "Node{{ "{{" }}$labels.nodename }} memory usage is too high:{{ "{{" }}$value }}%"
 
-        - alert: TooManyOpenFileDescriptors
-          expr: node_filefd_allocated * on(instance) group_left(nodename) (node_uname_info) > 900000
-          for: 2m
-          annotations:
-            summary: "Node{{ "{{" }}$labels.nodename }} has too many open file descriptors:{{ "{{" }}$value }}/999999"
+#         - alert: TooManyOpenFileDescriptors
+#           expr: node_filefd_allocated * on(instance) group_left(nodename) (node_uname_info) > 900000
+#           for: 2m
+#           annotations:
+#             summary: "Node{{ "{{" }}$labels.nodename }} has too many open file descriptors:{{ "{{" }}$value }}/999999"
 
-        - alert: DiskUsageRoot
-          expr: round(100-(node_filesystem_avail_bytes{mountpoint='/',device!='rootfs'}*100) / node_filesystem_size_bytes{mountpoint='/',device!='rootfs'} * on(instance) group_left(nodename) (node_uname_info), 1) > 90
-          for: 2m
-          annotations:
-            summary: "Root disk is getting pretty full on node{{ "{{" }}$labels.nodename }}:{{ "{{" }}$value }}%"
+#         - alert: DiskUsageRoot
+#           expr: round(100-(node_filesystem_avail_bytes{mountpoint='/',device!='rootfs'}*100) / node_filesystem_size_bytes{mountpoint='/',device!='rootfs'} * on(instance) group_left(nodename) (node_uname_info), 1) > 90
+#           for: 2m
+#           annotations:
+#             summary: "Root disk is getting pretty full on node{{ "{{" }}$labels.nodename }}:{{ "{{" }}$value }}%"
 
-        - alert: HighMemoryUsage
-          expr: round(((node_memory_MemTotal_bytes - node_memory_MemFree_bytes - (node_memory_Cached_bytes + node_memory_Buffers_bytes))/node_memory_MemTotal_bytes) * 100 * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info)), 1) > 90
-          for: 2m
-          annotations:
-            summary: "Node{{ "{{" }}$labels.nodename }} memory usage is too high:{{ "{{" }}$value }}%"
+#         - alert: HighMemoryUsage
+#           expr: round(((node_memory_MemTotal_bytes - node_memory_MemFree_bytes - (node_memory_Cached_bytes + node_memory_Buffers_bytes))/node_memory_MemTotal_bytes) * 100 * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info)), 1) > 90
+#           for: 2m
+#           annotations:
+#             summary: "Node{{ "{{" }}$labels.nodename }} memory usage is too high:{{ "{{" }}$value }}%"
 
-        - alert: DroppingMessagesInLRS
-          expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) > 0
-          annotations:
-            summary: "LRS{{ "{{" }}$labels.service_name }} is dropping messages"
+#         - alert: DroppingMessagesInLRS
+#           expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) > 0
+#           annotations:
+#             summary: "LRS{{ "{{" }}$labels.service_name }} is dropping messages"
 
-        - alert: DroppingMessagesInLRS
-          expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) * on(instance) group_left(nodename) (node_uname_info) > 0
-          annotations:
-            summary: "LRS{{ "{{" }}$labels.service_name }} on node{{ "{{" }}$labels.nodename }} is dropping messages"
+#         - alert: DroppingMessagesInLRS
+#           expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) * on(instance) group_left(nodename) (node_uname_info) > 0
+#           annotations:
+#             summary: "LRS{{ "{{" }}$labels.service_name }} on node{{ "{{" }}$labels.nodename }} is dropping messages"
 
-        - alert: ReplicaLag
-          expr: round(pg_stat_replication_pg_wal_lsn_diff / 1000000000, 0.01) > 10
-          for: 1m
-          annotations:
-            summary: "DB replica is lagging too far behind the master:{{ "{{" }}$value }}GB"
+#         - alert: ReplicaLag
+#           expr: round(pg_stat_replication_pg_wal_lsn_diff / 1000000000, 0.01) > 10
+#           for: 1m
+#           annotations:
+#             summary: "DB replica is lagging too far behind the master:{{ "{{" }}$value }}GB"
 
-    - name: ExpensiveStuff
-      interval: 5s
-      rules:
-        - record: http_succeeded:5m_increase
-          expr: sum by(instance) (increase(clearblade_http_succeeded[5m]))
-        - record: http_succeeded:1h_by_endpoint
-          expr: sum by(method,endpoint) (increase(clearblade_http_succeeded[1h]))
-        - record: http_failed:5m_increase
-          expr: sum by(instance) (increase(clearblade_http_failed[5m]))
-        - record: http_failed:1h_by_endpoint
-          expr: sum by(method,endpoint) (increase(clearblade_http_failed[1h]))
-        - record: mqtt_publishes:5m_avg
-          expr: sum by(instance) (rate(clearblade_mqtt_publishes[5m])) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
-        - record: timers_succeeded:5m_count
-          expr: sum by(system_key, timer_name, service_name) (increase(clearblade_timers_successful[5m]))
-        - record: timers_failed:5m_count
-          expr: sum by (system_key, timer_name, service_name) (increase(clearblade_timers_failed[5m]))
-        - record: triggers_succeeded:5m_count
-          expr: sum by(system_key, trigger_name) (increase(clearblade_triggers_successful[5m]))
-        - record: triggers_failed:5m_count
-          expr: sum by(system_key, trigger_name) (increase(clearblade_triggers_failed[5m]))
-        - record: mqtt_connections
-          expr: sum by(nodename, connection_type)(clearblade_mqtt_current_connections{connection_type!="all_connections"} * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info)))
-        - record: mqtt_dropped:5m_rate
-          expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
-        - record: mqtt_dropped:total
-          expr: sum(clearblade_stream_services_dropped_messages{service_name!="all_services"}) by(service_name,topic_path)
-        - record: services_running:by_name
-          expr: sum by(system_key,service_name) (clearblade_code_services_running_services{system_key!="all_systems"})
-        - record: services_running:by_node
-          expr: sum by(instance) (clearblade_code_services_running_services{system_key!="all_systems"}) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
+#     - name: ExpensiveStuff
+#       interval: 5s
+#       rules:
+#         - record: http_succeeded:5m_increase
+#           expr: sum by(instance) (increase(clearblade_http_succeeded[5m]))
+#         - record: http_succeeded:1h_by_endpoint
+#           expr: sum by(method,endpoint) (increase(clearblade_http_succeeded[1h]))
+#         - record: http_failed:5m_increase
+#           expr: sum by(instance) (increase(clearblade_http_failed[5m]))
+#         - record: http_failed:1h_by_endpoint
+#           expr: sum by(method,endpoint) (increase(clearblade_http_failed[1h]))
+#         - record: mqtt_publishes:5m_avg
+#           expr: sum by(instance) (rate(clearblade_mqtt_publishes[5m])) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
+#         - record: timers_succeeded:5m_count
+#           expr: sum by(system_key, timer_name, service_name) (increase(clearblade_timers_successful[5m]))
+#         - record: timers_failed:5m_count
+#           expr: sum by (system_key, timer_name, service_name) (increase(clearblade_timers_failed[5m]))
+#         - record: triggers_succeeded:5m_count
+#           expr: sum by(system_key, trigger_name) (increase(clearblade_triggers_successful[5m]))
+#         - record: triggers_failed:5m_count
+#           expr: sum by(system_key, trigger_name) (increase(clearblade_triggers_failed[5m]))
+#         - record: mqtt_connections
+#           expr: sum by(nodename, connection_type)(clearblade_mqtt_current_connections{connection_type!="all_connections"} * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info)))
+#         - record: mqtt_dropped:5m_rate
+#           expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
+#         - record: mqtt_dropped:total
+#           expr: sum(clearblade_stream_services_dropped_messages{service_name!="all_services"}) by(service_name,topic_path)
+#         - record: services_running:by_name
+#           expr: sum by(system_key,service_name) (clearblade_code_services_running_services{system_key!="all_systems"})
+#         - record: services_running:by_node
+#           expr: sum by(instance) (clearblade_code_services_running_services{system_key!="all_systems"}) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
