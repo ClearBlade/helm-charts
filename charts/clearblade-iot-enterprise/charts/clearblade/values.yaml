@@ -33,3 +33,7 @@ iotCore:
     enabled: true
     interval: 1440
     minToKeep: 10
+edges:
+  enabled: true
+rpc:
+  dataCompression: "lz4"

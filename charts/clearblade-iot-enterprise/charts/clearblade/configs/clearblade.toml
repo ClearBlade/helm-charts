@@ -74,6 +74,7 @@ DisablePprof = false
 
 [RPC]
 RPCTimeout = 120
+DataCompression = {{ .Values.rpc.DataCompression}}
 
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ .Values.global.namespace }}.svc.cluster.local"
@@ -115,7 +116,7 @@ ReportMetrics = {{ .Values.license.reporting.enabled }}
 ReportIntervalHours = {{ .Values.license.reporting.reportInterval }}
 MetricWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage"
 
-{{- if .Values.global.IA.enabled }}
+{{- if eq .Values.edges.enabled false}}
 [Buckets]
 QueueEmptyIntervalSecs = 157248000
 {{- end }}
