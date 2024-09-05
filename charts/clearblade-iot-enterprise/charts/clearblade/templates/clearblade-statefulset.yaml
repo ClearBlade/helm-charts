@@ -63,11 +63,19 @@ spec:
             done
           {{- end }}
         - name: init
+          {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
           image: google/cloud-sdk:slim
+          {{- end }}
+          {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+          image: amazon/aws-cli:latest
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
+              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              yum install -y hostname
+              {{- end}}
               {{- if .Values.global.mtlsClearBlade}}
               certificates=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
@@ -91,6 +99,9 @@ spec:
               {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
               dbpassword=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)
               {{- end }}
+              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
+              {{- end }}
               {{ if (.Values.global.advanced.cloudSQL).enabled }}
               sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- else }}
@@ -99,6 +110,8 @@ spec:
               {{- end }}
               {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
               gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
+              {{- else if eq .Values.global.advanced.secrets.manager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
@@ -260,11 +273,19 @@ spec:
             done
           {{- end }}
         - name: init
+          {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
           image: google/cloud-sdk:slim
+          {{- end }}
+          {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+          image: amazon/aws-cli:latest
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
+              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              yum install -y hostname
+              {{- end}}
               {{- if .Values.global.mtlsClearBlade}}
               certificates=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
@@ -288,6 +309,9 @@ spec:
               {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
               dbpassword=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)
               {{- end }}
+              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
+              {{- end }}
               {{ if (.Values.global.advanced.cloudSQL).enabled }}
               sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- else }}
@@ -296,6 +320,8 @@ spec:
               {{- end }}
               {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
               gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
+              {{- else if eq .Values.global.advanced.secrets.manager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}

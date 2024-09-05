@@ -35,8 +35,13 @@ spec:
           secret:
             secretName: cb-haproxy-config 
         - name: haproxy-cert-volume
+          {{- if eq .Values.global.advanced.secrets.manager "none"}}
           secret:
             secretName: cb-haproxy-secrets
+          {{- end}}
+          {{ if or (eq .Values.global.advanced.secrets.manager "gsm") (eq .Values.global.advanced.secrets.manager "asm")}}
+          emptyDir: {}
+          {{- end}}
         {{- if .Values.global.mtlsHAProxy}}
         - name: haproxy-mtls-cert-volume
           emptyDir: {}
@@ -57,15 +62,29 @@ spec:
             done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
-        {{- if eq ((.Values.global.advanced.secrets).manager) "gsm" }}
+        {{- if or (eq .Values.global.advanced.secrets.manager "gsm") (eq .Values.global.advanced.secrets.manager "asm") }}
         - name: init
+          {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
           image: google/cloud-sdk:slim
+          {{- end }}
+          {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+          image: amazon/aws-cli:latest
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
+              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
               certificates="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_tls-certificates)"
+              {{- end }}
+              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              certificates="$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_tls-certificates --region us-east-1 --query SecretString --output text)"
+              {{- end }}
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
+              for each in "${certificate_array[@]}"
+              do
+                echo "$each"
+              done
               x=0
               for i in "${certificate_array[@]}"
               do
@@ -78,9 +97,7 @@ spec:
             {{- end}}
           volumeMounts:
            - name: haproxy-cert-volume
-             mountPath: /etc/ssl/cert.pem
-             subPath: cert.pem
-             
+             mountPath: /etc/ssl/
           {{- if .Values.global.mtlsHAProxy}}
            - name: haproxy-mtls-cert-volume
              mountPath: /etc/mtls/

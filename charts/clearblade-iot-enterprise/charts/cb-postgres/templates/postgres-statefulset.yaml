@@ -39,7 +39,22 @@ spec:
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db
-      {{- end}}
+      {{- end }}
+      {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+      initContainers:
+        - name: init
+          image: amazon/aws-cli:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
+                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-replica-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
+                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-postgres-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
+          volumeMounts:
+            - name: postgres-env-vars-volume
+              mountPath: /env/db
+      {{- end }}
       containers:
         - name: cb-postgres
           image: "{{ .Values.image }}:{{ .Values.imageTag }}"
@@ -94,7 +109,7 @@ spec:
               memory: {{ .Values.resourceLimits.memory }}
 
           volumeMounts:
-            {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+            {{- if or (eq .Values.global.advanced.secrets.manager "gsm") (eq .Values.global.advanced.secrets.manager "asm")}}
             - mountPath: /env/db/
               name: postgres-env-vars-volume
             {{- end}}
@@ -174,7 +189,7 @@ spec:
         - name: postgres-config-volume
           configMap:
             name: postgres-config
-        {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+        {{- if or (eq .Values.global.advanced.secrets.manager "gsm") (eq .Values.global.advanced.secrets.manager "asm")}}
         - name: postgres-env-vars-volume
           emptyDir: {}
         {{- end }}

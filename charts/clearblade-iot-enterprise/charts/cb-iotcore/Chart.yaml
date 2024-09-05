@@ -2,4 +2,4 @@ apiVersion: v2
 name: cb-iotcore
 description: ClearBlade IoT Enterprise - IoT Core Sidecar
 type: application
-version: 3.0.0-dev
+version: 3.0.1-dev
