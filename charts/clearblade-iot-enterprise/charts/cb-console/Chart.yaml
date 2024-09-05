@@ -2,4 +2,4 @@ apiVersion: v2
 name: cb-console
 description: ClearBlade IoT Enterprise - ClearBlade Developer Console
 type: application
-version: 2.14.4
+version: 2.14.5

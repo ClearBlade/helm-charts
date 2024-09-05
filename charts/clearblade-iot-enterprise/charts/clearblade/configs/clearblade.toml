@@ -74,7 +74,7 @@ DisablePprof = false
 
 [RPC]
 RPCTimeout = 120
-DataCompression = {{ .Values.rpc.DataCompression}}
+DataCompression = "{{ .Values.rpc.dataCompression}}"
 
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ .Values.global.namespace }}.svc.cluster.local"
