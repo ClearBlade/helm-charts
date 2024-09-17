@@ -9,10 +9,10 @@ Expand the name of the chart.
 Create platformURL flag arg
 */}}
 {{- define "cb-console.platformURL" -}}
-{{- if (((.Values.global.enterprise.advanced).nonGeneratedURLs).platformURL) }}
-"-platformURL={{ .Values.global.enterprise.advanced.nonGeneratedURLs.platformURL }}"
+{{- if (.Values.global.enterprisePlatformURL) }}
+"-platformURL={{ .Values.global.enterprisePlatformURL }}"
 {{- else }}
-"-platformURL=https://{{ .Values.global.enterprise.baseURL }}"
+"-platformURL=https://{{ .Values.global.enterpriseBaseURL }}"
 {{- end }}
 {{- end }}
 
@@ -20,10 +20,10 @@ Create platformURL flag arg
 Create websocket messagingURL flag arg
 */}}
 {{- define "cb-console.wsMqttMessagingURL" -}}
-{{- if (((.Values.global.enterprise.advanced).nonGeneratedURLs).wsMqttMessagingURL) }}
-"-messageURL={{ .Values.global.enterprise.advanced.nonGeneratedURLs.wsMqttMessagingURL }}"
+{{- if (.Values.global.enterpriseWsMqttMessagingURL) }}
+"-messageURL={{ .Values.global.enterpriseWsMqttMessagingURL }}"
 {{- else }}
-"-messageURL={{ .Values.global.enterprise.baseURL }}"
+"-messageURL={{ .Values.global.enterpriseBaseURL }}"
 {{- end }}
 {{- end }}
 
@@ -31,8 +31,8 @@ Create websocket messagingURL flag arg
 Create websocket messagingPort flag arg
 */}}
 {{- define "cb-console.wsMqttMessagingPort" -}}
-{{- if (((.Values.global.enterprise.advanced).nonGeneratedURLs).wsMqttMessagingPort) }}
-"-messagePort={{ .Values.global.enterprise.advanced.nonGeneratedURLs.wsMqttMessagingPort }}"
+{{- if (.Values.global.enterpriseWsMqttMessagingPort) }}
+"-messagePort={{ .Values.global.enterpriseWsMqttMessagingPort }}"
 {{- else }}
 "-messagePort=8904"
 {{- end }}

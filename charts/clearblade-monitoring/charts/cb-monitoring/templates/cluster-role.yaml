@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: prometheus
+  name: prometheus-{{ default "monitoring" .Values.global.namespace }}
 rules:
 - apiGroups: [""]
   resources:
@@ -22,16 +22,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus
+  name: prometheus-{{ default "monitoring" .Values.global.namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: prometheus
+  name: prometheus-{{ default "monitoring" .Values.global.namespace }}
 subjects:
 - kind: ServiceAccount
-  {{- if eq .Values.global.GMP false}}
+  {{- if eq (default .Values.global.gmpEnabled false) false}}
   name: default
   {{- else }}
-  name: {{ .Values.global.gcp.gsmReadServiceAccount }}
+  name: {{ .Values.global.gcpGSMServiceAccount }}
   {{- end }}
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}

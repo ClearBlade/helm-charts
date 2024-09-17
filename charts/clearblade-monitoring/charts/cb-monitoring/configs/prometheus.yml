@@ -2,7 +2,7 @@ global:
   scrape_interval: 5s
   evaluation_interval: 5s
 # remote_write:
-#   - url: http://prometheus-managed.{{ .Values.global.namespace }}.svc.cluster.local:9090
+#   - url: http://prometheus-managed.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:9090
 rule_files:
   - /etc/prometheus/prometheus.rules
 alerting:
@@ -213,7 +213,7 @@ scrape_configs:
       - cb-postgres-exporter-service-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:9187
       {{- end}}
 
-  - job_name: 'haproxy-monitoring-{{ $.Values.global.namespace }}'
+  - job_name: 'haproxy-monitoring-{{ default "monitoring" .Values.global.namespace }}'
     scrape_interval: 5s
     metric_relabel_configs:
     - source_labels: [instance]
@@ -222,4 +222,4 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      - cb-haproxy-monitoring-service.{{ $.Values.global.namespace }}.svc.cluster.local:9101
+      - cb-haproxy-monitoring-service.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:9101

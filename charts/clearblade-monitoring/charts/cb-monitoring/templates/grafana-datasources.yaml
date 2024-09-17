@@ -3,15 +3,15 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: datasources
-  namespace: {{ .Values.global.namespace }}
-{{- if .Values.global.GMP }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+{{- if eq (default .Values.global.gmpEnabled false) true }}
 data:
   datasources.yaml: |
     apiVersion: 1
     datasources:
     - name: {{ .Values.grafana.datasource }}
       type: prometheus
-      url: http://prometheus-managed.{{ .Values.global.namespace }}:9090
+      url: http://prometheus-managed.{{ default "monitoring" .Values.global.namespace }}:9090
       isDefault: true
       jsonData:
         manageAlerts: false
@@ -23,7 +23,7 @@ data:
     datasources:
     - name: {{ .Values.grafana.datasource }}
       type: prometheus
-      url: http://prometheus-frontend.{{ .Values.global.namespace }}.svc.cluster.local:9090
+      url: http://prometheus-frontend.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:9090
       isDefault: true
       jsonData:
         manageAlerts: false
@@ -34,7 +34,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: dashboards
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
 data:
   dashboards.yaml: |
     apiVersion: 1

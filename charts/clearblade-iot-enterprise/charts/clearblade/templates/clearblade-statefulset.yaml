@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: clearblade
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: clearblade
 spec:
@@ -19,7 +19,7 @@ spec:
         slot: blue
         app.kubernetes.io/name: managed-prom
     spec:
-      {{- if eq ((.Values.global.advanced.secrets).manager) "gsm" }}
+      {{- if eq .Values.global.secretManager "gsm" }}
       serviceAccountName: clearblade-gsm-read
       {{- end }}
       {{- if .Values.global.imagePullerSecret }}
@@ -27,25 +27,25 @@ spec:
         - name: gcr-json-key
       {{- end }}
       initContainers:
-        {{- if not (.Values.global.advanced.cloudSQL).enabled }}
+        {{- if not .Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
           image: postgres:9.6.5
           command: 
           - sh 
           - "-c"
           - |
-            until pg_isready -h cb-postgres-headless.{{ .Values.global.namespace }}.svc.cluster.local -p 5432;
+            until pg_isready -h cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5432;
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
           image: redis:5.0-alpine
-          {{- if (.Values.global.advanced.memoryStore).enabled }}
+          {{- if .Values.global.gcpMemoryStoreEnabled }}
           command: 
           - sh 
           - "-c"
           - |
             set -x;
-            while [ "$(redis-cli -h {{ .Values.global.advanced.memoryStore.address }} ping)" != "PONG" ]
+            while [ "$(redis-cli -h {{ .Values.global.gcpMemorystoreAddress }} ping)" != "PONG" ]
             do
               echo waiting for redis
               sleep 5
@@ -56,28 +56,28 @@ spec:
           - "-c"
           - |
             set -x;
-            while [ "$(redis-cli -h cb-redis-service.{{ .Values.global.namespace }}.svc.cluster.local ping)" != "PONG" ]
+            while [ "$(redis-cli -h cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local ping)" != "PONG" ]
             do
               echo waiting for redis
               sleep 5
             done
           {{- end }}
         - name: init
-          {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+          {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
           {{- end }}
-          {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+          {{- if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
-              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
               {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_tls-certificates)
+              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
               for i in "${certificate_array[@]}"
@@ -96,26 +96,26 @@ spec:
               sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               # Add blue/green slot to host address
               sed -i 's|{slot}|''|g'  /etc/clearblade/conf/clearblade/clearblade.toml
-              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
-              dbpassword=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)
+              {{- if eq .Values.global.secretManager "gsm"}}
+              dbpassword=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password)
               {{- end }}
-              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
-              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
+              {{- if eq .Values.global.secretManager "asm"}}
+              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
               {{- end }}
-              {{ if (.Values.global.advanced.cloudSQL).enabled }}
+              {{ if .Values.global.gcpCloudSQLConnectionName }}
               sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- else }}
               escaped_dbpassword=$(printf '%s\n' "$dbpassword" | sed -e 's/[\/&]/\\&/g')
               sed -i 's|{db_password}|'$escaped_dbpassword'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- end }}
-              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
-              gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
-              {{- else if eq .Values.global.advanced.secrets.manager "asm"}}
-              aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
+              {{- if eq .Values.global.secretManager "gsm"}}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
+              {{- else if eq .Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
-          {{- if or (eq .Values.global.advanced.secrets.manager "none") (eq .Values.global.advanced.secrets.manager "kubernetes") }}
+          {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
           env:
             - name: dbpassword
               valueFrom:
@@ -140,14 +140,14 @@ spec:
               mountPath: /etc/clearblade/ssl/
             {{- end}}
       containers:
-        {{- if (.Values.global.advanced.cloudSQL).enabled }}
+        {{- if .Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
           args:
             - "--private-ip"
             - "--structured-logs"
             - "--port=5432"
-            - {{ .Values.global.advanced.cloudSQL.databaseConnectionName }}
+            - {{ .Values.global.gcpCloudSQLConnectionName }}
           securityContext:
             runAsNonRoot: true
           resources:
@@ -156,10 +156,10 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterprise.tagOverride }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.tagOverride }}"
+          {{- if .Values.global.enterpriseTagOverride }}
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseTagOverride }}"
           {{- else }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.version }}"
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
           command: ["clearblade"]
           args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
@@ -179,11 +179,11 @@ spec:
             {{- end}}
           resources:
             requests:
-              cpu: {{ .Values.resourceRequests.cpu }}
-              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.requestCPU }}
+              memory: {{ .Values.requestMemory }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
           ports:
             - containerPort: 2112
               name: metrics
@@ -212,7 +212,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: clearblade-green
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: clearblade
 spec:
@@ -229,7 +229,7 @@ spec:
         slot: green
         app.kubernetes.io/name: managed-prom
     spec:
-      {{- if eq ((.Values.global.advanced.secrets).manager) "gsm" }}
+      {{- if eq .Values.global.secretManager "gsm" }}
       serviceAccountName: clearblade-gsm-read
       {{- end }}
       {{- if .Values.global.imagePullerSecret }}
@@ -237,25 +237,25 @@ spec:
         - name: gcr-json-key
       {{- end }}
       initContainers:
-        {{- if not (.Values.global.advanced.cloudSQL).enabled }}
+        {{- if not .Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
           image: postgres:9.6.5
           command: 
           - sh 
           - "-c"
           - |
-            until pg_isready -h cb-postgres-headless.{{ .Values.global.namespace }}.svc.cluster.local -p 5432;
+            until pg_isready -h cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5432;
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
           image: redis:5.0-alpine
-          {{- if (.Values.global.advanced.memoryStore).enabled }}
+          {{- if .Values.global.gcpMemoryStoreEnabled }}
           command: 
           - sh 
           - "-c"
           - |
             set -x;
-            while [ "$(redis-cli -h {{ .Values.global.advanced.memoryStore.address }} ping)" != "PONG" ]
+            while [ "$(redis-cli -h {{ .Values.global.gcpMemoryStoreAddress }} ping)" != "PONG" ]
             do
               echo waiting for redis
               sleep 5
@@ -266,28 +266,28 @@ spec:
           - "-c"
           - |
             set -x;
-            while [ "$(redis-cli -h cb-redis-service.{{ .Values.global.namespace }}.svc.cluster.local ping)" != "PONG" ]
+            while [ "$(redis-cli -h cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local ping)" != "PONG" ]
             do
               echo waiting for redis
               sleep 5
             done
           {{- end }}
         - name: init
-          {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
+          {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
           {{- end }}
-          {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+          {{- if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
-              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+              {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
               {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_tls-certificates)
+              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
               for i in "${certificate_array[@]}"
@@ -306,26 +306,26 @@ spec:
               sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               # Add blue/green slot to host address
               sed -i 's|{slot}|'-green'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
-              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
-              dbpassword=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)
+              {{- if eq .Values.global.secretManager "gsm"}}
+              dbpassword=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password)
               {{- end }}
-              {{- if eq .Values.global.advanced.secrets.manager "asm"}}
-              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
+              {{- if eq .Values.global.secretManager "asm"}}
+              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
               {{- end }}
-              {{ if (.Values.global.advanced.cloudSQL).enabled }}
+              {{ if .Values.global.gcpCloudSQLConnectionName }}
               sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- else }}
               escaped_dbpassword=$(printf '%s\n' "$dbpassword" | sed -e 's/[\/&]/\\&/g')
               sed -i 's|{db_password}|'$escaped_dbpassword'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- end }}
-              {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
-              gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
-              {{- else if eq .Values.global.advanced.secrets.manager "asm"}}
-              aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
+              {{- if eq .Values.global.secretManager "gsm"}}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
+              {{- else if eq .Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
-          {{- if or (eq .Values.global.advanced.secrets.manager "none") (eq .Values.global.advanced.secrets.manager "kubernetes") }}
+          {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
           env:
             - name: dbpassword
               valueFrom:
@@ -350,14 +350,14 @@ spec:
               mountPath: /etc/clearblade/ssl/
             {{- end}}
       containers:
-        {{- if (.Values.global.advanced.cloudSQL).enabled }}
+        {{- if .Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
           args:
             - "--private-ip"
             - "--structured-logs"
             - "--port=5432"
-            - {{ .Values.global.advanced.cloudSQL.databaseConnectionName }}
+            - {{ .Values.global.gcpCloudSQLConnectionName }}
           securityContext:
             runAsNonRoot: true
           resources:
@@ -366,12 +366,12 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterprise.greenVersion }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.greenVersion }}"
-          {{- else if .Values.global.enterprise.tagOverride }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.tagOverride }}"
+          {{- if .Values.global.enterpriseGreenVersion }}
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseGreenVersion }}"
+          {{- else if .Values.global.enterpriseTagOverride }}
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseTagOverride }}"
           {{- else }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterprise.version }}"
+          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
           command: ["clearblade"]
           args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
@@ -391,11 +391,11 @@ spec:
             {{- end}}
           resources:
             requests:
-              cpu: {{ .Values.resourceRequests.cpu }}
-              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.requestCPU }}
+              memory: {{ .Values.requestMemory }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
           ports:
             - containerPort: 2112
               name: metrics

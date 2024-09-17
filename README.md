@@ -152,9 +152,9 @@ The following versions are unskippable - meaning you cannot jump from a prior ve
 
 ## Steps
 
-These steps assume a blue-to-green transition. To transition from green back to blue for a second update, replace instances of `global.enterprise.greenVersion` with `global.enterprise.version` and instances of `clearblade.greenReplicas` with `clearblade.replicas` and vice versa. The replica and version values are applied to the blue pod set but are not explicitly named blue. For step 3, change the slot value to blue instead of green.
+These steps assume a blue-to-green transition. To transition from green back to blue for a second update, replace instances of `global.enterpriseGreenVersion` with `global.enterpriseBlueVersion` and instances of `clearblade.greenReplicas` with `blueReplicas` and vice versa. The replica and version values are applied to the blue pod set but are not explicitly named blue. For step 3, change the slot value to blue instead of green.
 
-In your values file used to deploy ClearBlade with helm, set `global.enterprise.greenVersion` to the platform version you want to upgrade to. Then, in the ClearBlade section, set `clearblade.greenReplicas` to the desired number of pods.
+In your values file used to deploy ClearBlade with helm, set `global.enterpriseGreenVersion` to the platform version you want to upgrade to. Then, in the ClearBlade section, set `clearblade.greenReplicas` to the desired number of pods.
 
 Run 
 
@@ -164,13 +164,13 @@ This will start your green pod set running the desired version. Wait for them to
 
 A useful helm plugin is helm-diff. With it installed, you can run the above command with ‘diff’ added (helm diff upgrade ….). This will not upgrade your deployment but instead show you the changes that will be made so you can be sure you are only making intended changes.
 
-Update your values file to set `global.enterprise.slot` to `green`. If not set, this value defaults to blue.
+Update your values file to set `global.enterpriseSlot` to `green`. If not set, this value defaults to blue.
 
 Run the upgrade command above again. This will update your clearblade-service to route new connections to the new green set of ClearBlade pods instead of the existing old set. Before updating the service, your green pods must be running to establish new connections immediately.
 
 You are now in a transitional state and running two versions of ClearBlade simultaneously. Existing connections to the old ClearBlade set will persist while new connections connect to the new set. Stay in this state until all devices have reconnected to the new set for minimal interruption.
 
-You may change the `clearblade.replicas` value to 0, run the upgrade command, and exclusively run the new version and be done with your update.
+You may change the `blueReplicas` value to 0, run the upgrade command, and exclusively run the new version and be done with your update.
 
 
 

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: cb-postgres
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: cb-postgres
 spec:
@@ -22,10 +22,10 @@ spec:
     spec:
       {{- if eq .Values.global.cloud "aws"}}
       nodeSelector:
-        topology.kubernetes.io/zone: {{ .Values.global.eks.ebs.postgresVolumeAZ }}
+        topology.kubernetes.io/zone: {{ .Values.volumeAZ }}
       {{- end }}
-      {{- if eq .Values.global.advanced.secrets.manager "gsm"}}
-      serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
+      {{- if eq .Values.global.secretManager "gsm"}}
+      serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       initContainers:
         - name: init
           image: google/cloud-sdk:slim
@@ -33,14 +33,14 @@ spec:
           args:
             - -c
             - >-
-                echo "export PRIMARY_PASSWORD=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-primary-password)" >> /env/db/vars &&
-                echo "export REPLICA_PASSWORD=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-replica-password)" >> /env/db/vars &&
-                echo "export POSTGRES_PASSWORD=$(gcloud secrets versions access latest --secret={{ .Values.global.namespace }}_postgres-postgres-password)" >> /env/db/vars
+                echo "export PRIMARY_PASSWORD=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password)" >> /env/db/vars &&
+                echo "export REPLICA_PASSWORD=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-replica-password)" >> /env/db/vars &&
+                echo "export POSTGRES_PASSWORD=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password)" >> /env/db/vars
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db
       {{- end }}
-      {{- if eq .Values.global.advanced.secrets.manager "asm"}}
+      {{- if eq .Values.global.secretManager "asm"}}
       initContainers:
         - name: init
           image: amazon/aws-cli:latest
@@ -48,9 +48,9 @@ spec:
           args:
             - -c
             - >-
-                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
-                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-replica-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
-                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ .Values.global.namespace }}_postgres-postgres-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
+                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
+                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-replica-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
+                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db
@@ -61,14 +61,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args:
-            {{- if eq .Values.global.advanced.secrets.manager "none"}}
+            {{ if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}
             - -c
             - >-
+                source /env/db/vars &&
                 /docker-entrypoint/start-database.sh
             {{- else }}
             - -c
             - >-
-                source /env/db/vars &&
                 /docker-entrypoint/start-database.sh
             {{- end }}
           env:
@@ -81,7 +81,7 @@ spec:
             - name: REPLICA_USER
               value: {{ .Values.user.replica }}
               env:
-            {{- if eq .Values.global.advanced.secrets.manager "none"}}
+            {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
             - name: PRIMARY_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -102,14 +102,14 @@ spec:
             - containerPort: {{ .Values.port }}
           resources:
             requests:
-              memory: {{ .Values.resourceRequests.memory }}
-              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.requestCPU }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
 
           volumeMounts:
-            {{- if or (eq .Values.global.advanced.secrets.manager "gsm") (eq .Values.global.advanced.secrets.manager "asm")}}
+            {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}
             - mountPath: /env/db/
               name: postgres-env-vars-volume
             {{- end}}
@@ -156,7 +156,7 @@ spec:
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           {{- end}}
-          {{- if .Values.monitoringEnabled }}
+          {{- if .Values.global.monitoringenabled }}
           lifecycle:
             preStop:
               exec:
@@ -189,7 +189,7 @@ spec:
         - name: postgres-config-volume
           configMap:
             name: postgres-config
-        {{- if or (eq .Values.global.advanced.secrets.manager "gsm") (eq .Values.global.advanced.secrets.manager "asm")}}
+        {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}
         - name: postgres-env-vars-volume
           emptyDir: {}
         {{- end }}
@@ -201,22 +201,34 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 1Gi
-        {{- if eq .Values.replicas 1.0 }}
-        - name: pvc-cb-postgres
-          persistentVolumeClaim:
-            claimName: pvc-cb-postgres-cb-postgres-0
-        {{- end }}
-  {{- if gt .Values.replicas 1.0 }}      
-  volumeClaimTemplates:
-    - apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: pvc-cb-postgres
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: {{ .Values.storage.class }}
-        resources:
-          requests:
-            storage: {{ .Values.storage.size }}
-  {{- end }}
+#         {{- if eq .Values.replicas 1.0 }}
+#         - name: pvc-cb-postgres
+#           persistentVolumeClaim:
+#             claimName: pvc-cb-postgres-cb-postgres-0
+#         {{- end }}
+#   {{- if gt .Values.replicas 1.0 }}      
+#   volumeClaimTemplates:
+#     - apiVersion: v1
+#       kind: PersistentVolumeClaim
+#       metadata:
+#         name: pvc-cb-postgres
+#       spec:
+#         accessModes:
+#           - ReadWriteOnce
+#         storageClassName: {{ .Values.global.storageClassName }}
+#         resources:
+#           requests:
+#             storage: {{ .Values.storageSize }}
+#   {{- end }}
+#   apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: pvc-cb-postgres-cb-postgres-0
+#   namespace: {{ default "clearblade" .Values.global.namespace }}
+# spec:
+#   storageClassName: {{ .Values.global.storageClassName }}
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: {{ .Values.storageSize }}

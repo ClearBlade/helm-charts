@@ -1,14 +1,11 @@
 replicas: 3
-namespace: clearblade
-monitoringEnabled: true
+monitoringEnabled: false
 image: timescale/timescaledb
 imageTag: "latest-pg15"
-resourceRequests:
-  cpu: 1
-  memory: 4G
-resourceLimits:
-  cpu: 1
-  memory: 4G
+requestCPU: 1
+requestMemory: 4G
+limitCPU: 1
+limitMemory: 4G
 user:
   primary: cbuser
   replica: cbreplication
@@ -29,10 +26,9 @@ readinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
-storage:
-  class: premium-rwo
-  size: 100Gi
-  name: cb-postgres-disk
-  gceDisk_postgres0: postgres-0
-  gceDisk_postgres1: postgres-1
-  gceDisk_postgres2: postgres-2
+storageSize: 100Gi
+postgres0DiskName: postgres-0
+postgres1DiskName: postgres-1
+postgres2DiskName: postgres-2
+volumeAZ:
+volumeHandle:

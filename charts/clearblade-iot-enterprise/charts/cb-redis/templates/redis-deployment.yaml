@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cb-redis
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: cb-redis
 spec:
@@ -21,12 +21,12 @@ spec:
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           resources:
             requests:
-              memory: {{ .Values.resourceRequests.memory }}
-              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.requestCPU }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
-        {{- if .Values.monitoringEnabled }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
+        {{- if .Values.global.monitoringenabled }}
         - name: cb-redis-exporter
           image: oliver006/redis_exporter
           env:

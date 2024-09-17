@@ -1,7 +1,8 @@
-resourceLimits:
-  cpu: 1
-  memory: 2G
-storage:
-  class: premium-rwo
-  size: 10Gi
+requestCPU: 1
+requestMemory: 2G
+limitCPU: 1
+limitMemory: 2G
+storageSize: 10Gi
 checkClearbladeReadiness: true
+version:
+volumeHandle:

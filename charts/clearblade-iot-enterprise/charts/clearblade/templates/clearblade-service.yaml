@@ -2,40 +2,40 @@ apiVersion: v1
 kind: Service
 metadata:
   name: clearblade-service
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
-    {{- if .Values.global.enterprise.slot }}
-    slot: {{ .Values.global.enterprise.slot }}
+    {{- if .Values.global.enterpriseSlot }}
+    slot: {{ .Values.global.enterpriseSlot }}
     {{- else }}
     slot: blue
     {{- end }}
 spec:
-  {{- if ((.Values.global.advanced.externalHaproxy).loadBalancer) }}
+  {{- if .Values.global.ExternalHaproxy }}
   type: LoadBalancer
   ports:
     - name: mqtt
-      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqtt }}
+      port: {{ .Values.global.externalHaproxy.clearbladeMQTT }}
       targetPort: 1883
       protocol: TCP
     - name: mqtt-ws
       targetPort: 8903
-      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqttWS }}
+      port: {{ .Values.global.externalHaproxy.clearbladeMQTTWS }}
       protocol: TCP
     - name: mqtt-auth
       targetPort: 8905
-      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqttAuth }}
+      port: {{ .Values.global.externalHaproxy.clearbladeMQTTAuth }}
       protocol: TCP
     - name: mqtt-ws-auth
       targetPort: 8907
-      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.mqttWSAuth }}
+      port: {{ .Values.global.externalHaproxy.clearbladeMQTTWSAuth }}
       protocol: TCP
     - name: edge-rpc
       targetPort: 8950
-      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.edgeRPC }}
+      port: {{ .Values.global.externalHaproxy.clearbladeEdgeRPC }}
       protocol: TCP
     - name: api
       targetPort: 9000
-      port: {{ .Values.global.advanced.externalHaproxy.ports.clearblade.http }}
+      port: {{ .Values.global.externalHaproxy.clearbladeHTTP }}
       protocol: TCP
   {{- else }}
   ports:
@@ -70,8 +70,8 @@ spec:
   {{- end }}
   selector:
     app: clearblade
-    {{- if .Values.global.enterprise.slot }}
-    slot: {{ .Values.global.enterprise.slot }}
+    {{- if .Values.global.enterpriseSlot }}
+    slot: {{ .Values.global.enterpriseSlot }}
     {{- else }}
     slot: blue
     {{- end }}
@@ -80,7 +80,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: clearblade-cluster-nodes-service
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: clearblade
 {{ include "clearblade.labels" . | indent 4 }}
@@ -93,15 +93,15 @@ spec:
       protocol: TCP
   selector:
     app: clearblade
-{{- if eq .Values.global.GMP false }}
+{{- if eq (default .Values.global.gmpEnabled false) false }}
 ---
-{{- if .Values.monitoringEnabled }}
+{{- if .Values.global.monitoringenabled }}
 {{- range $i, $e := until (.Values.replicas | int)}}
 apiVersion: v1
 kind: Service
 metadata:
   name: clearblade-monitoring-service-{{$i}}
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     run: clearblade
     slot: blue
@@ -117,7 +117,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: clearblade-monitoring-service-green-{{$i}}
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     run: clearblade
     slot: green

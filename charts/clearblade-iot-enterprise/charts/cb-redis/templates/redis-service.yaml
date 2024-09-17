@@ -2,13 +2,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cb-redis-service
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   ports:
     - port: 6379
       protocol: TCP
       name: redis
-    {{- if .Values.monitoringEnabled }}
+    {{- if .Values.global.monitoringenabled }}
     - port: 9121
       protocol: TCP
       name: metrics

@@ -3,8 +3,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: template
-  namespace: {{ .Values.global.namespace }}
-{{- if .Values.global.GMP }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+{{- if eq (default .Values.global.gmpEnabled false) true }}
 data:
   dashboards.json: |
 {{ (tpl (.Files.Glob "configs/dashboards.json").AsConfig .) | indent 2 }}

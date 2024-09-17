@@ -28,9 +28,9 @@ dependencies:
     repository: file://charts/cb-redis
   - name: cb-iotcore
     version: 3.0.1-dev
-    condition: global.iotCore.enabled
+    condition: global.iotCoreEnabled
     repository: file://charts/cb-iotcore
   - name: cb-ia
     version: 3.0.1-dev
-    condition: global.IA.enabled
+    condition: global.iaEnabled
     repository: file://charts/cb-ia

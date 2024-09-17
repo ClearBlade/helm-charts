@@ -1,14 +1,14 @@
-{{- if eq .Values.replicas 1.0 }}
+{{- range $i, $e := until (.Values.replicas | int)}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-cb-postgres-cb-postgres-0
-  namespace: {{ .Values.global.namespace }}
+  name: pvc-cb-postgres-cb-postgres-{{i}}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  storageClassName: {{ .Values.storage.class }}
+  storageClassName: {{ .Values.global.storageClassName }}
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.storage.size }}
+      storage: {{ .Values.storageSize }}
 {{- end }}
