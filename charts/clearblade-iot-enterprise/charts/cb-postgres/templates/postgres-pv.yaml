@@ -19,7 +19,7 @@ spec:
   csi:
   {{- if eq $.Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io
-    volumeHandle: projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.postgres0DiskName }}
+    volumeHandle: "projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.postgres{{$i}}DiskName }}"
     fsType: ext4
   {{- else if eq $.Values.global.cloud "aws" }}
   driver: ebs.csi.aws.com
