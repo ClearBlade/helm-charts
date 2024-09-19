@@ -95,8 +95,8 @@ spec:
     app: clearblade
 {{- if eq (default .Values.global.gmpEnabled false) false }}
 ---
-{{- if .Values.global.monitoringenabled }}
-{{- range $i, $e := until (.Values.replicas | int)}}
+{{- if .Values.global.monitoringEnabled }}
+{{- range $i, $e := until (.Values.blueReplicas | int)}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -112,7 +112,9 @@ spec:
     protocol: TCP
   selector:
     statefulset.kubernetes.io/pod-name: clearblade-{{$i}}
+{{- end }}
 ---
+{{- range $i, $e := until (.Values.greenReplicas | int)}}
 apiVersion: v1
 kind: Service
 metadata:

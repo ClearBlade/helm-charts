@@ -135,7 +135,7 @@ spec:
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/
             {{- end}}
-{{- if .Values.global.monitoringenabled }}
+{{- if .Values.global.monitoringEnabled }}
         - name: haproxy-exporter
           image: prom/haproxy-exporter:latest
           command: ["haproxy_exporter"]

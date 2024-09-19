@@ -152,6 +152,7 @@ cb-postgres:
   requestMemory: 2G
   limitCPU: 1
   limitMemory: 2G
+  postgres0DiskName: postgres-0
 cb-redis:
   # Required. Set to false if using an external redis deployment.
   enabled: true

@@ -2,28 +2,28 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ default "clearblade" .Values.global.namespace}}-postgres-{{$i}}
-  namespace: {{ default "clearblade" .Values.global.namespace }}
+  name: {{ default "clearblade" $.Values.global.namespace}}-postgres-{{$i}}
+  namespace: {{ default "clearblade" $.Values.global.namespace }}
 spec:
-  storageClassName: {{ .Values.global.storageClassName }}
-  {{- if eq .Values.global.cloud "aws" }}
+  storageClassName: {{ $.Values.global.storageClassName }}
+  {{- if eq $.Values.global.cloud "aws" }}
   persistentVolumeReclaimPolicy: Retain
   {{- end }}
   capacity:
-    storage: {{ .Values.storageSize }}
+    storage: {{ $.Values.storageSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
-    namespace: {{ default "clearblade" .Values.global.namespace }}
+    namespace: {{ default "clearblade" $.Values.global.namespace }}
     name: pvc-cb-postgres-cb-postgres-{{$i}}
   csi:
-  {{- if eq .Values.global.cloud "gcp" }}
+  {{- if eq $.Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io
-    volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ default "clearblade" .Values.global.namespace }}-{{ .Values.postgres0DiskName }}
+    volumeHandle: projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.postgres0DiskName }}
     fsType: ext4
-  {{- else if eq .Values.global.cloud "aws" }}
+  {{- else if eq $.Values.global.cloud "aws" }}
   driver: ebs.csi.aws.com
-  volumeHandle: {{ .Values.volumeHandle }}
+  volumeHandle: {{ $.Values.volumeHandle }}
   {{- end }}
 ---
 {{- end }}

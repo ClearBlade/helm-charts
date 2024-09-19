@@ -1,6 +1,6 @@
 monitoringEnabled: true
 namespace: clearblade
-replicas: 3
+blueReplicas: 3
 greenReplicas: 0
 logLevel: debug
 storeCodeLogs: true

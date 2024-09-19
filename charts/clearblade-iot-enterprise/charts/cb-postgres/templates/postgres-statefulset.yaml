@@ -156,7 +156,7 @@ spec:
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           {{- end}}
-          {{- if .Values.global.monitoringenabled }}
+          {{- if .Values.global.monitoringEnabled }}
           lifecycle:
             preStop:
               exec:
@@ -200,35 +200,16 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 1Gi
-#         {{- if eq .Values.replicas 1.0 }}
-#         - name: pvc-cb-postgres
-#           persistentVolumeClaim:
-#             claimName: pvc-cb-postgres-cb-postgres-0
-#         {{- end }}
-#   {{- if gt .Values.replicas 1.0 }}      
-#   volumeClaimTemplates:
-#     - apiVersion: v1
-#       kind: PersistentVolumeClaim
-#       metadata:
-#         name: pvc-cb-postgres
-#       spec:
-#         accessModes:
-#           - ReadWriteOnce
-#         storageClassName: {{ .Values.global.storageClassName }}
-#         resources:
-#           requests:
-#             storage: {{ .Values.storageSize }}
-#   {{- end }}
-#   apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: pvc-cb-postgres-cb-postgres-0
-#   namespace: {{ default "clearblade" .Values.global.namespace }}
-# spec:
-#   storageClassName: {{ .Values.global.storageClassName }}
-#   accessModes:
-#     - ReadWriteOnce
-#   resources:
-#     requests:
-#       storage: {{ .Values.storageSize }}
+            sizeLimit: 1Gi     
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: pvc-cb-postgres
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.global.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.storageSize }}

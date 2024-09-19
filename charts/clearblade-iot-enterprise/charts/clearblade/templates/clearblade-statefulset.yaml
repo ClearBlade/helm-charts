@@ -11,7 +11,7 @@ spec:
       app: clearblade
       slot: blue
   serviceName: clearblade-cluster-nodes-service
-  replicas: {{ .Values.replicas }}
+  replicas: {{ .Values.blueReplicas }}
   template:
     metadata:
       labels:

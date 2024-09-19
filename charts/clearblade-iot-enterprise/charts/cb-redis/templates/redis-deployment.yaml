@@ -26,7 +26,7 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
-        {{- if .Values.global.monitoringenabled }}
+        {{- if .Values.global.monitoringEnabled }}
         - name: cb-redis-exporter
           image: oliver006/redis_exporter
           env:
