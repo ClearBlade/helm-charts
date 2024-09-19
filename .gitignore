@@ -1,2 +1,2 @@
-eks-test-values.yml
-gke-test-values.yml
+*test*.yml
+*.tgz
