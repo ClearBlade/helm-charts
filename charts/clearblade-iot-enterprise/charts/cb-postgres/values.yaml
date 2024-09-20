@@ -27,8 +27,10 @@ readinessProbe:
   successThreshold: 1
 
 storageSize: 100Gi
-postgres0DiskName: postgres-0
-postgres1DiskName: postgres-1
-postgres2DiskName: postgres-2
+ # Base name of disk - "-$i" will be appended in the PV automatically.
+ # Disk name must follow this convention: {namespace}-{postgresDiskName}-{number}
+ # Example: clearblade-postgres-0
+ # In the above example, the value below would just be "postgres"
+postgresDiskName: postgres
 volumeAZ:
 volumeHandle:
