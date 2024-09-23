@@ -1,3 +1,5 @@
 *test*.yml
 *.tgz
 *.lock
+disk-create.sh
+disk-delete.sh
