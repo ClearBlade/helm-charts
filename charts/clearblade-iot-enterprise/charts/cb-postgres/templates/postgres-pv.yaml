@@ -13,9 +13,6 @@ spec:
     storage: {{ $.Values.storageSize }}
   accessModes:
     - ReadWriteOnce
-  claimRef:
-    namespace: {{ default "clearblade" $.Values.global.namespace }}
-    name: pvc-cb-postgres-cb-postgres-{{$i}}
   csi:
   {{- if eq $.Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io

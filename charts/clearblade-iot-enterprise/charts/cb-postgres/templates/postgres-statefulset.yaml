@@ -80,7 +80,6 @@ spec:
               value: {{ .Values.user.primary }}
             - name: REPLICA_USER
               value: {{ .Values.user.replica }}
-              env:
             {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
             - name: PRIMARY_PASSWORD
               valueFrom:
@@ -114,7 +113,7 @@ spec:
               name: postgres-env-vars-volume
             {{- end}}
             - mountPath: /var/lib/postgresql/data/
-              name: pvc-cb-postgres
+              name: pvc-postgres-data
 
             - mountPath: /etc/postgresql/
               name: postgres-config-volume
@@ -205,7 +204,7 @@ spec:
     - apiVersion: v1
       kind: PersistentVolumeClaim
       metadata:
-        name: pvc-cb-postgres
+        name: pvc-postgres-data
       spec:
         accessModes:
           - ReadWriteOnce
