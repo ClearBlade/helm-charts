@@ -90,7 +90,6 @@ PerformStackTriage = true
 MaxLockTime = 600
 MaxLockWaitTime = 900
 
-{{ if gt .Values.replicas 1.0}}
 [KVStore]
 {{ if (.Values.global.advanced.memoryStore).enabled }}
 SkipSettingNotifyKeyspaceEvents = true
@@ -100,7 +99,6 @@ Address = "cb-redis-service.{{ .Values.global.namespace }}.svc.cluster.local"
 {{- end }}
 Port = "6379"
 Store = "redis"
-{{- end}}
 
 [IotCore]
 DeviceTimestampCacheSeconds = {{ .Values.iotCore.deviceTimestampCacheSeconds }}
