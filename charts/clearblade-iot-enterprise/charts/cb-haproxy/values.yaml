@@ -1,7 +1,7 @@
 replicas: 1
 monitoringEnabled: false
 image: haproxy
-imageTag: 2.6-alpine
+imageTag: 2.9-alpine
 requestCPU: 1
 requestMemory: 1G
 limitCPU: 1
