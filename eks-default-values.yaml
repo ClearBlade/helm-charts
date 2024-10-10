@@ -1,6 +1,6 @@
 global:
-  # Required. Supported clouds are "aws" and "gcp". As this values file is for GKE, the value should be "gcp".
-  cloud: gcp
+  # Required. Supported clouds are "aws" and "gcp". As this values file is for EKS, the value should be "aws".
+  cloud: aws
 
   # Optional. Namespace to deploy to. Default is "clearblade"
   namespace: 
@@ -25,13 +25,13 @@ global:
   # enterpriseConsoleURL:
 
   # Required. The blue version is the default ClearBlade version, even if not using Blue/Green upgrades.
-  enterpriseBlueVersion: 
+  enterpriseBlueVersion:
 
   # Optional. Utilized during Blue/Green upgrades. See README for detailed process explanation. Leave blank or comment out if not using.
   # enterpriseGreenVersion:
 
   # Required. The Instance ID for the deployment, provided by ClearBlade.
-  enterpriseInstanceID: 
+  enterpriseInstanceID:
 
   # Optional. Highly recommended to create a unique registration key for new users to register with the platform. Leave blank or comment out if not using.
   enterpriseRegistrationKey: 
@@ -48,32 +48,14 @@ global:
   # Required. Set to "true" if this deployment uses the Intelligent Assets Sidecar.
   iaEnabled: false
 
-  # Required. Set to true if you are using GCP's Cloud SQL instead of postgres.
-  gcpCloudSQLEnabled: false
-
-  # Required if using Cloud SQL. Leave blank or comment out if not using.
-  # gcpCloudSQLConnectionName:
-
-  # Required. Set to true if you are using GCP's MemoryStore instead of redis.
-  gcpMemoryStoreEnabled: false
-
-  # Required if using MemoryStore. Leave blank or comment out if not using.
-  # gcpMemoryStoreAddress:
-
-  # Rquired. The GCP project the cluster is in.
-  gcpProject: 
-
-  # Required. The GCP region the cluster is in.
-  gcpRegion: 
-
-  # Required if using the Google Secret Manager. LEave blank or comment out if not using.
-  gcpGSMServiceAccount: 
+  # Required if using the Intelligent Assets sidecar. Intelligent Assets sidecar version. Leave blank or comment out if not using.
+  # iaVersion:
 
   # Optional. Set to true if you manage the namespace outside of Helm. Leave blank or comment out if not using.
   # predefinedNamespace: false
 
   # Optional. Supported secret managers are "asm" and "gsm". Leave blank or comment out if not using.
-  secretManager: gsm
+  secretManager: asm
 
   # Optional. Directly input your Base64 encoded TLS certificate if not using a secret manager. Leave blank or comment out if not using.
   # tlsCertificate: |
@@ -85,7 +67,7 @@ global:
   # postgresPassword:
 
   # Optional. Define the storage class used by all Persistent Volume Claims in the deployment. Leave blank or comment out if not using.
-  storageClassName: premium-rwo
+  storageClassName: gp2
 
   # Optional. Set to true if you wish to enable mTLS support on the ClearBlade pods. Leave blank or comment out if not using.
   # mtlsClearBlade:
@@ -95,9 +77,6 @@ global:
 
   # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
   # monitoringEnabled:
-
-  # Optional. Set to true if you are using Google Managed Prometheus. Leave blank or comment out if not using.
-  # gmpEnabled:
 
 # Requests and limits for CPU/memory have default settings in each chart values file. They can be overidden for each chart below.
 cb-console:
@@ -119,7 +98,7 @@ cb-haproxy:
   # Required. Set to false if using an external HAProxy deployment.
   enabled: true
   # Required if using this HAProxy. The primary external IP address for the deployment.
-  primaryIP:
+  primaryIP: 
   # Required if utilizing external MQTT connections. Leave blank or comment out if not using.
   mqttIP:
   # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
@@ -135,6 +114,8 @@ cb-iotcore:
   # version:
   # Optional. Comma-separated list of the regions IOTCore will be deployed in. Leave blank or comment out if not using.
   # regions:
+  # Required if using the IOTCore sidecar. AWS EBS postgres volume handle.
+  # volumeHandle:
 cb-ia:
   # Optional. Set to true to force the Intelligent Assets pod to wait for the Clearblade pods before starting.
   checkClearbladeReadiness: false
@@ -144,6 +125,8 @@ cb-ia:
   limitMemory: 1G
   # Required if using the Intelligent Assets sidecar. Intelligent Assets sidecar version. Leave blank or comment out if not using.
   # version:
+  # Required if using the Intelligent Assets sidecar. AWS EBS postgres volume handle.
+  # volumeHandle:
 cb-postgres:
   # Required. Set to false if using an external postgres deployment.
   enabled: true
@@ -152,7 +135,10 @@ cb-postgres:
   requestMemory: 2G
   limitCPU: 1
   limitMemory: 2G
-  postgres0DiskName: postgres-0
+  # Required. AWS EBS postgres volume location.
+  volumeAZ:
+  # Required. AWS EBS postgres volume handle.
+  volumeHandle:
 cb-redis:
   # Required. Set to false if using an external redis deployment.
   enabled: true
@@ -165,7 +151,7 @@ clearblade:
   blueReplicas: 2
   # Required. If not using blue/green deployments, set to 0. See the README for an explanation on blue/green deployments.
   greenReplicas: 0
-  # Required. Set to true to allow duplicate client IDs. Set to false to reject duplicate connections.
+  # Required. Set to true to allow duplicate client IDs. Set to false to reject duplicate connections. The IOTCore default behavior is true.
   mqttAllowDuplicateClientID: true
   requestCPU: 1
   requestMemory: 1G

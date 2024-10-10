@@ -2,7 +2,7 @@
 # kind: Rules
 # metadata:
 #   name: clearblade-rules
-#   namespace: {{ .Values.global.namespace }}
+#   namespace: {{ default "monitoring" .Values.global.namespace }}
 # spec:
 #   groups:
 #     - name: Alerts

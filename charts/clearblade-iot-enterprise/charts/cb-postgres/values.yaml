@@ -1,14 +1,11 @@
 replicas: 3
-namespace: clearblade
-monitoringEnabled: true
+monitoringEnabled: false
 image: timescale/timescaledb
 imageTag: "latest-pg15"
-resourceRequests:
-  cpu: 1
-  memory: 4G
-resourceLimits:
-  cpu: 1
-  memory: 4G
+requestCPU: 1
+requestMemory: 4G
+limitCPU: 1
+limitMemory: 4G
 user:
   primary: cbuser
   replica: cbreplication
@@ -29,10 +26,11 @@ readinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
-storage:
-  class: premium-rwo
-  size: 100Gi
-  name: cb-postgres-disk
-  gceDisk_postgres0: postgres-0
-  gceDisk_postgres1: postgres-1
-  gceDisk_postgres2: postgres-2
+storageSize: 100Gi
+ # Base name of disk - "-$i" will be appended in the PV automatically.
+ # Disk name must follow this convention: {namespace}-{postgresDiskName}-{number}
+ # Example: clearblade-postgres-0
+ # In the above example, the value below would just be "postgres"
+postgresDiskName: postgres
+volumeAZ:
+volumeHandle:

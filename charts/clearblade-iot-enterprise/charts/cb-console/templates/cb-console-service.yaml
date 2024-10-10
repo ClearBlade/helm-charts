@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cb-console-service
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  {{- if ((.Values.global.advanced.externalHaproxy).loadBalancer) }}
+  {{- if (.Values.global.externalHaproxyCbConsoleHttpPort) }}
   type: LoadBalancer
   ports:
     - name: console-http
       targetPort: 3000
-      port: {{ .Values.global.advanced.externalHaproxy.ports.cbConsole.http }}
-  {{- else}}
+      port: {{ .Values.global.externalHaproxyCbConsoleHttpPort }}
+  {{- else }}
   ports:
     - name: console-http
       port: 3000

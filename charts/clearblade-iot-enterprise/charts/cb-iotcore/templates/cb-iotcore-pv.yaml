@@ -1,18 +1,26 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Values.global.namespace}}-cb-iotcore-pv
-  namespace: {{ .Values.global.namespace}}
+  name: {{ default "clearblade" .Values.global.namespace}}-iotcore-pv
+  namespace: {{ default "clearblade" .Values.global.namespace}}
 spec:
-  storageClassName: {{ .Values.storage.class }}
+  storageClassName: {{ .Values.global.storageClassName }}
+  {{- if eq .Values.global.cloud "aws" }}
+  persistentVolumeReclaimPolicy: Retain
+  {{- end }}
   capacity:
-    storage: {{ .Values.storage.size }}
+    storage: {{ .Values.storageSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
-    namespace: {{ .Values.global.namespace }}
+    namespace: {{ default "clearblade" .Values.global.namespace }}
     name: cb-iotcore-pvc
   csi:
+  {{- if eq .Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io
-    volumeHandle: projects/{{ .Values.global.gcp.project }}/regions/{{ .Values.global.gcp.region }}/disks/{{ .Values.global.namespace }}-{{ .Values.storage.gceDisk_iotcore }}
+    volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ default "clearblade" .Values.global.namespace }}-iotcore
     fsType: ext4
+  {{- else if eq .Values.global.cloud "aws" }}
+  driver: ebs.csi.aws.com
+  volumeHandle: {{ .Values.volumeHandle }}
+  {{- end }}

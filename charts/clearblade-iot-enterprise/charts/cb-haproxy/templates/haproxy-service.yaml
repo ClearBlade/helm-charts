@@ -2,10 +2,19 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cb-haproxy-service
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  {{- if eq .Values.global.cloud "aws" }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .Values.primaryIP }}
+  {{- end }}
 spec:
   type: LoadBalancer
-  loadBalancerIP: {{.Values.ip.primary}}
+  {{- if eq .Values.global.cloud "gcp" }}
+  loadBalancerIP: {{.Values.primaryIP}}
+  {{- end }}
   externalTrafficPolicy: Local
   ports:
     - name: http
@@ -59,7 +68,7 @@ apiVersion: v1
 kind: Service
 metadata: 
   name: cb-haproxy-metrics-service
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     run: cb-haproxy
 spec:
@@ -76,10 +85,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cb-haproxy-mqtt-service
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   type: LoadBalancer
-  loadBalancerIP: {{.Values.ip.mqtt}}
+  loadBalancerIP: {{.Values.mqttIP}}
   externalTrafficPolicy: Local
   ports:
     - name: mqtt
@@ -93,15 +102,15 @@ spec:
   selector:
     app: cb-haproxy
 {{- end }}
-{{- if eq .Values.global.GMP false}}
+{{- if eq (default .Values.global.gmpEnabled false) false}}
 ---
-{{- if .Values.monitoringEnabled }}
+{{- if .Values.global.monitoringEnabled }}
 {{- range $i, $e := until (.Values.replicas | int)}}
 apiVersion: v1
 kind: Service
 metadata: 
   name: cb-haproxy-monitoring-service-{{$i}}
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     run: cb-haproxy
 spec:

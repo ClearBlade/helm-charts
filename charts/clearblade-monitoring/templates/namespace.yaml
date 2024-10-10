@@ -1,6 +1,6 @@
-{{- if not .Values.global.advanced.predefinedNamespace }}
+{{- if not .Values.global.predefinedNamespace }}
 kind: Namespace
 apiVersion: v1  
 metadata:
-  name: {{ .Values.global.namespace }}
+  name: {{ default "monitoring" .Values.global.namespace }}
 {{- end }}

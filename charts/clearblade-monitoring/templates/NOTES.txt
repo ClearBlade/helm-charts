@@ -1,4 +1,4 @@
     Congratulations ClearBlade IoT Enterprise Monitoring is deployed!
     Release name: {{ .Release.Name }}
     Chart name: {{ .Chart.Name }}
-    Namespaces: {{ .Values.global.namespace }}
+    Namespaces: {{ default "monitoring" .Values.global.namespace }}

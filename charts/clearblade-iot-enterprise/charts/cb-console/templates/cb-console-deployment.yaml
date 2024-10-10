@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cb-console
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: cb-console
 spec:
@@ -20,15 +20,9 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
-      {{- if .Values.iaMount }}
-      volumes:
-        - name: console
-          persistentVolumeClaim:
-            claimName: pvc-cb-console-cb-console-{{ .Values.global.namespace }}
-      {{- end }}
       containers:
         - name: cb-console
-          image: "gcr.io/api-project-320446546234/cb_console:{{ .Values.global.enterprise.version }}"
+          image: "gcr.io/api-project-320446546234/cb_console:{{ .Values.global.enterpriseBlueVersion }}"
           command:  ["cb_console"]
           args: [
             {{- include "cb-console.platformURL" . | indent 12 }},
@@ -36,20 +30,15 @@ spec:
             {{- include "cb-console.wsMqttMessagingPort" . | indent 12 }},
             "-checkCert=true"
           ]
-          {{- if .Values.iaMount }}
-          volumeMounts:
-            - name: {{ .Values.storage.name }} 
-              mountPath: /asset_monitor_files
-          {{- end }}
           ports:
             - containerPort: 3000
           resources:
             requests:
-              memory: {{ .Values.resourceRequests.memory }}
-              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.requestCPU }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
