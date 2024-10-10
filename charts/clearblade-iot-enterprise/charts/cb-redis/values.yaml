@@ -1,8 +1,8 @@
 enabled: true
+highAvailability: false
 monitoringEnabled: false
-replicas: 1
 image: redis
-imageTag: 5.0-alpine
+imageTag: 7.2.4-alpine
 requestCPU: 1
 requestMemory: 8G
 limitCPU: 1

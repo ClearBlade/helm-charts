@@ -1,0 +1,80 @@
+{{- if .Values.highAvailability }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cb-redis-sentinel
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  serviceName: cb-redis-sentinel
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cb-redis-sentinel
+  template:
+    metadata:
+      labels:
+        app: cb-redis-sentinel
+    spec:
+      initContainers:
+      - name: config
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "IfNotPresent"
+        command: [ "sh", "-c" ]
+        args:
+          - |
+            nodes=cb-redis-0.cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local,cb-redis-1.cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local,cb-redis-2.cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+
+            for i in ${nodes//,/ }
+            do
+                echo "finding master at $i"
+                MASTER=$(redis-cli --no-auth-warning --raw -h $i info replication | awk '{print $1}' | grep master_host: | cut -d ":" -f2)
+                if [ "$MASTER" == "" ]; then
+                    echo "no master found"
+                    MASTER=
+                else
+                    echo "found $MASTER"
+                    break
+                fi
+            done
+            if [ "$MASTER" = "" ]; then
+                echo "No master was found in any node"
+                echo "Exiting..."
+                exit 1
+            fi
+            echo "sentinel monitor mymaster $MASTER 6379 2" >> /tmp/master
+            echo "port 5000
+            sentinel resolve-hostnames yes
+            sentinel announce-hostnames yes
+            $(cat /tmp/master)
+            sentinel down-after-milliseconds mymaster 5000
+            sentinel failover-timeout mymaster 60000
+            sentinel parallel-syncs mymaster 1
+            " > /etc/redis/sentinel.conf
+            cat /etc/redis/sentinel.conf
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis/
+      containers:
+      - name: cb-redis-sentinel
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "IfNotPresent"
+        command: ["redis-sentinel"]
+        args: ["/etc/redis/sentinel.conf"]
+        ports:
+        - containerPort: 5000
+          name: sentinel
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis/
+      volumes:
+      - name: redis-config
+        emptyDir: {}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+{{- end }}

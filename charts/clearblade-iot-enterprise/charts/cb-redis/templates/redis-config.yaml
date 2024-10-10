@@ -3,5 +3,7 @@ kind: ConfigMap
 metadata:
   name: redis-config
   namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:    
+{{ include "cb-redis.labels" . | indent 4 }}
 data:
-{{ (.Files.Glob "configs/pg_hba.conf").AsConfig | indent 2 }}
+{{ (tpl (.Files.Glob "configs/redis.conf").AsConfig .) | indent 2 }}
