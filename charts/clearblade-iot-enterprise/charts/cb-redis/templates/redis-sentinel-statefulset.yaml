@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         app: cb-redis-sentinel
+        app.kubernetes.io/name: managed-prom
     spec:
       initContainers:
       - name: config
@@ -49,6 +50,7 @@ spec:
             sentinel down-after-milliseconds mymaster 5000
             sentinel failover-timeout mymaster 60000
             sentinel parallel-syncs mymaster 1
+            protected-mode no
             " > /etc/redis/sentinel.conf
             cat /etc/redis/sentinel.conf
         volumeMounts:

@@ -18,32 +18,45 @@ spec:
         app.kubernetes.io/name: managed-prom
     spec:
       containers:
-        - name: cb-redis
-          image: {{ .Values.image }}:{{ .Values.imageTag }}
-          resources:
-            requests:
-              memory: {{ .Values.requestMemory }}
-              cpu: {{ .Values.requestCPU }}
-            limits:
-              cpu: {{ .Values.limitCPU }}
-              memory: {{ .Values.limitMemory }}
-        {{- if .Values.global.monitoringEnabled }}
-        - name: cb-redis-exporter
-          image: oliver006/redis_exporter
-          env:
-            - name: REDIS_ADDR
-              value: "redis://localhost:6379"
-          ports:
-            - containerPort: 9121
-              name: metrics
-          resources:
-            limits:
-              cpu: 250m
-              memory: 180Mi
-            requests:
-              cpu: 102m
-              memory: 180Mi
-        {{- end }}
+      - name: cb-redis
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "IfNotPresent"
+        command: ["redis-server"]
+        args: ["/etc/redis/redis.conf"]
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis/
+        resources:
+          requests:
+            memory: {{ .Values.requestMemory }}
+            cpu: {{ .Values.requestCPU }}
+          limits:
+            cpu: {{ .Values.limitCPU }}
+            memory: {{ .Values.limitMemory }}
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
+      {{- if .Values.global.monitoringEnabled }}
+      - name: cb-redis-exporter
+        image: oliver006/redis_exporter
+        env:
+          - name: REDIS_ADDR
+            value: "redis://localhost:6379"
+        ports:
+          - containerPort: 9121
+            name: metrics
+        resources:
+          limits:
+            cpu: 250m
+            memory: 180Mi
+          requests:
+            cpu: 102m
+            memory: 180Mi
+      {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
