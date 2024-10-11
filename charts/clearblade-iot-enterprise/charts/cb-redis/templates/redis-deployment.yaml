@@ -31,8 +31,8 @@ spec:
           mountPath: /etc/redis/
         resources:
           requests:
-            memory: {{ .Values.requestMemory }}
             cpu: {{ .Values.requestCPU }}
+            memory: {{ .Values.requestMemory }}
           limits:
             cpu: {{ .Values.limitCPU }}
             memory: {{ .Values.limitMemory }}

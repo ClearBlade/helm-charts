@@ -68,6 +68,13 @@ spec:
         volumeMounts:
         - name: redis-config
           mountPath: /etc/redis/
+        resources:
+          requests:
+            cpu: 1
+            memory: 1G
+          limits:
+            cpu: 1
+            memory: 1G
       volumes:
       - name: redis-config
         emptyDir: {}
