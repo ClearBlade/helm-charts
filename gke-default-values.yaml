@@ -156,6 +156,8 @@ cb-postgres:
 cb-redis:
   # Required. Set to false if using an external redis deployment.
   enabled: true
+  # Required. Set to true to utilize redis sentinel with automatic failover. Requires roughly 4x CPU/mem as a non-HA deployment.
+  highAvailability: false
   requestCPU: 1
   requestMemory: 2G
   limitCPU: 1
