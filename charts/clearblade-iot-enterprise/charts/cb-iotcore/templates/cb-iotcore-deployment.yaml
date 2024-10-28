@@ -18,8 +18,9 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
-      {{- if .Values.checkClearbladeReadiness }}
+      serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
       initContainers:
+      {{- if .Values.checkClearbladeReadiness }}
       - name: check-clearblade-readiness
         image: ellerbrock/alpine-bash-curl-ssl
         command:
@@ -33,14 +34,29 @@ spec:
           # Give clearblade just a little more time to really start for real
           sleep 10;
       {{- end }}
+      - name: trust-cert
+        image: ellerbrock/alpine-bash-curl-ssl
+        # command: ["update-ca-certificates"]
+        volumeMounts:
+        - name: ca-pemstore
+          mountPath: /etc/ssl/certs/my-cert.pem
+          subPath: my-cert.pem
+          readOnly: false
       containers:
         - name: cb-iotcore
           image: gcr.io/api-project-320446546234/iotcore:{{ .Values.global.iotCore.version }}
           command:  ["iotcore"]
           args: ["-reg-key={{ .Values.global.enterprise.registrationKey }}", "-regions={{ .Values.global.iotCore.regions }}", "-url=https://{{ .Values.global.enterprise.baseURL }}"]
+          env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
           volumeMounts:
           - name: iotcore
             mountPath: /etc/clearblade/conf/iotcore
+          - name: ca-pemstore
+            mountPath: /etc/ssl/certs/my-cert.pem
+            subPath: my-cert.pem
+            readOnly: false
           ports:
             - containerPort: 8080
           imagePullPolicy: Always
@@ -60,3 +76,21 @@ spec:
         - name: iotcore
           persistentVolumeClaim:
             claimName: cb-iotcore-pvc
+        - name: ca-pemstore
+          csi:
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: ca-pem
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: ca-pem
+  namespace: {{ .Values.global.namespace }}
+spec:
+  provider: gke
+  parameters:
+    secrets: |
+      - resourceName: "projects/{{ .Values.global.gcp.project }}/secrets/{{ .Values.global.namespace }}_root-ca"
+        path: "my-cert.pem"
