@@ -92,5 +92,5 @@ spec:
   provider: gke
   parameters:
     secrets: |
-      - resourceName: "projects/{{ .Values.global.gcp.project }}/secrets/{{ .Values.global.namespace }}_root-ca"
+      - resourceName: "projects/{{ .Values.global.gcp.project }}/secrets/{{ .Values.global.namespace }}_root-ca/versions/1"
         path: "my-cert.pem"
