@@ -166,8 +166,6 @@ spec:
           env:
             - name: GODEBUG
               value: netdns=go
-            - name: HELM_CHART_VERSION
-              value: {{ .Chart.Version }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
@@ -378,8 +376,6 @@ spec:
           env:
             - name: GODEBUG
               value: netdns=go
-            - name: HELM_CHART_VERSION
-              value: {{ .Chart.Version }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/

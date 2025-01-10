@@ -34,6 +34,10 @@ spec:
         - name: haproxy-config-volume
           secret:
             secretName: cb-haproxy-config 
+        {{- if .Values.certRenewal }}
+        - name: haproxy-controller-volume
+          emptyDir: {}
+        {{- end }}
         - name: haproxy-cert-volume
           {{ if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}
           emptyDir: {}
@@ -90,6 +94,11 @@ spec:
                 echo "$i" > /etc/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
+            {{- if .Values.certRenewal }}
+              apk add ca-certificates
+              mkdir -p /etc/ssl/certs
+              update-ca-certificates
+            {{- end }}
             {{- if .Values.global.mtlsHAProxy}}
               mtls_cert="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_mtls-certificate)"
               echo "$mtls_cert"  > /etc/mtls/sampleCACertificate.pem
@@ -131,10 +140,56 @@ spec:
               mountPath: /usr/local/etc/haproxy/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl
+            {{- if .Values.certRenewal }}
+            - name: haproxy-controller-volume
+              mountPath: /var/run
+            {{- end }}
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/
             {{- end}}
+        {{- if .Values.certRenewal }}
+        - name: haproxy-controller
+          image: "gcr.io/api-project-320446546234/cb_controller:latest"
+          env: 
+            - name: PLATFORM_URL
+              value: "{{ .Values.global.enterpriseBaseURL }}"
+            - name: TESTING_MODE
+              value: "false"
+            - name: CERT_PATH
+              value: etc/ssl/clearblade-0.pem
+            - name: CONFIG_PATH
+              value: usr/local/etc/haproxy/haproxy.cfg
+            - name: ADDRESS
+              value: "/var/run/cb-haproxy.sock"
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: EMAIL
+              value: "serversupport@clearblade.com"
+            - name: RENEWAL_DAYS
+              value: "{{ .Values.renewalDays}}"
+          ports:
+            - containerPort: 9999
+              name: controller
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: haproxy-config-volume
+              mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-cert-volume
+              mountPath: /etc/ssl/
+            - name: haproxy-controller-volume
+              mountPath: /var/run
+        {{- end }}
 {{- if .Values.global.monitoringEnabled }}
         - name: haproxy-exporter
           image: prom/haproxy-exporter:latest

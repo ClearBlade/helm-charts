@@ -8,6 +8,8 @@ limitCPU: 1
 limitMemory: 1G
 mqttOver443: true
 mqttOver1883: false
+certRenewal: false
+renewalDays: 15
 ip:
   primary: 0.0.0.0
   mqtt: 0.0.0.0
