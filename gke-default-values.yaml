@@ -124,6 +124,10 @@ cb-haproxy:
   mqttIP:
   # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
   mqttOver443: false
+  # Automatic cert renewal with letencrypt
+  certRenewal: false
+  # days out to renew cert
+  renewalDays: 5
 cb-iotcore:
   # Optional. Set to true to force the IOTCore pod to wait for the Clearblade pods before starting.
   checkClearbladeReadiness: false
