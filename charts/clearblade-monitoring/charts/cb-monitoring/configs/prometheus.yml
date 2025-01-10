@@ -1,8 +1,8 @@
 global:
-  scrape_interval: 5s
-  evaluation_interval: 5s
+  scrape_interval: 15s
+  evaluation_interval: 15s
 # remote_write:
-#   - url: http://prometheus-managed.{{ .Values.global.namespace }}.svc.cluster.local:9090
+#   - url: http://prometheus-managed.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:9090
 rule_files:
   - /etc/prometheus/prometheus.rules
 alerting:
@@ -141,7 +141,7 @@ scrape_configs:
       target_label: kubernetes_name
 
   - job_name: 'prometheus'
-    scrape_interval: 5s
+    scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'
@@ -151,8 +151,11 @@ scrape_configs:
     - targets: ['localhost:9090']
 
   - job_name: 'clearblade-monitoring-{{ $.Values.global.deploymentnamespace }}'
-    scrape_interval: 5s
+    scrape_interval: 15s
     metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: 'clearblade_locks_wait_time.*'
+      action: drop
     - source_labels: [instance]
       regex: '(.*):.*'
       replacement: '$1'
@@ -164,8 +167,11 @@ scrape_configs:
       {{- end}}
 
   - job_name: 'clearblade-monitoring-green-{{ $.Values.global.deploymentnamespace }}'
-    scrape_interval: 5s
+    scrape_interval: 15s
     metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: 'clearblade_locks_wait_time.*'
+      action: drop
     - source_labels: [instance]
       regex: '(.*):.*'
       replacement: '$1'
@@ -177,7 +183,7 @@ scrape_configs:
       {{- end}}
 
   - job_name: 'haproxy-{{ $.Values.global.deploymentnamespace }}'
-    scrape_interval: 5s
+    scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'
@@ -190,7 +196,7 @@ scrape_configs:
       {{- end}}
 
   - job_name: 'redis-{{ $.Values.global.deploymentnamespace }}'
-    scrape_interval: 5s
+    scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'
@@ -201,7 +207,7 @@ scrape_configs:
       - cb-redis-service.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:9121
 
   - job_name: 'postgres-{{ $.Values.global.deploymentnamespace }}'
-    scrape_interval: 5s
+    scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'
@@ -213,8 +219,8 @@ scrape_configs:
       - cb-postgres-exporter-service-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:9187
       {{- end}}
 
-  - job_name: 'haproxy-monitoring-{{ $.Values.global.namespace }}'
-    scrape_interval: 5s
+  - job_name: 'haproxy-monitoring-{{ default "monitoring" .Values.global.namespace }}'
+    scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'
@@ -222,4 +228,4 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      - cb-haproxy-monitoring-service.{{ $.Values.global.namespace }}.svc.cluster.local:9101
+      - cb-haproxy-monitoring-service.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:9101

@@ -1,4 +1,4 @@
-{{- if eq .Values.global.GMP false}}
+{{- if eq (default .Values.global.gmpEnabled false) false}}
 {{- else }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -20,13 +20,13 @@ roleRef:
   name: gmp:prometheus
 subjects:
 - kind: ServiceAccount
-  namespace: {{ .Values.global.namespace }}
-  name: {{ .Values.global.gcp.gsmReadServiceAccount }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+  name: {{ .Values.global.gcpGSMServiceAccount }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
   name: prometheus
   labels:
     prometheus: managed
@@ -43,7 +43,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
   name: prometheus-gmp
   annotations:
     # The emptyDir for the storage and config directories prevents cluster
@@ -158,7 +158,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
   name: prometheus
   labels:
     prometheus: managed

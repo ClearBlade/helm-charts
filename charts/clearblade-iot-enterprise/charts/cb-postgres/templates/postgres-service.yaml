@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cb-postgres-headless
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   ports:
     - port: {{ .Values.port }}
@@ -11,14 +11,14 @@ spec:
   selector:
     app: cb-postgres
 ---
-{{- if eq .Values.global.GMP false}}
-{{- if .Values.monitoringEnabled }}
+{{- if eq (default .Values.global.gmpEnabled false) false}}
+{{- if .Values.global.monitoringEnabled }}
 {{- range $i, $e := until (.Values.replicas | int)}}
 apiVersion: v1
 kind: Service
 metadata:
   name: cb-postgres-exporter-service-{{$i}}
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ default "clearblade" $.Values.global.namespace }}
   labels:
     app: cb-postgres
 spec:

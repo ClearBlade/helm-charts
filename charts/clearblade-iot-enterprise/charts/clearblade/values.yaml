@@ -1,6 +1,6 @@
 monitoringEnabled: true
 namespace: clearblade
-replicas: 3
+blueReplicas: 3
 greenReplicas: 0
 logLevel: debug
 storeCodeLogs: true
@@ -12,12 +12,10 @@ license:
   reporting:
     enabled: true
     reportInterval: 1
-resourceRequests:
-  cpu: 2
-  memory: 8G
-resourceLimits:
-  cpu: 2
-  memory: 8G
+requestCPU: 2
+requestMemory: 8G
+limitCPU: 2
+limitMemory: 8G
 mqtt:
   allowDuplicateClientID: false
   maxPublishSize: ":5000000"
@@ -33,3 +31,7 @@ iotCore:
     enabled: true
     interval: 1440
     minToKeep: 10
+edges:
+  enabled: true
+rpc:
+  dataCompression: "lz4"

@@ -1,0 +1,83 @@
+{{- if .Values.highAvailability }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cb-redis
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  serviceName: cb-redis-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cb-redis
+  template:
+    metadata:
+      labels:
+        app: cb-redis
+        app.kubernetes.io/name: managed-prom
+    spec:
+      initContainers:
+      - name: config
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "IfNotPresent"
+        command: [ "sh", "-c" ]
+        args:
+          - |
+            cp /tmp/redis/redis.conf /etc/redis/redis.conf
+            
+            echo "finding master..."
+            MASTER_FDQN=`hostname  -f | sed -e 's/cb-redis-[0-9]\./cb-redis-0./'`
+            if [ "$(redis-cli -h cb-redis-sentinel-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5000 ping)" != "PONG" ]; then
+              echo "master not found, defaulting to cb-redis-0"
+
+              if [ "$(hostname)" == "cb-redis-0" ]; then
+                echo "this is cb-redis-0, not updating config..."
+              else
+                echo "updating redis.conf..."
+                echo "slaveof $MASTER_FDQN 6379" >> /etc/redis/redis.conf
+              fi
+            else
+              echo "sentinel found, finding master"
+              MASTER="$(redis-cli -h cb-redis-sentinel-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5000 sentinel get-master-addr-by-name mymaster | grep -E '(^cb-redis-\d{1,})|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})')"
+              echo "master found : $MASTER, updating redis.conf"
+              echo "slaveof $MASTER 6379" >> /etc/redis/redis.conf
+            fi
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis/
+        - name: config
+          mountPath: /tmp/redis/
+      containers:
+      - name: cb-redis
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "IfNotPresent"
+        command: ["redis-server"]
+        args: ["/etc/redis/redis.conf"]
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis/
+        resources:
+          requests:
+            cpu: {{ .Values.requestCPU }}
+            memory: {{ .Values.requestMemory }}
+          limits:
+            cpu: {{ .Values.limitCPU }}
+            memory: {{ .Values.limitMemory }}
+      volumes:
+      - name: redis-config
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: redis-config
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+{{- end }}

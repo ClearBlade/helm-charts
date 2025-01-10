@@ -1,11 +1,11 @@
-{{- if eq .Values.global.GMP false}}
+{{- if eq (default .Values.global.gmpEnabled false) false}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-server-conf
   labels:
     name: prometheus-server-conf
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
 data:
   prometheus.rules: |-
    groups:

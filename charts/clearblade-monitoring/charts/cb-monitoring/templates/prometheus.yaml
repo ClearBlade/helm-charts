@@ -1,9 +1,9 @@
-{{- if eq .Values.global.GMP false}}
+{{- if eq (default .Values.global.gmpEnabled false) false}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-frontend
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
 spec:
   replicas: 1
   selector:
@@ -27,11 +27,11 @@ spec:
             - "--storage.tsdb.path=/prometheus/"
           resources:
             requests:
-              cpu: {{ .Values.resourceRequests.cpu }}
-              memory: {{ .Values.resourceRequests.memory }}
+              cpu: {{ .Values.requestCPU }}
+              memory: {{ .Values.requestMemory }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
           ports:
             - name: web
               containerPort: 9090
@@ -72,7 +72,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus-frontend
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
   labels:
 {{ include "cb-monitoring.labels" . | indent 4 }}
 spec:
@@ -88,9 +88,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: prometheus-pvc
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
 spec:
-  storageClassName: premium-rwo
+  storageClassName: {{ .Values.global.storageClassName }}
   accessModes:
     - ReadWriteOnce
   resources:
@@ -101,15 +101,15 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: prometheus-pv
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "monitoring" .Values.global.namespace }}
 spec:
-  storageClassName: premium-rwo
+  storageClassName: {{ .Values.global.storageClassName }}
   capacity:
     storage: {{ .Values.prometheusDiskSize}}
   accessModes:
     - ReadWriteOnce
   claimRef:
-    namespace: {{ .Values.global.namespace }}
+    namespace: {{ default "monitoring" .Values.global.namespace }}
     name: prometheus-pvc
   gcePersistentDisk:
     pdName: {{ .Values.prometheusDisk}}

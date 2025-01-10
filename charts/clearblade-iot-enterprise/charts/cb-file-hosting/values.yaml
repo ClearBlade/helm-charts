@@ -1,6 +1,4 @@
-resourceLimits:
-  cpu: 1
-  memory: 1G
-resourceRequests:
-  cpu: 1
-  memory: 1G
+requestCPU: 1
+requestMemory: 1G
+limitCPU: 1
+limitMemory: 1G

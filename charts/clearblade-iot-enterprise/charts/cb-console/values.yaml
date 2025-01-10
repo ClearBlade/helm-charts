@@ -1,12 +1,4 @@
-resourceRequests:
-  cpu: 1
-  memory: 1G
-resourceLimits:
-  cpu: 1
-  memory: 1G
-iaMount: false
-storage:
-  class: retain-standard-rwo
-  size: 10Gi
-  name: console
-  gceDisk_console: console
+requestCPU: 1
+requestMemory: 1G
+limitCPU: 1
+limitMemory: 1G

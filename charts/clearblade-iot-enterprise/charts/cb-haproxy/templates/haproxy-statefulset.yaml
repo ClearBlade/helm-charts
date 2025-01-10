@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: cb-haproxy
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: cb-haproxy
 spec:
@@ -34,15 +34,22 @@ spec:
         - name: haproxy-config-volume
           secret:
             secretName: cb-haproxy-config 
-        - name: haproxy-cert-volume
-          emptyDir: {}
         - name: haproxy-controller-volume
           emptyDir: {}
+        - name: haproxy-cert-volume
+          {{ if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}
+          emptyDir: {}
+          {{- else }}
+          secret:
+            secretName: cb-haproxy-secrets
+          {{- end}}
         {{- if .Values.global.mtlsHAProxy}}
         - name: haproxy-mtls-cert-volume
           emptyDir: {}
         {{- end}}
-      serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
+      {{- if eq .Values.global.secretManager "gsm" }}
+      serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
+      {{- end}}
       initContainers:
         - name: check-clearblade-readiness
           image: ellerbrock/alpine-bash-curl-ssl
@@ -51,19 +58,34 @@ spec:
           - "-c"
           - |
             set -x;
-            while [ $(curl -sw '%{http_code}' "clearblade-service.{{ .Values.global.namespace }}.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
+            while [ $(curl -sw '%{http_code}' "clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
               echo waiting for clearblade; sleep 5;
             done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
+        {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
         - name: init
+          {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
+          {{- end }}
+          {{- if eq .Values.global.secretManager "asm"}}
+          image: amazon/aws-cli:latest
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
-              certificates="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_tls-certificates)"
+              {{- if eq .Values.global.secretManager "gsm"}}
+              certificates="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)"
+              {{- end }}
+              {{- if eq .Values.global.secretManager "asm"}}
+              certificates="$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_tls-certificates --region us-east-1 --query SecretString --output text)"
+              {{- end }}
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
+              for each in "${certificate_array[@]}"
+              do
+                echo "$each"
+              done
               x=0
               for i in "${certificate_array[@]}"
               do
@@ -74,7 +96,7 @@ spec:
               mkdir -p /etc/ssl/certs
               update-ca-certificates
             {{- if .Values.global.mtlsHAProxy}}
-              mtls_cert="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_mtls-certificate)"
+              mtls_cert="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_mtls-certificate)"
               echo "$mtls_cert"  > /etc/mtls/sampleCACertificate.pem
             {{- end}}
           volumeMounts:
@@ -84,6 +106,7 @@ spec:
            - name: haproxy-mtls-cert-volume
              mountPath: /etc/mtls/
            {{- end}}
+        {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
@@ -101,18 +124,18 @@ spec:
           image: "{{ .Values.image }}:{{ .Values.imageTag }}"
           resources:
             requests:
-              memory: {{ .Values.resourceRequests.memory }}
-              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.requestCPU }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
           securityContext:
             runAsUser: 0
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
             - name: haproxy-cert-volume
-              mountPath: /etc/ssl/
+              mountPath: /etc/ssl
             - name: haproxy-controller-volume
               mountPath: /var/run
             {{- if .Values.global.mtlsHAProxy}}
@@ -159,11 +182,11 @@ spec:
               mountPath: /etc/ssl/
             - name: haproxy-controller-volume
               mountPath: /var/run
-{{- if .Values.monitoringEnabled }}
+{{- if .Values.global.monitoringEnabled }}
         - name: haproxy-exporter
           image: prom/haproxy-exporter:latest
           command: ["haproxy_exporter"]
-          args: ["--haproxy.scrape-uri=http://{{ .Values.stats_auth }}@cb-haproxy-metrics-service.{{ .Values.global.namespace }}.svc.cluster.local:9876/haproxy_stats?stats;csv"]
+          args: ["--haproxy.scrape-uri=http://{{ .Values.stats_auth }}@cb-haproxy-metrics-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:9876/haproxy_stats?stats;csv"]
           ports:
             - containerPort: 9101
               name: metrics
@@ -174,14 +197,14 @@ spec:
             requests:
               cpu: 102m
               memory: 180Mi
-{{- if eq .Values.global.GMP false}}
+{{- if eq (default .Values.global.gmpEnabled false) false}}
 {{- else }}
 ---
 apiVersion: monitoring.googleapis.com/v1
 kind: PodMonitoring
 metadata:
-  name: {{ .Values.global.namespace }}-pod-monitoring
-  namespace: {{ .Values.global.namespace }}
+  name: {{ default "clearblade" .Values.global.namespace }}-pod-monitoring
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   selector:
     matchLabels:

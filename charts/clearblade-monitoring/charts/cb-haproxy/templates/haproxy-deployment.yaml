@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cb-haproxy
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: cb-haproxy
 spec:
@@ -34,7 +34,7 @@ spec:
             secretName: cb-haproxy-config 
         - name: haproxy-cert-volume
           emptyDir: {}
-      serviceAccountName: {{ .Values.global.gcp.gsmReadServiceAccount }}
+      serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       initContainers:
         - name: init
           image: google/cloud-sdk:slim
@@ -42,7 +42,7 @@ spec:
           args:
             - -c
             - |
-              certificates="$(gcloud secrets versions access "latest" --secret={{ .Values.global.namespace }}_tls-certificates)"
+              certificates="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)"
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
               for i in "${certificate_array[@]}"
@@ -70,11 +70,11 @@ spec:
           image: "{{ .Values.image }}:{{ .Values.imageTag }}"
           resources:
             requests:
-              memory: {{ .Values.resourceRequests.memory }}
-              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.requestCPU }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/

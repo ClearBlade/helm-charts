@@ -1,14 +1,11 @@
 replicas: 1
-namespace: clearblade
 monitoringEnabled: false
 image: haproxy
-imageTag: 2.6-alpine
-resourceLimits:
-  cpu: 1
-  memory: 1G
-resourceRequests:
-  cpu: 1
-  memory: 1G
+imageTag: 2.9-alpine
+requestCPU: 1
+requestMemory: 1G
+limitCPU: 1
+limitMemory: 1G
 mqttOver443: true
 mqttOver1883: false
 ip:

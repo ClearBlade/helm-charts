@@ -9,10 +9,10 @@ Expand the name of the chart.
 Create platformURL flag arg
 */}}
 {{- define "clearblade-iot-enterprise.platformURL" -}}
-{{- if (((.Values.global.enterprise.advanced).nonGeneratedURLs).platformURL) }}
-{{ .Values.global.enterprise.advanced.nonGeneratedURLs.platformURL }}
+{{- if .Values.global.nonGeneratedPlatformURL }}
+{{ .Values.global.nonGeneratedPlatformURL }}
 {{- else }}
-https://{{ .Values.global.enterprise.baseURL }}
+https://{{ .Values.global.enterpriseBaseURL }}
 {{- end }}
 {{- end }}
 
@@ -20,10 +20,10 @@ https://{{ .Values.global.enterprise.baseURL }}
 Create websocket messagingURL flag arg
 */}}
 {{- define "clearblade-iot-enterprise.wsMqttMessagingURL" -}}
-{{- if (((.Values.global.enterprise.advanced).nonGeneratedURLs).wsMqttMessagingURL) }}
-{{ .Values.global.enterprise.advanced.nonGeneratedURLs.wsMqttMessagingURL }}
+{{- if .Values.global.nonGeneratedWsMqttMessagingURL }}
+{{ .Values.global.nonGeneratedWsMqttMessagingURL }}
 {{- else }}
-{{ .Values.global.enterprise.baseURL }}
+{{ .Values.global.enterpriseBaseURL }}
 {{- end }}
 {{- end }}
 

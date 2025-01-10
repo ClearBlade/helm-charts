@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cb-file-hosting
-  namespace: {{ .Values.global.namespace }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
     app: cb-file-hosting
 spec:
@@ -22,16 +22,16 @@ spec:
       {{- end }}
       containers:
         - name: cb-file-hosting
-          image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterprise.version }}"
+          image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseBlueVersion }}"
           ports:
             - containerPort: 8915
           resources:
             requests:
-              memory: {{ .Values.resourceRequests.memory }}
-              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.requestCPU }}
             limits:
-              cpu: {{ .Values.resourceLimits.cpu }}
-              memory: {{ .Values.resourceLimits.memory }}
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}

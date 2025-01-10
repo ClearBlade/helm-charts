@@ -2,11 +2,11 @@ Title = "ClearBlade IoT Enterprise Configuration File"
 
 [License]
 PKey = "{{ .Values.license.key }}"
-RegistrationKey = "{{ .Values.global.enterprise.registrationKey }}"
+RegistrationKey = "{{ .Values.global.enterpriseRegistrationKey }}"
 AutoRenewLicense = {{ .Values.license.autoRenew.enabled }}
 LicenseRenewalWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal"
 LicenseAutoRenewDays = {{ .Values.license.autoRenew.days }}
-PlatformID = "{{ .Values.license.instanceID }}"
+PlatformID = "{{ .Values.global.enterpriseInstanceID }}"
 
 [Logging]
 LogLevel = "{{ .Values.logLevel }}"
@@ -20,39 +20,39 @@ StoreMessageHistory = {{ .Values.storeMessageHistory }}
 
 [HTTP]
 HttpURL = "{{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
-{{- if .Values.global.enterprise.consoleURL }}
-ConsoleURL = "https://{{ .Values.global.enterprise.consoleURL}}"
+{{- if .Values.global.enterpriseConsoleURL }}
+ConsoleURL = "https://{{ .Values.global.enterpriseConsoleURL}}"
 {{- else }}
 ConsoleURL = "{{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
 {{- end }}
 
 [MQTT]
 MessagingURL = "{{- include "clearblade-iot-enterprise.wsMqttMessagingURL" . | trim }}"
-AllowDuplicateClientId = {{ .Values.mqtt.allowDuplicateClientID }}
+AllowDuplicateClientId = {{ .Values.mqttAllowDuplicateClientID }}
 MaxPublishSize = {{ .Values.mqtt.maxPublishSize | replace ":" "" }}
 EnforceMQTTKeepAlive = {{ .Values.mqtt.enforceKeepAlive }}
 IgnorePermissionErrors = {{ .Values.mqtt.ignorePermissionErrors }}
 AllowRetainedMessages = {{ .Values.mqtt.allowRetainedMessages }}
 
 [Database]
-{{- if ((.Values.global.advanced.externalPostgres).host) }}
-DBHost = "{{ .Values.global.advanced.externalPostgres.host }}"
-{{- else if (.Values.global.advanced.cloudSQL).enabled }}
+{{- if .Values.global.externalPostgresHost }}
+DBHost = "{{ .Values.global.externalPostgresHost }}"
+{{- else if .Values.global.gcpCloudSQLEnabled }}
 DBHost = "127.0.0.1"
 DisableTimescale = true
 {{- else }}
-DBHost = "cb-postgres-0.cb-postgres-headless.{{ .Values.global.namespace }}.svc.cluster.local"
+DBHost = "cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 {{- end }}
-{{- if ((.Values.global.advanced.externalPostgres).port) }}
-DBPort = "{{ .Values.global.advanced.externalPostgres.port }}"
+{{- if .Values.global.externalPostgresPort }}
+DBPort = "{{ .Values.global.externalPostgresPort}}"
 {{- else }}
 DBPort = "5432"
 {{- end }}
 DBPassword = "{db_password}"
 MongoOperationTimeoutSeconds = 60
 MongoMaxPoolSize = 100
-{{- if ((.Values.global.advanced.externalPostgres).disableTimescale) }}
-DisableTimescale = {{ .Values.global.advanced.externalPostgres.disableTimescale }}
+{{- if .Values.global.disableTimescale }}
+DisableTimescale = {{ .Values.global.disableTimescale }}
 {{- end }}
 
 [Security]
@@ -74,12 +74,13 @@ DisablePprof = false
 
 [RPC]
 RPCTimeout = 120
+DataCompression = "{{ .Values.rpc.dataCompression}}"
 
 [Cluster]
-HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ .Values.global.namespace }}.svc.cluster.local"
+HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 
 [FileHosting]
-URL = "http://cb-file-hosting-service.{{ .Values.global.namespace }}.svc.cluster.local:8915"
+URL = "http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
 
 [Triage]
 PerformTriage = true
@@ -89,17 +90,15 @@ PerformStackTriage = true
 MaxLockTime = 600
 MaxLockWaitTime = 900
 
-{{ if gt .Values.replicas 1.0}}
 [KVStore]
-{{ if (.Values.global.advanced.memoryStore).enabled }}
+{{ if .Values.global.gcpMemoryStoreEnabled }}
 SkipSettingNotifyKeyspaceEvents = true
-Address = "{{ .Values.global.advanced.memoryStore.address }}"
+Address = "{{ .Values.global.gcpMemoryStoreAddress }}"
 {{ else }}
-Address = "cb-redis-service.{{ .Values.global.namespace }}.svc.cluster.local"
+Address = "cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 {{- end }}
 Port = "6379"
 Store = "redis"
-{{- end}}
 
 [IotCore]
 DeviceTimestampCacheSeconds = {{ .Values.iotCore.deviceTimestampCacheSeconds }}
@@ -115,7 +114,7 @@ ReportMetrics = {{ .Values.license.reporting.enabled }}
 ReportIntervalHours = {{ .Values.license.reporting.reportInterval }}
 MetricWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage"
 
-{{- if .Values.global.IA.enabled }}
+{{- if eq .Values.edges.enabled false}}
 [Buckets]
 QueueEmptyIntervalSecs = 157248000
 {{- end }}
