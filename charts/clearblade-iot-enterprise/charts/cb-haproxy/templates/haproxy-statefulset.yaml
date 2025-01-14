@@ -52,6 +52,10 @@ spec:
       {{- if eq .Values.global.secretManager "gsm" }}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       {{- end}}
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
       initContainers:
         - name: check-clearblade-readiness
           image: ellerbrock/alpine-bash-curl-ssl
