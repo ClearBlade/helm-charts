@@ -27,11 +27,11 @@ spec:
             - "--storage.tsdb.path=/prometheus/"
           resources:
             requests:
-              cpu: {{ .Values.requestCPU }}
-              memory: {{ .Values.requestMemory }}
+              cpu: {{ .Values.resourceRequests.cpu }}
+              memory: {{ .Values.resourceRequests.memory }}
             limits:
-              cpu: {{ .Values.limitCPU }}
-              memory: {{ .Values.limitMemory }}
+              cpu: {{ .Values.resourceLimits.cpu }}
+              memory: {{ .Values.resourceLimits.memory }}
           ports:
             - name: web
               containerPort: 9090
