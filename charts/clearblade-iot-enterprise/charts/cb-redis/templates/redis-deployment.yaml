@@ -17,6 +17,10 @@ spec:
         app: cb-redis
         app.kubernetes.io/name: managed-prom
     spec:
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
       containers:
       - name: cb-redis
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
@@ -36,10 +40,6 @@ spec:
           limits:
             cpu: {{ .Values.limitCPU }}
             memory: {{ .Values.limitMemory }}
-      volumes:
-      - name: redis-config
-        configMap:
-          name: redis-config
       {{- if .Values.global.monitoringEnabled }}
       - name: cb-redis-exporter
         image: oliver006/redis_exporter
