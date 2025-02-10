@@ -26,6 +26,15 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
       initContainers:
         {{- if not .Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
@@ -234,6 +243,15 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
       initContainers:
         {{- if not .Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness

@@ -21,6 +21,15 @@ spec:
       - name: redis-config
         configMap:
           name: redis-config
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
       containers:
       - name: cb-redis
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"

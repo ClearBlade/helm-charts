@@ -20,6 +20,15 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
       containers:
         - name: cb-console
           image: "gcr.io/api-project-320446546234/cb_console:{{ .Values.global.enterpriseBlueVersion }}"
