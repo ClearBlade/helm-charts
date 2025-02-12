@@ -18,6 +18,15 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
       {{- if .Values.checkClearbladeReadiness }}
       initContainers:
       - name: check-clearblade-readiness
