@@ -5,6 +5,10 @@ greenReplicas: 0
 logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
+pubSubEmulator: false
+pubSubEmulatorProjectID: iot-core-test-363819
+pubSubEmulatorRegistry: cb-perf-testing
+pubSubEmulatorTopic: my-sub
 license:
   autoRenew:
     enabled: true

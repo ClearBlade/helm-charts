@@ -177,3 +177,8 @@ clearblade:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
+  pubSubEmulator: false
+  # Set the following if the above pubSubEmulator is true. 
+  # pubSubEmulatorProjectID:
+  # pubSubEmulatorRegistry: 
+  # pubSubEmulatorTopic: 

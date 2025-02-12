@@ -148,7 +148,23 @@ spec:
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
+      {{- if .Values.pubSubEmulator}}
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "2000 65001"
+      {{- end }}
       containers:
+        {{- if .Values.pubSubEmulator}}
+        - name: pubsub-emulator
+          image: quay.io/thekevjames/gcloud-pubsub-emulator:latest
+          command: []
+          env:
+          - name: PUBSUB_PROJECT1
+            value: {{ .Values.pubSubEmulatorProjectID }},{{ .Values.pubSubEmulatorRegistry }}:{{ .Values.pubSubEmulatorTopic }}
+          - name: PUBSUB_EMULATOR_HOST
+            value: 0.0.0.0:8681
+        {{- end}}
         {{- if .Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
@@ -175,6 +191,10 @@ spec:
           env:
             - name: GODEBUG
               value: netdns=go
+            {{- if .Values.pubSubEmulator}}
+            - name: PUBSUB_EMULATOR_HOST
+              value: 0.0.0.0:8681
+            {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
@@ -365,7 +385,23 @@ spec:
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
+      {{- if .Values.pubSubEmulator}}
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "2000 65001"
+      {{- end }}
       containers:
+        {{- if .Values.pubSubEmulator}}
+        - name: pubsub-emulator
+          image: quay.io/thekevjames/gcloud-pubsub-emulator:latest
+          command: []
+          env:
+          - name: PUBSUB_PROJECT1
+            value: {{ .Values.pubSubEmulatorProjectID }},{{ .Values.pubSubEmulatorRegistry }}:{{ .Values.pubSubEmulatorTopic }}
+          - name: PUBSUB_EMULATOR_HOST
+            value: 0.0.0.0:8681
+        {{- end}}
         {{- if .Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
@@ -394,6 +430,10 @@ spec:
           env:
             - name: GODEBUG
               value: netdns=go
+            {{- if .Values.pubSubEmulator}}
+            - name: PUBSUB_EMULATOR_HOST
+              value: 0.0.0.0:8681
+            {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
