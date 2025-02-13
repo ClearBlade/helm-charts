@@ -139,7 +139,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: clearblade
+  namespace: {{ default "clearblade" $.Values.global.namespace }}
   name: pubsub-service
 spec:
   type: NodePort
