@@ -34,3 +34,4 @@ storageSize: 100Gi
 postgresDiskName: postgres
 volumeAZ:
 volumeHandle:
+maxConnections: 500
