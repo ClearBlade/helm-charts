@@ -20,7 +20,7 @@ data:
       {{- end}}
       {{- if .Values.alerts.highCPU }}
      - alert: HighCPU
-       expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="long-running-test"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="long-running-test"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="long-running-test"}) by (pod, container)) > 80
+       expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container)) > 80
        for: 10m
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} cpu is too high: {{ "{{" }} $value }}%"
@@ -41,7 +41,7 @@ data:
       {{- end}}
       {{- if .Values.alerts.highMem }}
      - alert: HighMemoryUsage
-       expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="long-running-test"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="long-running-test"}) by (pod, container)) > 90
+       expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container)) > 90
        for: 2m
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} memory usage is too high: {{ "{{" }} $value }}%"
