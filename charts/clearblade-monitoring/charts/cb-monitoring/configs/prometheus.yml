@@ -10,7 +10,7 @@ alerting:
   - scheme: http
     static_configs:
     - targets:
-      - "alertmanager.monitoring.svc:9093"
+      - "alertmanager-service.{{ default "monitoring" .Values.global.namespace }}.svc:9093"
 
 scrape_configs:
   - job_name: 'node-exporter'
