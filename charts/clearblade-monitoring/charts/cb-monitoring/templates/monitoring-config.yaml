@@ -11,49 +11,48 @@ data:
    groups:
    - name: Alerts
      rules:
+      {{- if .Values.alerts.containerRestart }}
      - alert: ContainerRestart
-       expr: time() - docker_status_start_time{name=~"(clearblade|cb_console|cb_haproxy|cb_postgres|cb_redis|cb_replica)"} * on(instance) group_left(nodename) (node_uname_info) < 300
+       expr: time() - container_start_time_seconds{container=~"(clearblade|cb-.*)",container!~".*exporter",namespace="{{ $.Values.global.deploymentnamespace }}"} < 300
        for: 1m
        annotations:
-         summary: "{{ "{{" }} $labels.name }} container on node {{ "{{" }} $labels.nodename }} restarted"
-    #  - alert: HighCPU
-    #    expr: round(100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) * on(instance) group_left(nodename) (node_uname_info), 0.1) > 80
-    #    for: 10m
-    #    annotations:
-    #      summary: "Node {{ "{{" }} $labels.nodename }} cpu is too high: {{ "{{" }} $value }}%"
-    #  - alert: TooManyOpenFileDescriptors
-    #    expr: node_filefd_allocated * on(instance) group_left(nodename) (node_uname_info) > 900000
-    #    for: 2m
-    #    annotations:
-    #      summary: "Node {{ "{{" }} $labels.nodename }} has too many open file descriptors: {{ "{{" }} $value }}/999999"
-    #  - alert: DiskUsageRoot
-    #    expr: round(100-(node_filesystem_avail_bytes{mountpoint='/',device!='rootfs'}*100) / node_filesystem_size_bytes{mountpoint='/',device!='rootfs'} * on(instance) group_left(nodename) (node_uname_info), 1) > 90
-    #    for: 2m
-    #    annotations:
-    #      summary: "Root disk is getting pretty full on node {{ "{{" }} $labels.nodename }}: {{ "{{" }} $value }}%"
+         summary: "{{ "{{" }} $labels.container }} container on node {{ "{{" }} $labels.namespace }} restarted"
+      {{- end}}
+      {{- if .Values.alerts.highCPU }}
+     - alert: HighCPU
+       expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container)) > 80
+       for: 10m
+       annotations:
+         summary: "Pod {{ "{{" }} $labels.pod }} cpu is too high: {{ "{{" }} $value }}%"
+      {{- end}}
+      {{- if .Values.alerts.fileDescriptors }}
+     - alert: TooManyOpenFileDescriptors
+       expr: node_filefd_allocated * on(instance) group_left(nodename) (node_uname_info) > 900000
+       for: 2m
+       annotations:
+         summary: "Pod {{ "{{" }} $labels.pod }} has too many open file descriptors: {{ "{{" }} $value }}/999999"
+      {{- end}}
+      {{- if .Values.alerts.disk }}
      - alert: DiskUsageDB
-       expr: round(100-(node_filesystem_avail_bytes{mountpoint=~'/mnt/disks/.*',device!='rootfs'}*100) / node_filesystem_size_bytes{mountpoint=~'/mnt/disks/.*',device!='rootfs'} * on(instance) group_left(nodename) (node_uname_info), 1) > 80
+       expr: round(100.0 * kubelet_volume_stats_used_bytes{persistentvolumeclaim="cb-postgres-1"} / kubelet_volume_stats_capacity_bytes) > 1
        for: 2m
        annotations:
-         summary: "DB disk is getting pretty full on node {{ "{{" }} $labels.nodename }}: {{ "{{" }} $value }}%"
+         summary: "DB disk is getting pretty full on {{ "{{" }} $labels.namespace }}: {{ "{{" }} $value }}%"
+      {{- end}}
+      {{- if .Values.alerts.highMem }}
      - alert: HighMemoryUsage
-       expr: round(((node_memory_MemTotal_bytes - node_memory_MemFree_bytes - (node_memory_Cached_bytes + node_memory_Buffers_bytes))/node_memory_MemTotal_bytes) * 100 * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info)), 1) > 90
+       expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container)) > 90
        for: 2m
        annotations:
-         summary: "Node {{ "{{" }} $labels.nodename }} memory usage is too high: {{ "{{" }} $value }}%"
+         summary: "Pod {{ "{{" }} $labels.pod }} memory usage is too high: {{ "{{" }} $value }}%"
+      {{- end}}
+      {{- if .Values.alerts.LRS }}
      - alert: DroppingMessagesInLRS
        expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) > 0
        annotations:
-         summary: "LRS {{ "{{" }} $labels.service_name }} is dropping messages"
-     - alert: DroppingMessagesInLRS
-       expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) * on(instance) group_left(nodename) (node_uname_info) > 0
-       annotations:
-         summary: "LRS {{ "{{" }} $labels.service_name }} on node {{ "{{" }} $labels.nodename }} is dropping messages"
-     - alert: ReplicaLag
-       expr: round(pg_stat_replication_pg_wal_lsn_diff / 1000000000, 0.01) > 10 # GB
-       for: 1m
-       annotations:
-         summary: "DB replica is lagging too far behind the master: {{ "{{" }} $value }}GB"
+         summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
+      {{- end}}
+    {{- if .Values.alerts.expensiveStuff }}
    - name: ExpensiveStuff
      rules:
      - record: http_succeeded:5m_increase
@@ -84,6 +83,7 @@ data:
        expr: sum by(system_key,service_name) (clearblade_code_services_running_services{system_key!="all_systems"})
      - record: services_running:by_node
        expr: sum by(instance) (clearblade_code_services_running_services{system_key!="all_systems"}) * on(instance) group_left(nodename) (sum by(instance,nodename) (node_uname_info))
+    {{- end}}
   prometheus.yml: |-
 {{ (tpl (.Files.Get "configs/prometheus.yml") .) | indent 4 }}
 {{- end}}

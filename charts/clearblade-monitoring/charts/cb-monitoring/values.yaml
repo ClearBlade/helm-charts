@@ -8,7 +8,15 @@ grafana:
 alerts:
   slack:
     enabled: false
-    url: ""
+    webhook: ""
+    channel: '#alerts-testing'
+  containerRestart: true
+  highCPU: true
+  highMem: true
+  disk: true
+  LRS: true
+  fileDescriptors: true
+  expensiveStuff: true
 monitoringURL: ""
 resourceRequests:
     cpu: 1
