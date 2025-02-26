@@ -12,8 +12,11 @@ alerts:
     channel: '#alerts-testing'
   containerRestart: true
   highCPU: true
+  highCPUValue: 90
   highMem: true
+  highMemValue: 90
   disk: true
+  diskValue: 80
   LRS: true
   fileDescriptors: true
   expensiveStuff: true

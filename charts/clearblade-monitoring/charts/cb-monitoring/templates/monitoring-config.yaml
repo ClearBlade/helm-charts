@@ -11,48 +11,50 @@ data:
    groups:
    - name: Alerts
      rules:
-      {{- if .Values.alerts.containerRestart }}
-     - alert: ContainerRestart
-       expr: time() - container_start_time_seconds{container=~"(clearblade|cb-.*)",container!~".*exporter",namespace="{{ $.Values.global.deploymentnamespace }}"} < 300
+      {{- range $n := .Values.global.deploymentNamespaces }}
+      {{- if $.Values.alerts.containerRestart }}
+     - alert: {{$n.name}}ContainerRestart
+       expr: time() - container_start_time_seconds{container=~"(clearblade|cb-.*)",container!~".*exporter",namespace="{{ $n.name }}"} < 300
        for: 1m
        annotations:
          summary: "{{ "{{" }} $labels.container }} container on node {{ "{{" }} $labels.namespace }} restarted"
       {{- end}}
-      {{- if .Values.alerts.highCPU }}
-     - alert: HighCPU
-       expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container)) > 80
+      {{- if $.Values.alerts.highCPU }}
+     - alert: {{$n.name}}HighCPU
+       expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highCPUValue }}
        for: 10m
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} cpu is too high: {{ "{{" }} $value }}%"
       {{- end}}
-      {{- if .Values.alerts.fileDescriptors }}
-     - alert: TooManyOpenFileDescriptors
+      {{- if $.Values.alerts.fileDescriptors }}
+     - alert: {{$n.name}}TooManyOpenFileDescriptors
        expr: node_filefd_allocated * on(instance) group_left(nodename) (node_uname_info) > 900000
        for: 2m
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} has too many open file descriptors: {{ "{{" }} $value }}/999999"
       {{- end}}
-      {{- if .Values.alerts.disk }}
-     - alert: DiskUsageDB
-       expr: round(100.0 * kubelet_volume_stats_used_bytes{persistentvolumeclaim="cb-postgres-1"} / kubelet_volume_stats_capacity_bytes) > 1
+      {{- if $.Values.alerts.disk }}
+     - alert: {{$n.name}}DiskUsageDB
+       expr: round(100.0 * kubelet_volume_stats_used_bytes{persistentvolumeclaim="cb-postgres-1"} / kubelet_volume_stats_capacity_bytes) > {{ $.Values.alerts.diskValue }}
        for: 2m
        annotations:
          summary: "DB disk is getting pretty full on {{ "{{" }} $labels.namespace }}: {{ "{{" }} $value }}%"
       {{- end}}
-      {{- if .Values.alerts.highMem }}
-     - alert: HighMemoryUsage
-       expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $.Values.global.deploymentnamespace }}"}) by (pod, container)) > 90
+      {{- if $.Values.alerts.highMem }}
+     - alert: {{$n.name}}HighMemoryUsage
+       expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", container!="cb-postgres", namespace="{{ $n.name }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highMemValue }}
        for: 2m
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} memory usage is too high: {{ "{{" }} $value }}%"
       {{- end}}
-      {{- if .Values.alerts.LRS }}
-     - alert: DroppingMessagesInLRS
+      {{- if $.Values.alerts.LRS }}
+     - alert: {{$n.name}}DroppingMessagesInLRS
        expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) > 0
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
       {{- end}}
-    {{- if .Values.alerts.expensiveStuff }}
+      {{- end }}
+    {{- if $.Values.alerts.expensiveStuff }}
    - name: ExpensiveStuff
      rules:
      - record: http_succeeded:5m_increase

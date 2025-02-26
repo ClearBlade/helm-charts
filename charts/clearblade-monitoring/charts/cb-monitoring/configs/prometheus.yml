@@ -150,7 +150,8 @@ scrape_configs:
     static_configs:
     - targets: ['localhost:9090']
 
-  - job_name: 'clearblade-monitoring-{{ $.Values.global.deploymentnamespace }}'
+  {{- range $n := .Values.global.deploymentNamespaces }}
+  - job_name: 'clearblade-monitoring-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [__name__]
@@ -162,11 +163,11 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      {{- range $i, $e := until (.Values.clearbladereplicas | int)}}
-      - clearblade-monitoring-service-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:2112
+      {{- range $i, $e := until ($.Values.clearbladereplicas | int)}}
+      - clearblade-monitoring-service-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
       {{- end}}
 
-  - job_name: 'clearblade-monitoring-green-{{ $.Values.global.deploymentnamespace }}'
+  - job_name: 'clearblade-monitoring-green-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [__name__]
@@ -178,11 +179,11 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      {{- range $i, $e := until (.Values.clearbladereplicas | int)}}
-      - clearblade-monitoring-service-green-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:2112
+      {{- range $i, $e := until ($.Values.clearbladereplicas | int)}}
+      - clearblade-monitoring-service-green-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
       {{- end}}
 
-  - job_name: 'haproxy-{{ $.Values.global.deploymentnamespace }}'
+  - job_name: 'haproxy-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
@@ -191,11 +192,11 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      {{- range $i, $e := until (.Values.haproxyreplicas | int)}}
-      - cb-haproxy-monitoring-service-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:9101
+      {{- range $i, $e := until ($.Values.haproxyreplicas | int)}}
+      - cb-haproxy-monitoring-service-{{$i}}.{{ $n.name }}.svc.cluster.local:9101
       {{- end}}
 
-  - job_name: 'redis-{{ $.Values.global.deploymentnamespace }}'
+  - job_name: 'redis-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
@@ -204,9 +205,9 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      - cb-redis-service.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:9121
+      - cb-redis-service.{{ $n.name }}.svc.cluster.local:9121
 
-  - job_name: 'postgres-{{ $.Values.global.deploymentnamespace }}'
+  - job_name: 'postgres-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
     - source_labels: [instance]
@@ -215,9 +216,10 @@ scrape_configs:
       target_label: instance
     static_configs:
     - targets:
-      {{- range $i, $e := until (.Values.postgresreplicas | int)}}
-      - cb-postgres-exporter-service-{{$i}}.{{ $.Values.global.deploymentnamespace }}.svc.cluster.local:9187
+      {{- range $i, $e := until ($.Values.postgresreplicas | int)}}
+      - cb-postgres-exporter-service-{{$i}}.{{ $n.name }}.svc.cluster.local:9187
       {{- end}}
+  {{- end }}
 
   - job_name: 'haproxy-monitoring-{{ default "monitoring" .Values.global.namespace }}'
     scrape_interval: 15s
