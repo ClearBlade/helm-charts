@@ -1,6 +1,8 @@
 global:
   namespace: monitoring # Namespace to be created for the monitoring resources (one per cluster, must be unique per deployment if non-wildcard TLS certificates are used)
-  deploymentnamespace: REPLACE # the existing namespace that clearblade is deployed in. Not necessary for GMP
+  deploymentNamespaces: 
+    - name: REPLACE # the existing namespace that clearblade is deployed in. Not necessary for GMP
+  # - name: #OPTIONAL add additional namespaces if multiple deployments on cluster 
   nodeSelector: REPLACE # Optional nodeSelector. Leave blank if not utilizing.
   tolerations: # Optional taint tolerations. Add as many key blocks as necessary. Leave blank if not utilizing.
     # - key: "key1"
