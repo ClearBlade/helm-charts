@@ -171,6 +171,8 @@ spec:
               value: "false"
             - name: CERT_PATH
               value: etc/ssl/clearblade-0.pem
+            - name: MQTT_CERT_PATH
+              value: etc/ssl/clearblade-1.pem
             - name: CONFIG_PATH
               value: usr/local/etc/haproxy/haproxy.cfg
             - name: ADDRESS
