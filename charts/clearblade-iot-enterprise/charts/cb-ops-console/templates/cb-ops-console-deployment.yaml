@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-ops-console
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: cb-ops-console
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cb-ops-console
+        app.kubernetes.io/name: managed-prom
+    spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      {{- if .Values.checkClearbladeReadiness }}
+      initContainers:
+      - name: check-clearblade-readiness
+        image: ellerbrock/alpine-bash-curl-ssl
+        command:
+        - bash
+        - "-c"
+        - |
+          set -x;
+          while [ $(curl -sw '%{http_code}' "https://{{ .Values.global.enterpriseBaseURL }}/api/about" -o /dev/null) -ne 200 ]; do
+            echo waiting for clearblade; sleep 5;
+          done;
+          # Give clearblade just a little more time to really start for real
+          sleep 10;
+      {{- end }}
+      containers:
+        - name: cb-ops-console
+          image: gcr.io/api-project-320446546234/ops-console:{{ .Values.version }}
+          command:  ["ops-console-sidecar"]
+          args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-message-port=8904", "-message-tls=true"] #,"-instance-id={{ .Values.global.enterpriseInstanceID }}"]
+          volumeMounts:
+          - name: ops-console
+            mountPath: /etc/clearblade/conf/ops-console
+          ports:
+            - containerPort: 8080
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: {{ .Values.requestCPU }}
+              memory: {{ .Values.requestMemory }}
+            limits:
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      volumes:
+        - name: ops-console
+          persistentVolumeClaim:
+            claimName: cb-ops-console-pvc
