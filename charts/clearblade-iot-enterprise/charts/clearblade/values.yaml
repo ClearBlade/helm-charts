@@ -17,8 +17,8 @@ requestMemory: 8G
 limitCPU: 2
 limitMemory: 8G
 http:
-  httpPort: ":9000" # Listen port for HTTP server
-  httpMTLSPort: ":9001" # Listen port for HTTP mTLS server
+  httpPort: :9000 # Listen port for HTTP server
+  httpMTLSPort: :9001 # Listen port for HTTP mTLS server
   timeProfile: -1 # Enables time profiling of HTTP requests (in ms). Default is disabled (-1)
   gzipResponses: true # gzip http responses if http client supports it
   enableExtendedWebhookURLs: true
@@ -28,12 +28,12 @@ mqtt:
   enforceKeepAlive: false
   ignorePermissionErrors: true
   allowRetainedMessages: true
-  brokerTCPPort: ":1883" # Listen port for MQTT broker
-  brokerTLSPort: ":1884" # TLS listen port for MQTT broker
-  brokerWSPort: ":8903" # Websocket listen port for MQTT broker
-  brokerWSSPort: ":8904" # TLS websocket listen port for MQTT broker
-  messagingAuthPort: ":8905" # Listen port for MQTT Auth broker
-  messagingAuthWSPort: ":8907" # Websocket listen port for MQTT Auth broker
+  brokerTCPPort: :1883 # Listen port for MQTT broker
+  brokerTLSPort: :1884 # TLS listen port for MQTT broker
+  brokerWSPort: :8903 # Websocket listen port for MQTT broker
+  brokerWSSPort: :8904 # TLS websocket listen port for MQTT broker
+  messagingAuthPort: :8905 # Listen port for MQTT Auth broker
+  messagingAuthWSPort: :8907 # Websocket listen port for MQTT Auth broker
   useTLSMessaging: false # Use TLS for MQTT broker
   useTLSMessagingWS: false # Use TLS for websocket MQTT broker
   useTLSMessagingAuth: false # Use TLS for MQTT Auth broker
@@ -57,8 +57,8 @@ database:
   port: "" # optional, defaults to 5432 if left empty
 iotCore:
   deviceTimestampCacheSeconds: 300
-  cloudLoggingResourceType: "global"
-  deviceNumIdColumn: "numid" # Column in the device table representing the device numerical Id in IoT Core
+  cloudLoggingResourceType: global
+  deviceNumIdColumn: numid # Column in the device table representing the device numerical Id in IoT Core
   strictClientIDEnforcement: false # Reject clients if the words "project", "locations", "registries", and "devices" are missing or misspelled in their clientid, disabling will still warn.
   deviceStateCleanup:
     enabled: true
@@ -70,16 +70,16 @@ edges:
 rpc:
   timeout: 120
   dataCompression: "lz4"
-  transport: "tcp" # Transport layer for RPC communications
-  port: "8950" # Listen port for external RPC server. Used to edge to platform communication
-  portInternal: "8952" # Listen port for internal RPC server. Used to node to node communication
+  transport: tcp # Transport layer for RPC communications
+  port: 8950 # Listen port for external RPC server. Used to edge to platform communication
+  portInternal: 8952 # Listen port for internal RPC server. Used to node to node communication
   useRPCServerTimeout: true # If a request takes longer than RPCTimeout, the server will not send a response and not count the request as in flight
   keepaliveInterval: 60 # Keepalive interval for RPC connections
   maxRPCPacketSizeMB: 20 # Maximum RPC packet size after which packets will be split into segments for transfer
   segmentSizeMB: 5 # Size of each RPC packet segment. Only set on the edge
   maxInMemorySegmentStorageSizeMB: 100 # Maximum in memory segment storage size during data transfer after which segments are stored in the database
   maxSegmentStorageDays: 5 # Maximum number of days to store segments in the database
-  encoderDecoderType: "json" # Rpc encoder decoder
+  encoderDecoderType: json # Rpc encoder decoder
   maxInFlightWorkers: 100 # Maximum number of process message goroutines at a time per RPC client
   maxProcessMessageQueue: 10000 # Maximum number of process message goroutines at a time per RPC client
   messageTrafficSeconds: 120 # Interval in which to dump and clear the rpc message traffic on a single node.
@@ -90,16 +90,16 @@ rpc:
 buckets:
   queueEmptyIntervalSecs: 5
   maxFilePacketSize: 2048
-  googleBucketName: "clearblade-buckets"
-  defaultEdgeStorageType: "local"
-  defaultPlatformStorageType: "google"
+  googleBucketName: clearblade-buckets
+  defaultEdgeStorageType: local
+  defaultPlatformStorageType: google
   maxParallelSyncEvents: 10
 database:
   mongoOperationTimeoutSeconds: 60
   mongoMaxPoolSize: 100
-  dbStore: "postgres" # Database store to use. postgres for platform and sqlite for edge
-  dbType: "postgres" # Similar to DBStore. postgres for platform and sqlite for edge
-  dbUsername: "myUser" # Username for connecting to the database
+  dbStore: postgres # Database store to use. postgres for platform and sqlite for edge
+  dbType: postgres # Similar to DBStore. postgres for platform and sqlite for edge
+  dbUsername: myUser # Username for connecting to the database
   maxMySQLDBConnections: 5 # Max number of connections to MySQL to open, per collection
   disableDBRecoveryMode: false # Disables database recovery mode. Platform will go into a crash restart loop if it cannot connect to a database
 dataUsage:
@@ -129,7 +129,7 @@ engine:
   eventQueueLength: 10000
   terminationGracePeriodSeconds: 15 # Amount of seconds to wait for engine to gracefully shutdown before forcefully terminating it.
 fileHosting:
-  edgeBinaryLocation: "/edge/"
+  edgeBinaryLocation: /edge/
 kvStore:
   localCacheReaperIntervalSeconds: 60 # How often to scan the local cache and delete expired keys
   deviceCacheExpirySeconds: 10 # How long to keep entries in the local device cache
@@ -153,15 +153,15 @@ locks:
   bumpInterval: 60 # Number of seconds in between wait queue bumps to prevent locks getting stuck
   checkLockLock: false # whether to check Lock(); Lock(); sequence which is valid in our javascript
   enableBumpingWaitQueue: false # Should we periodically bump the wait queues to prevent locks getting stuck
-  lockStore: "kvs" # The location to store lock requests. "kvs" for the key value store or "postgres".
+  lockStore: kvs # The location to store lock requests. "kvs" for the key value store or "postgres".
 logging:
-  enabled:
-  logFormat: "json"
-  logfile: "" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
+  enabled: true
+  logFormat: json
+  # logfile: "" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
   maxLogFileSizeInKB: 50000 # Maximum size of log file before rotation in KB. Default 50MB. Must be greater than 100 KB. -1 indicates no limit. Only used when Logfile is set and not stdout/stderr.
   maxLogFileBackups: 1 # Maximum backups of the log file. Must be greater than 0
-  includes: "" # categories to log. If empty, all categories logged. Works in concert with log level
-  excludes: "" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
+  # includes: "" # categories to log. If empty, all categories logged. Works in concert with log level
+  # excludes: "" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
 misc:
   maxServiceCachesPerSystem: 30 # max service caches per system
   userCtxCacheTTLSeconds: 60 # ttl for user ctx cache
@@ -171,11 +171,11 @@ profiler:
   enabled: false # is profiling enabled?
   numGatherers: 5 # Number of profiling event gatherer goroutines.
   gathererBufferSize: 51200 # Max number of profile events to cache before writing.
-  writerType: "Local File System" # type of profiler writer.
-  maxDuration: "5m" # Maximum duration to run a profile. Specified as a duration string.
-  rootPath: "/tmp/cb_profiling" # Where to store the gathered profile info at run time
+  writerType: Local File System # type of profiler writer.
+  maxDuration: 5m # Maximum duration to run a profile. Specified as a duration string.
+  rootPath: /tmp/cb_profiling # Where to store the gathered profile info at run time
 security:
-  key: "" # Location of TLS key file
+  # key: "" # Location of TLS key file
   expireDevTokens: false
   expireTokens: true # Set to invalidate user/device tokens issued more than the system's tokenTTL (defaults to 5 days)
   maxSocketReadSizeMB: 500 # If data to be read on any socket is greater than this number, client is disconnected
@@ -184,8 +184,8 @@ security:
   addDefaultTopicPermissions: false # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
 sync:
   syncOptimize: true # Optimizes the syncing process if set to true
-  syncOptimizeExceptions: "" # Exceptions for the sync optimization process
-  syncOptimizations: "" # List specific optimizations to run
+  # syncOptimizeExceptions: "" # Exceptions for the sync optimization process
+  # syncOptimizations: "" # List specific optimizations to run
   perSystemOptimizerIntervalSeconds: 3600 # Interval to run the per system optimizer (Currently only for collection item in inserts)
   allowOverlappingDeployments: false # Set to true to disable overlapping deployment check (not recommended)
   enableReaper: true # The reaper will periodically clean old entries from the sync queue.
