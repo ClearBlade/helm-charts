@@ -172,7 +172,6 @@ HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-node
 
 [FileHostingConfig]
 URL = "http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
-EdgeBinaryLocation = "{{ .Values.fileHosting.edgeBinaryLocation}}"
 
 [Triage]
 PerformTriage = true
@@ -227,7 +226,9 @@ QueueEmptyIntervalSecs = 157248000
 QueueEmptyIntervalSecs = {{ .Values.buckets.queueEmptyIntervalSecs }} # Number of secs to wait before emptying queue full of file storage system events
 {{- end }}
 MaxFilePacketSize = {{ .Values.buckets.maxFilePacketSize }} # Maximum number of bytes that can be copied/transferred in a single RPC packet
-RootDir = "$GOPATH/src/clearblade/blade-runner/clearblade_edge_buckets" # Root path to buckets.
+{{- if .Values.buckets.rootDir }}
+RootDir = "{{ .Values.buckets.roorDir }}" # Root path to buckets.
+{{- end }}
 GoogleBucketName = "{{ .Values.buckets.googleBucketName }}" # The name of the google cloud storage bucket to use.
 DefaultEdgeStorageType = "{{ .Values.buckets.defaultEdgeStorageType }}" # Use the local file system.
 DefaultPlatformStorageType = "{{ .Values.buckets.defaultPlatformStorageType }}" # Use an already-configured google bucket instance.

@@ -94,6 +94,7 @@ buckets:
   defaultEdgeStorageType: local
   defaultPlatformStorageType: google
   maxParallelSyncEvents: 10
+  # rootDir: ""
 database:
   mongoOperationTimeoutSeconds: 60
   mongoMaxPoolSize: 100
@@ -128,8 +129,6 @@ engine:
   messageQueueLength: 10000
   eventQueueLength: 10000
   terminationGracePeriodSeconds: 15 # Amount of seconds to wait for engine to gracefully shutdown before forcefully terminating it.
-fileHosting:
-  edgeBinaryLocation: /edge/
 kvStore:
   localCacheReaperIntervalSeconds: 60 # How often to scan the local cache and delete expired keys
   deviceCacheExpirySeconds: 10 # How long to keep entries in the local device cache
