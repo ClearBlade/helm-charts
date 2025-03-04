@@ -215,7 +215,7 @@ QueueEmptyIntervalSecs = 157248000
 QueueEmptyIntervalSecs = {{ .Values.buckets.queueEmptyIntervalSecs }} # Number of secs to wait before emptying queue full of file storage system events
 {{- end }}
 MaxFilePacketSize = {{ .Values.buckets.maxFilePacketSize }} # Maximum number of bytes that can be copied/transferred in a single RPC packet
-RootDir = "{{ .Values.buckets.roorDir }}" # Root path to buckets.
+RootDir = "{{ .Values.buckets.rootDir }}" # Root path to buckets.
 GoogleBucketName = "{{ .Values.buckets.googleBucketName }}" # The name of the google cloud storage bucket to use.
 DefaultEdgeStorageType = "{{ .Values.buckets.defaultEdgeStorageType }}" # Use the local file system.
 DefaultPlatformStorageType = "{{ .Values.buckets.defaultPlatformStorageType }}" # Use an already-configured google bucket instance.

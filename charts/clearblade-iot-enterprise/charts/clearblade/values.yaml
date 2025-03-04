@@ -95,7 +95,7 @@ buckets:
   defaultEdgeStorageType: local
   defaultPlatformStorageType: google
   maxParallelSyncEvents: 10
-  rootDir: ""
+  rootDir: /tmp/clearblade_platform_buckets
 database:
   mongoOperationTimeoutSeconds: 60
   mongoMaxPoolSize: 100
