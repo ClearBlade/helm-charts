@@ -10,13 +10,29 @@ PlatformID = "{{ .Values.global.enterpriseInstanceID }}"
 
 [Logging]
 LogLevel = "{{ .Values.logLevel }}"
-LogFormat = "json"
+LogFormat = "{{ .Values.logging.logFormat }}"
+LoggingEnabled = {{ .Values.logging.enabled }} # Enable or disable logging
+Logfile = "{{ .Values.logging.logfile }}" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
+MaxLogFileSizeInKB = {{ .Values.logging.maxLogFileSizeInKB }} # Maximum size of log file before rotation in KB. Default 50MB. Must be greater than 100 KB. -1 indicates no limit. Only used when Logfile is set and not stdout/stderr.
+MaxLogFileBackups = {{ .Values.logging.maxLogFileBackups }} # Maximum backups of the log file. Must be greater than 0
+Includes = "{{ .Values.logging.includes }}" # categories to log. If empty, all categories logged. Works in concert with log level
+Excludes = "{{ .Values.logging.excludes }}" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
 
 [LeanMode]
-LeanMode = false
-StoreAnalytics = true
+LeanMode = {{ .Values.leanMode.enabled }}
+StoreAnalytics = {{ .Values.leanMode.storeAnalytics }}
 StoreCodeLogs = {{ .Values.storeCodeLogs }}
 StoreMessageHistory = {{ .Values.storeMessageHistory }}
+DefaultCodeLogsTTLMinutes = {{ .Values.leanMode.defaultCodeLogsTTLMinutes }} # when < 0, use the db schema default (7 days) otherwise use this value.
+MaxPageSize = {{ .Values.leanMode.maxPageSize }} # Maximum page size for analytics calls
+MaxAuditTrailDays = {{ .Values.leanMode.maxAuditTrailDays }} # Number of days of audit trail to keep
+MaxAuditTrailCounts = {{ .Values.leanMode.maxAuditTrailCounts }} # Max number of audit trail entries per (asset_class,action_type)
+DisableDebugGoroutines = {{ .Values.leanMode.disableDebugGoroutines }} # Disable all goroutines that print debug info
+MaxNotificationHistory = {{ .Values.leanMode.maxNotificationHistory }} # Max number of notification history entries
+FailedServiceStorageTimeHours = {{ .Values.leanMode.failedServiceStorageTimeHours }} # Time to keep failed runs in the db before deletion
+FailedServiceCleanerIntervalMinutes = {{ .Values.leanMode.failedServiceCleanerIntervalMinutes }} # Time between delete calls to failed services
+CodeLogCleanerIntervalMinutes = {{ .Values.leanMode.codeLogCleanerIntervalMinutes }} # Time between delete calls to code logs
+CodeLogCleanerVacuumThreshold = {{ .Values.leanMode.codeLogCleanerVacuumThreshold }} # If code log cleaner deletes more than this number of rows in one go, it will also vacuum the table.
 
 [HTTP]
 HttpURL = "{{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
@@ -25,6 +41,11 @@ ConsoleURL = "https://{{ .Values.global.enterpriseConsoleURL}}"
 {{- else }}
 ConsoleURL = "{{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
 {{- end }}
+HttpPort = "{{ .Values.http.httpPort }}" # Listen port for HTTP server
+HttpMTLSPort = "{{ .Values.http.httpMTLSPort }}" # Listen port for HTTP mTLS server
+TimeProfile = {{ .Values.http.timeProfile }} # Enables time profiling of HTTP requests (in ms). Default is disabled (-1)
+GzipResponses = {{ .Values.http.gzipResponses }} # gzip http responses if http client supports it
+EnableExtendedWebhookURLs = {{ .Values.http.enableExtendedWebhookURLs }} # Allows for custom suffixes on webhook URLs that may contain URL variables
 
 [MQTT]
 MessagingURL = "{{- include "clearblade-iot-enterprise.wsMqttMessagingURL" . | trim }}"
@@ -33,6 +54,30 @@ MaxPublishSize = {{ .Values.mqtt.maxPublishSize | replace ":" "" }}
 EnforceMQTTKeepAlive = {{ .Values.mqtt.enforceKeepAlive }}
 IgnorePermissionErrors = {{ .Values.mqtt.ignorePermissionErrors }}
 AllowRetainedMessages = {{ .Values.mqtt.allowRetainedMessages }}
+BrokerTCPPort = "{{ .Values.mqtt.brokerTCPPort }}" # Listen port for MQTT broker
+BrokerTLSPort = "{{ .Values.mqtt.brokerTLSPort }}" # TLS listen port for MQTT broker
+BrokerWSPort = "{{ .Values.mqtt.brokerWSPort }}" # Websocket listen port for MQTT broker
+BrokerWSSPort = "{{ .Values.mqtt.brokerWSSPort }}" # TLS websocket listen port for MQTT broker
+MessagingAuthPort = "{{ .Values.mqtt.messagingAuthPort }}" # Listen port for MQTT Auth broker
+MessagingAuthWSPort = "{{ .Values.mqtt.messagingAuthWSPort }}" # Websocket listen port for MQTT Auth broker
+UseTLSMessaging = {{ .Values.mqtt.useTLSMessaging }} # Use TLS for MQTT broker
+UseTLSMessagingWS = {{ .Values.mqtt.useTLSMessagingWS }} # Use TLS for websocket MQTT broker
+UseTLSMessagingAuth = {{ .Values.mqtt.useTLSMessagingAuth }} # Use TLS for MQTT Auth broker
+InitialReadTimeoutSeconds = {{ .Values.mqtt.initialReadTimeoutSeconds }} # How long a client has to send us data before we disconnect them
+UseModifiedErrorCodes = {{ .Values.mqtt.useModifiedErrorCodes }} # Use error code 5 when JWT private key doesn't match cert
+WriteTimeoutSeconds = {{ .Values.mqtt.writeTimeoutSeconds }} # Timeout for a socket write
+RetainMessageTTL = {{ .Values.mqtt.retainMessageTTL }} # Db TTL (# of minutes) for retained messages (0 is infinite)
+RetainMessageCleanupIntervalMinutes = {{ .Values.mqtt.retainMessageCleanupIntervalMinutes }} # How often to clean up old retained messages. Only applies if RetainMessageTTL > 0
+AddRandomToClientIds = {{ .Values.mqtt.addRandomToClientIds }} # append random string to client Ids
+MaxConcurrentConnectsPerNode = {{ .Values.mqtt.maxConcurrentConnectsPerNode }} # Node limit on concurrent connection processing (only applies if >0)
+PostAuthDelayMs = {{ .Values.mqtt.postAuthDelayMs }} # Initial delay in milliseconds between sending suback and publish to client when authenticating
+MaxKeepAliveSeconds = {{ .Values.mqtt.maxKeepAliveSeconds }} # Upper limit for MQTT keep alive. Clients requesting a greater keep alive will be forced to use this value. Cannot be greater than 65535
+AllowMQTT5Clients = {{ .Values.mqtt.allowMQTT5Clients }} # Allow MQTT5 clients to connect and interact with the broker.
+AllowDelayedWillMessages = {{ .Values.mqtt.allowDelayedWillMessages }} # Allow MQTT5 clients to specify a will delay.
+AllowSettingSendQuota = {{ .Values.mqtt.allowSettingSendQuota }} # Allow MQTT5 clients to specify a max send quota.
+QosMapSizeLimit = {{ .Values.mqtt.qosMapSizeLimit }} # Max number of unacknowledged messages allowed for a client before we kill their connection. Set to 0 for no limit.
+LogPingResps = {{ .Values.mqtt.logPingResps }} # Print a google cloud debug log for each time a PINGRESP is sent to a client
+LogPubAcks = {{ .Values.mqtt.logPubAcks }} # Print a google cloud debug log for each time a PUBACK is sent to a client
 
 [Database]
 {{- if .Values.global.externalPostgresHost }}
@@ -49,14 +94,19 @@ DBPort = "{{ .Values.global.externalPostgresPort}}"
 DBPort = "5432"
 {{- end }}
 DBPassword = "{db_password}"
-MongoOperationTimeoutSeconds = 60
-MongoMaxPoolSize = 100
+MongoOperationTimeoutSeconds = {{ .Values.database.mongoOperationTimeoutSeconds }}
+MongoMaxPoolSize = {{ .Values.database.mongoMaxPoolSize }}
 {{- if .Values.global.disableTimescale }}
 DisableTimescale = {{ .Values.global.disableTimescale }}
 {{- end }}
+DBStore = "{{ .Values.database.dbStore }}" # Database store to use. postgres for platform and sqlite for edge
+DBType = "{{ .Values.database.dbType }}" # Similar to DBStore. postgres for platform and sqlite for edge
+DBUsername = "{{ .Values.database.dbUsername }}" # Username for connecting to the database
+MaxMySQLDBConnections = {{ .Values.database.maxMySQLDBConnections }} # Max number of connections to MySQL to open, per collection
+DisableDBRecoveryMode = {{ .Values.database.disableDBRecoveryMode }} # Disables database recovery mode. Platform will go into a crash restart loop if it cannot connect to a database
 
 [Security]
-ExpireDevTokens = false
+ExpireDevTokens = {{ .Values.security.expireDevTokens }}
 InsecureAuth = false
 MEKStorageLocation = "/etc/clearblade/mek"
 {{- if .Values.global.mtlsClearBlade }}
@@ -68,53 +118,151 @@ CheckCertificateCNForMTLS = true
 EnableMutualTLSAuth = true
 CheckCertificateCNForMTLS = true
 {{- end}}
+Key = "{{ .Values.security.key }}" # Location of TLS key file
+ExpireTokens = {{ .Values.security.expireTokens }} # Set to invalidate user/device tokens issued more than the system's tokenTTL (defaults to 5 days)
+MaxSocketReadSizeMB = {{ .Values.security.maxSocketReadSizeMB }} # If data to be read on any socket is greater than this number, client is disconnected
+AccessControlAllowCredentials = {{ .Values.security.accessControlAllowCredentials }} # Value to use for the Access-Control-Allow-Credentials header on all responses
+AccessControlAllowOrigin = "{{ .Values.security.accessControlAllowOrigin }}" # Value to use for the Access-Control-Allow-Origin header on all responses
+AddDefaultTopicPermissions = {{ .Values.security.addDefaultTopicPermissions }} # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
 
 [Debug]
-DisablePprof = false
+DisablePprof = {{ .Values.debug.disablePprof }} # This will disable pprof output file creation and pprof web-server creation if set to true
+PprofCPUInterval = {{ .Values.debug.pprofCPUInterval }} # The length of time, in seconds, to wait between successive pprof cpu profile generations
+PprofHeapInterval = {{ .Values.debug.pprofHeapInterval }} # The length of time, in seconds, to wait between successive pprof heap profile generations
+PprofLatencyInterval = {{ .Values.debug.pprofLatencyInterval }} # The length of time, in seconds, to wait between successive pprof latency profile generations
+PprofStackDumpInterval = {{ .Values.debug.pprofStackDumpInterval }} # The length of time, in seconds, to wait between successive stack profile generations.
+PprofMaxFiles = {{ .Values.debug.pprofMaxFiles }} # The maximum number of cpu and heap profiles to retain. 0 indicates keep all of them
+PprofMaxFileAge = {{ .Values.debug.pprofMaxFileAge }} # The maximum amount of time, specified in minutes, in which to retain cpu and heap profile data files
+EnablePrometheus = {{ .Values.debug.enablePrometheus }} # Collect debug metrics and expose prometheus exporter endpoints
+BrokerQosLogging = {{ .Values.debug.brokerQosLogging }} # Extra debug logging around qos storage in the broker
+PrometheusLabelExpirationMinutes = {{ .Values.debug.prometheusLabelExpirationMinutes }} # Number of minutes to wait since a label was last used before deleting it from the metrics. Defaults to 1 week. If negative, never expires.
+QosStorageMapReportingThreshold = {{ .Values.debug.qosStorageMapReportingThreshold }} # Start reporting qos storage map size once this threshold is exceeded
 
 [RPC]
-RPCTimeout = 120
+RPCTimeout = {{ .Values.rpc.timeout}}
 DataCompression = "{{ .Values.rpc.dataCompression}}"
+RPCTransport = "{{ .Values.rpc.transport}}" # Transport layer for RPC communications
+RPCPort = "{{ .Values.rpc.port}}" # Listen port for external RPC server. Used to edge to platform communication
+RPCPortInternal = "{{ .Values.rpc.portInternal}}" # Listen port for internal RPC server. Used to node to node communication
+UseRPCServerTimeout = {{ .Values.rpc.useRPCServerTimeout}} # If a request takes longer than RPCTimeout, the server will not send a response and not count the request as in flight
+RPCKeepaliveInterval = {{ .Values.rpc.keepaliveInterval}} # Keepalive interval for RPC connections
+MaxRPCPacketSizeMB = {{ .Values.rpc.maxRPCPacketSizeMB}} # Maximum RPC packet size after which packets will be split into segments for transfer
+RPCSegmentSizeMB = {{ .Values.rpc.segmentSizeMB}} # Size of each RPC packet segment. Only set on the edge
+MaxInMemorySegmentStorageSizeMB = {{ .Values.rpc.maxInMemorySegmentStorageSizeMB}} # Maximum in memory segment storage size during data transfer after which segments are stored in the database
+MaxSegmentStorageDays = {{ .Values.rpc.maxSegmentStorageDays}} # Maximum number of days to store segments in the database
+EncoderDecoderType = "{{ .Values.rpc.encoderDecoderType}}" # Rpc encoder decoder
+MaxInFlightWorkers = {{ .Values.rpc.maxInFlightWorkers}} # Maximum number of process message goroutines at a time per RPC client
+MaxProcessMessageQueue = {{ .Values.rpc.maxProcessMessageQueue}} # Maximum number of process message goroutines at a time per RPC client
+RPCMessageTrafficSeconds = {{ .Values.rpc.messageTrafficSeconds}} # Interval in which to dump and clear the rpc message traffic on a single node.
+RTTRefreshIntervalSeconds = {{ .Values.rpc.rttRefreshIntervalSeconds}} # Interval in which RPC round trip times are updates for all nodes in cluster.
+RPCRTTWarnThresholdMilliseconds = {{ .Values.rpc.rttWarnThresholdMilliseconds}} # Threshold in milliseconds for warning about high round trip times between nodes
+RPCExecutionWarnThresholdMilliseconds = {{ .Values.rpc.executionWarnThresholdMilliseconds}} # The amount of time an RPC function execution can take before a warning is logged. If threshold is 0 or less, no warning is logged.
+RPCQueueWarnThresholdMilliseconds = {{ .Values.rpc.queueWarnThresholdMilliseconds}} # The amount of time an RPC message can be in the queue before a warning is logged. If threshold is 0 or less, no warning is logged.
 
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 
 [FileHosting]
 URL = "http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
-
-[Triage]
-PerformTriage = true
-PerformStackTriage = true
+EdgeBinaryLocation = "{{ .Values.edges.edgeBinaryLocation}}"
 
 [Locks]
-MaxLockTime = 600
-MaxLockWaitTime = 900
+MaxLockTime = {{ .Values.locks.maxLockTime}}
+MaxLockWaitTime = {{ .Values.locks.maxLockWaitTime}}
+BumpInterval = {{ .Values.locks.bumpInterval}} # Number of seconds in between wait queue bumps to prevent locks getting stuck
+CheckLockLock = {{ .Values.locks.checkLockLock}} # whether to check Lock(); Lock(); sequence which is valid in our javascript
+EnableBumpingWaitQueue = {{ .Values.locks.enableBumpingWaitQueue}} # Should we periodically bump the wait queues to prevent locks getting stuck
+LockStore = "{{ .Values.locks.lockStore}}" # The location to store lock requests. "kvs" for the key value store or "postgres".
 
 [KVStore]
 {{ if .Values.global.gcpMemoryStoreEnabled }}
 SkipSettingNotifyKeyspaceEvents = true
 Address = "{{ .Values.global.gcpMemoryStoreAddress }}"
 {{ else }}
+SkipSettingNotifyKeyspaceEvents = false
 Address = "cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 {{- end }}
 Port = "6379"
 Store = "redis"
+IsCluster = false # Specifies if the cache is clusterized
+NumCacheNodes = 0 # Number of cache nodes in the cache cluster
+Password = "" # Redis username. Empty if using local store
+LocalCacheReaperIntervalSeconds = {{ .Values.kvStore.localCacheReaperIntervalSeconds }} # How often to scan the local cache and delete expired keys
+DeviceCacheExpirySeconds = {{ .Values.kvStore.deviceCacheExpirySeconds }} # How long to keep entries in the local device cache
+DefaultCacheExpirySeconds = {{ .Values.kvStore.defaultCacheExpirySeconds }} # Default TTL for cache entries
 
 [IotCore]
 DeviceTimestampCacheSeconds = {{ .Values.iotCore.deviceTimestampCacheSeconds }}
-CloudLoggingResourceType = "global"
+CloudLoggingResourceType = "{{ .Values.iotCore.cloudLoggingResourceType }}"
+DeviceNumIdColumn = "{{ .Values.iotCore.deviceNumIdColumn }}" # Column in the device table representing the device numerical Id in IoT Core
+StrictClientIDEnforcement = {{ .Values.iotCore.strictClientIDEnforcement }} # Reject clients if the words "project", "locations", "registries", and "devices" are missing or misspelled in their clientid, disabling will still warn.
 
 [MessageHistory]
 EnableDeviceStateHistoryCleanup = {{ .Values.iotCore.deviceStateCleanup.enabled }}
 DeviceStateHistoryCleanupInterval = {{ .Values.iotCore.deviceStateCleanup.interval }}
 MinDeviceStatesToKeep = {{ .Values.iotCore.deviceStateCleanup.minToKeep }}
+TimePeriodDeleteMsgHistory = {{ .Values.iotCore.deviceStateCleanup.timePeriodDelete }} # time interval to delete message history based on storage rules (seconds)
 
 [Metrics]
 ReportMetrics = {{ .Values.license.reporting.enabled }}
 ReportIntervalHours = {{ .Values.license.reporting.reportInterval }}
 MetricWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage"
 
-{{- if eq .Values.edges.enabled false}}
 [Buckets]
+{{- if eq .Values.edges.enabled false}}
 QueueEmptyIntervalSecs = 157248000
+{{- else }}
+QueueEmptyIntervalSecs = {{ .Values.buckets.queueEmptyIntervalSecs }} # Number of secs to wait before emptying queue full of file storage system events
 {{- end }}
+MaxFilePacketSize = {{ .Values.buckets.maxFilePacketSize }} # Maximum number of bytes that can be copied/transferred in a single RPC packet
+RootDir = "{{ .Values.buckets.rootDir }}" # Root path to buckets.
+GoogleBucketName = "{{ .Values.buckets.googleBucketName }}" # The name of the google cloud storage bucket to use.
+DefaultEdgeStorageType = "{{ .Values.buckets.defaultEdgeStorageType }}" # Use the local file system.
+DefaultPlatformStorageType = "{{ .Values.buckets.defaultPlatformStorageType }}" # Use an already-configured google bucket instance.
+MaxParallelSyncEvents = {{ .Values.buckets.maxParallelSyncEvents }}
+
+[DataUsage]
+DataUsageDBFlushIntervalSeconds = {{ .Values.dataUsage.dataUsageDBFlushIntervalSeconds }} # How often does the data usage collector flushes the info to the db
+MaxDataUsageDataExpirationMinutes = {{ .Values.dataUsage.maxDataUsageDataExpirationMinutes }} # (3 months) Used to set the expiry in minutes for mqtt/http usage data
+GoogleMinMessageSizeBytes = {{ .Values.dataUsage.googleMinMessageSizeBytes }} # Messages below this size will be set equal to GoogleMinMessageSizeBytes
+
+[EdgeMonitoring]
+MaxEdgeMonSizeDays = {{ .Values.edgeMonitoring.maxEdgeMonSizeDays }}
+
+[Engine]
+PreloaderRequestTimeoutSeconds = {{ .Values.engine.preloaderRequestTimeoutSeconds }}
+MaxLegacyServiceLogLines = {{ .Values.engine.maxLegacyServiceLogLines }}
+HotSwapUserCtx = {{ .Values.engine.hotSwapUserCtx }}
+MessageQueueExpirationSeconds = {{ .Values.engine.messageQueueExpirationSeconds }} # Amount of seconds to maintain MQTT shared topic message queue after all engines unsubscribe. If an engine resubscribes within this time period, the queue is maintained.
+MessageQueueLength = {{ .Values.engine.messageQueueLength }}
+EventQueueLength = {{ .Values.engine.eventQueueLength }}
+TerminationGracePeriodSeconds = {{ .Values.engine.terminationGracePeriodSeconds }} # Amount of seconds to wait for engine to gracefully shutdown before forcefully terminating it.
+
+[Misc]
+MaxServiceCachesPerSystem = {{ .Values.misc.maxServiceCachesPerSystem }} # max service caches per system
+UserCtxCacheTTLSeconds = {{ .Values.misc.userCtxCacheTTLSeconds }} # ttl for user ctx cache
+MaxThreads = {{ .Values.misc.maxThreads }} # max number of machine threads before go throws a fatal "thread exhaustion" error
+EnableDefaultThrottlers = {{ .Values.misc.enableDefaultThrottlers }} # Enable or Disable default throttlers
+
+[Profiler]
+Enabled = {{ .Values.profiler.enabled }} # is profiling enabled?
+NumGatherers = {{ .Values.profiler.numGatherers }} # Number of profiling event gatherer goroutines.
+GathererBufferSize = {{ .Values.profiler.gathererBufferSize }} # Max number of profile events to cache before writing.
+WriterType = "{{ .Values.profiler.writerType }}" # type of profiler writer.
+MaxDuration = "{{ .Values.profiler.maxDuration }}" # Maximum duration to run a profile. Specified as a duration string.
+
+[Profiler.LocalFile]
+RootPath = "{{ .Values.profiler.rootPath }}" # Where to store the gathered profile info at run time
+
+[Sync]
+SyncOptimize = {{ .Values.sync.syncOptimize }} # Optimizes the syncing process if set to true
+SyncOptimizeExceptions = "{{ .Values.sync.syncOptimizeExceptions }}" # Exceptions for the sync optimization process
+SyncOptimizations = "{{ .Values.sync.syncOptimizations }}" # List specific optimizations to run
+PerSystemOptimizerIntervalSeconds = {{ .Values.sync.perSystemOptimizerIntervalSeconds }} # Interval to run the per system optimizer (Currently only for collection item in inserts)
+AllowOverlappingDeployments = {{ .Values.sync.allowOverlappingDeployments }} # Set to true to disable overlapping deployment check (not recommended)
+EnableReaper = {{ .Values.sync.enableReaper }} # The reaper will periodically clean old entries from the sync queue.
+ReaperIntervalMinutes = {{ .Values.sync.reaperIntervalMinutes }} # How often the reaper will reap.
+ReaperThreshold = {{ .Values.sync.reaperThreshold }} # How many entries an edge is allowed to have in the sync queue before the reaper deletes them all.
+
+[Triggers]
+MaxExecutors = {{ .Values.triggers.maxExecutors }} # Maximum number of trigger executors running at one time
