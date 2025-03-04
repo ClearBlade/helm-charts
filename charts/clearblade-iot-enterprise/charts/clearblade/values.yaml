@@ -67,6 +67,7 @@ iotCore:
     timePeriodDelete: 120
 edges:
   enabled: true
+  edgeBinaryLocation: /edge/
 rpc:
   timeout: 120
   dataCompression: "lz4"
@@ -94,7 +95,7 @@ buckets:
   defaultEdgeStorageType: local
   defaultPlatformStorageType: google
   maxParallelSyncEvents: 10
-  # rootDir: ""
+  rootDir: ""
 database:
   mongoOperationTimeoutSeconds: 60
   mongoMaxPoolSize: 100
@@ -156,11 +157,11 @@ locks:
 logging:
   enabled: true
   logFormat: json
-  # logfile: "" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
+  logfile: "" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
   maxLogFileSizeInKB: 50000 # Maximum size of log file before rotation in KB. Default 50MB. Must be greater than 100 KB. -1 indicates no limit. Only used when Logfile is set and not stdout/stderr.
   maxLogFileBackups: 1 # Maximum backups of the log file. Must be greater than 0
-  # includes: "" # categories to log. If empty, all categories logged. Works in concert with log level
-  # excludes: "" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
+  includes: "" # categories to log. If empty, all categories logged. Works in concert with log level
+  excludes: "" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
 misc:
   maxServiceCachesPerSystem: 30 # max service caches per system
   userCtxCacheTTLSeconds: 60 # ttl for user ctx cache
@@ -174,7 +175,7 @@ profiler:
   maxDuration: 5m # Maximum duration to run a profile. Specified as a duration string.
   rootPath: /tmp/cb_profiling # Where to store the gathered profile info at run time
 security:
-  # key: "" # Location of TLS key file
+  key: "" # Location of TLS key file
   expireDevTokens: false
   expireTokens: true # Set to invalidate user/device tokens issued more than the system's tokenTTL (defaults to 5 days)
   maxSocketReadSizeMB: 500 # If data to be read on any socket is greater than this number, client is disconnected
@@ -183,8 +184,8 @@ security:
   addDefaultTopicPermissions: false # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
 sync:
   syncOptimize: true # Optimizes the syncing process if set to true
-  # syncOptimizeExceptions: "" # Exceptions for the sync optimization process
-  # syncOptimizations: "" # List specific optimizations to run
+  syncOptimizeExceptions: "" # Exceptions for the sync optimization process
+  syncOptimizations: "" # List specific optimizations to run
   perSystemOptimizerIntervalSeconds: 3600 # Interval to run the per system optimizer (Currently only for collection item in inserts)
   allowOverlappingDeployments: false # Set to true to disable overlapping deployment check (not recommended)
   enableReaper: true # The reaper will periodically clean old entries from the sync queue.

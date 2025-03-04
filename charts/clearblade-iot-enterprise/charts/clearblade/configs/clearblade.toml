@@ -12,17 +12,11 @@ PlatformID = "{{ .Values.global.enterpriseInstanceID }}"
 LogLevel = "{{ .Values.logLevel }}"
 LogFormat = "{{ .Values.logging.logFormat }}"
 LoggingEnabled = {{ .Values.logging.enabled }} # Enable or disable logging
-{{- if .Values.logging.logfile }}
 Logfile = "{{ .Values.logging.logfile }}" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
-{{- end }}
 MaxLogFileSizeInKB = {{ .Values.logging.maxLogFileSizeInKB }} # Maximum size of log file before rotation in KB. Default 50MB. Must be greater than 100 KB. -1 indicates no limit. Only used when Logfile is set and not stdout/stderr.
 MaxLogFileBackups = {{ .Values.logging.maxLogFileBackups }} # Maximum backups of the log file. Must be greater than 0
-{{- if .Values.logging.includes }}
 Includes = "{{ .Values.logging.includes }}" # categories to log. If empty, all categories logged. Works in concert with log level
-{{- end }}
-{{- if .Values.logging.excludes }}
 Excludes = "{{ .Values.logging.excludes }}" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
-{{- end }}
 
 [LeanMode]
 LeanMode = {{ .Values.leanMode.enabled }}
@@ -124,9 +118,7 @@ CheckCertificateCNForMTLS = true
 EnableMutualTLSAuth = true
 CheckCertificateCNForMTLS = true
 {{- end}}
-{{- if  .Values.security.key }}
 Key = "{{ .Values.security.key }}" # Location of TLS key file
-{{- end }}
 ExpireTokens = {{ .Values.security.expireTokens }} # Set to invalidate user/device tokens issued more than the system's tokenTTL (defaults to 5 days)
 MaxSocketReadSizeMB = {{ .Values.security.maxSocketReadSizeMB }} # If data to be read on any socket is greater than this number, client is disconnected
 AccessControlAllowCredentials = {{ .Values.security.accessControlAllowCredentials }} # Value to use for the Access-Control-Allow-Credentials header on all responses
@@ -170,12 +162,9 @@ RPCQueueWarnThresholdMilliseconds = {{ .Values.rpc.queueWarnThresholdMillisecond
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 
-[FileHostingConfig]
+[FileHosting]
 URL = "http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
-
-[Triage]
-PerformTriage = true
-PerformStackTriage = true
+EdgeBinaryLocation = "{{ .Values.edges.edgeBinaryLocation}}"
 
 [Locks]
 MaxLockTime = {{ .Values.locks.maxLockTime}}
@@ -226,9 +215,7 @@ QueueEmptyIntervalSecs = 157248000
 QueueEmptyIntervalSecs = {{ .Values.buckets.queueEmptyIntervalSecs }} # Number of secs to wait before emptying queue full of file storage system events
 {{- end }}
 MaxFilePacketSize = {{ .Values.buckets.maxFilePacketSize }} # Maximum number of bytes that can be copied/transferred in a single RPC packet
-{{- if .Values.buckets.rootDir }}
 RootDir = "{{ .Values.buckets.roorDir }}" # Root path to buckets.
-{{- end }}
 GoogleBucketName = "{{ .Values.buckets.googleBucketName }}" # The name of the google cloud storage bucket to use.
 DefaultEdgeStorageType = "{{ .Values.buckets.defaultEdgeStorageType }}" # Use the local file system.
 DefaultPlatformStorageType = "{{ .Values.buckets.defaultPlatformStorageType }}" # Use an already-configured google bucket instance.
@@ -269,12 +256,8 @@ RootPath = "{{ .Values.profiler.rootPath }}" # Where to store the gathered profi
 
 [Sync]
 SyncOptimize = {{ .Values.sync.syncOptimize }} # Optimizes the syncing process if set to true
-{{- if  .Values.sync.syncOptimizeExceptions }}
 SyncOptimizeExceptions = "{{ .Values.sync.syncOptimizeExceptions }}" # Exceptions for the sync optimization process
-{{- end }}
-{{- if .Values.sync.syncOptimizations }}
 SyncOptimizations = "{{ .Values.sync.syncOptimizations }}" # List specific optimizations to run
-{{- end }}
 PerSystemOptimizerIntervalSeconds = {{ .Values.sync.perSystemOptimizerIntervalSeconds }} # Interval to run the per system optimizer (Currently only for collection item in inserts)
 AllowOverlappingDeployments = {{ .Values.sync.allowOverlappingDeployments }} # Set to true to disable overlapping deployment check (not recommended)
 EnableReaper = {{ .Values.sync.enableReaper }} # The reaper will periodically clean old entries from the sync queue.
