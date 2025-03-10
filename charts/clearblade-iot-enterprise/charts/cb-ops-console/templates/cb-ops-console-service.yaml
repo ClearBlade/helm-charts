@@ -7,7 +7,7 @@ spec:
   ports:
   - name: ui
     targetPort: 8080
-    port: 3000
+    port: 8080
     protocol: TCP
   selector:
     app: cb-ops-console
