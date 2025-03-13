@@ -48,6 +48,9 @@ global:
   # Required. Set to "true" if this deployment uses the Intelligent Assets Sidecar.
   iaEnabled: false
 
+  # Required. Set to "true" if this deployment uses the Ops Agent Sidecar(Internal).
+  opsConsoleEnabled: false
+
   # Required. Set to true if you are using GCP's Cloud SQL instead of postgres.
   gcpCloudSQLEnabled: false
 
@@ -148,6 +151,13 @@ cb-ia:
   limitMemory: 1G
   # Required if using the Intelligent Assets sidecar. Intelligent Assets sidecar version. Leave blank or comment out if not using.
   # version:
+cb-ops-agent:
+  checkClearbladeReadiness: false
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  # version: 
 cb-postgres:
   # Required. Set to false if using an external postgres deployment.
   enabled: true
