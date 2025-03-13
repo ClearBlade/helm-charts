@@ -85,6 +85,8 @@ DBHost = "{{ .Values.global.externalPostgresHost }}"
 {{- else if .Values.global.gcpCloudSQLEnabled }}
 DBHost = "127.0.0.1"
 DisableTimescale = true
+{{- else if .Values.global.dynamicVolumes }}
+DBHost = "cb-postgres-rw.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 {{- else }}
 DBHost = "cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
 {{- end }}

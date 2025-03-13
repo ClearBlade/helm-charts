@@ -1,0 +1,99 @@
+{{- if .Values.global.dynamicVolumes }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cb-postgres
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: cb-postgres
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: enabled
+spec:
+  # template:
+  #   spec:
+  #     serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
+  instances: 3
+  bootstrap:
+  {{- if .Values.global.restored }}
+    recovery:
+      source: {{ default "clearblade" .Values.global.folder }}
+      # recoveryTarget:
+        # Time base target for the recovery
+        # targetTime: "2025-03-13 07:42:00.00000-06"
+  externalClusters:
+    - name: {{ default "clearblade" .Values.global.folder }}
+      barmanObjectStore:
+        destinationPath: "{{ .Values.global.bucket }}"
+        # googleCredentials:
+        #   gkeEnvironment: true
+        googleCredentials:
+          applicationCredentials:
+            name: backup-creds
+            key: gcsCredentials
+        wal:
+          maxParallel: 8
+  {{- else }}
+    initdb:
+      # database: app
+      # owner: app
+      # secret:
+        # name: app-secret
+      postInitSQL:
+        - CREATE USER cbuser;
+        - ALTER USER cbuser WITH SUPERUSER;
+        - ALTER USER cbuser WITH PASSWORD '{{ .Values.global.pass }}';
+        - CREATE DATABASE admin;
+        - GRANT ALL PRIVILEGES ON DATABASE admin TO cbuser;
+        - CREATE EXTENSION pg_stat_statements;
+        # - CREATE EXTENSION IF NOT EXISTS timescaledb;
+        - CREATE EXTENSION pg_trgm;
+    {{- end }}
+  backup:
+    barmanObjectStore:
+      destinationPath: "{{ .Values.global.bucket }}"
+      # googleCredentials:
+      #   gkeEnvironment: true
+      serverName: "{{ default "clearblade" .Values.global.folder }}"
+      googleCredentials:
+        applicationCredentials:
+          name: backup-creds
+          key: gcsCredentials
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        iam.gke.io/gcp-service-account: {{ .Values.global.gcpGSMServiceAccount }}@{{ .Values.global.gcpProject }}.iam.gserviceaccount.com
+  # backup:
+  #   volumeSnapshot:
+  #      className: cb-vsp
+  storage:
+    size: 100Gi
+    storageClass: {{ .Values.global.storageClassName }}
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi
+      storageClassName: {{ .Values.global.storageClassName }}
+      volumeMode: Filesystem
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: cb-backup
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  cluster:
+    name: cb-postgres
+  schedule: '{{ .Values.global.schedule }}'
+  backupOwnerReference: none
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: backup-example
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  cluster:
+    name: cb-postgres
+{{- end }}
