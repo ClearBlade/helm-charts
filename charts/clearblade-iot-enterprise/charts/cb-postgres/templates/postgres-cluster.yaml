@@ -12,14 +12,20 @@ spec:
   # template:
   #   spec:
   #     serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
+        # tolerations:
+        # - key: node.kubernetes.io/not-ready
+        #   operator: Exists
+        #   effect: NoExecute
+        #   tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+        #   operator: Exists
+        #   effect: NoExecute
+        #   tolerationSeconds: 0
   instances: 3
   bootstrap:
   {{- if .Values.global.restored }}
     recovery:
       source: {{ default "clearblade" .Values.global.folder }}
-      # recoveryTarget:
-        # Time base target for the recovery
-        # targetTime: "2025-03-13 07:42:00.00000-06"
   externalClusters:
     - name: {{ default "clearblade" .Values.global.folder }}
       barmanObjectStore:
@@ -34,10 +40,6 @@ spec:
           maxParallel: 8
   {{- else }}
     initdb:
-      # database: app
-      # owner: app
-      # secret:
-        # name: app-secret
       postInitSQL:
         - CREATE USER cbuser;
         - ALTER USER cbuser WITH SUPERUSER;
@@ -45,7 +47,6 @@ spec:
         - CREATE DATABASE admin;
         - GRANT ALL PRIVILEGES ON DATABASE admin TO cbuser;
         - CREATE EXTENSION pg_stat_statements;
-        # - CREATE EXTENSION IF NOT EXISTS timescaledb;
         - CREATE EXTENSION pg_trgm;
     {{- end }}
   backup:
@@ -62,9 +63,6 @@ spec:
     metadata:
       annotations:
         iam.gke.io/gcp-service-account: {{ .Values.global.gcpGSMServiceAccount }}@{{ .Values.global.gcpProject }}.iam.gserviceaccount.com
-  # backup:
-  #   volumeSnapshot:
-  #      className: cb-vsp
   storage:
     size: 100Gi
     storageClass: {{ .Values.global.storageClassName }}
