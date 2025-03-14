@@ -43,7 +43,11 @@ spec:
           - sh 
           - "-c"
           - |
+            {{- if .Values.global.dynamicVolumes }}
+            until pg_isready -h cb-postgres-rw.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- else }}
             until pg_isready -h cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- end }}
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
@@ -260,7 +264,11 @@ spec:
           - sh 
           - "-c"
           - |
+            {{- if .Values.global.dynamicVolumes }}
+            until pg_isready -h cb-postgres-rw.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- else }}
             until pg_isready -h cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- end }}            
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
