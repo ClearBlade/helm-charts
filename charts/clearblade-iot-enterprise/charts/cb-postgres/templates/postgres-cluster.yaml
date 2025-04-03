@@ -9,8 +9,12 @@ metadata:
   annotations:
     cnpg.io/skipEmptyWalArchiveCheck: enabled
 spec:
-  # template:
-  #   spec:
+  template:
+    spec:
+        {{- if .Values.global.imagePullerSecret }}
+        imagePullSecrets:
+          - name: gcr-json-key
+        {{- end }}
   #     serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
         # tolerations:
         # - key: node.kubernetes.io/not-ready
@@ -22,6 +26,7 @@ spec:
         #   effect: NoExecute
         #   tolerationSeconds: 0
   instances: 3
+  imageName: gcr.io/api-project-320446546234/cb_cnpg:15
   bootstrap:
   {{- if .Values.global.restored }}
     recovery:
@@ -48,7 +53,11 @@ spec:
         - GRANT ALL PRIVILEGES ON DATABASE admin TO cbuser;
         - CREATE EXTENSION pg_stat_statements;
         - CREATE EXTENSION pg_trgm;
+        - CREATE EXTENSION timescaledb;
     {{- end }}
+  postgresql:
+    shared_preload_libraries:
+      - timescaledb
   backup:
     barmanObjectStore:
       destinationPath: "{{ .Values.global.bucket }}"
