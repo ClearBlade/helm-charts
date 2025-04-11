@@ -49,7 +49,7 @@ EnableExtendedWebhookURLs = {{ .Values.http.enableExtendedWebhookURLs }} # Allow
 
 [MQTT]
 MessagingURL = "{{- include "clearblade-iot-enterprise.wsMqttMessagingURL" . | trim }}"
-AllowDuplicateClientId = {{ .Values.mqttAllowDuplicateClientID }}
+AllowDuplicateClientId = {{ .Values.mqtt.allowDuplicateClientID }}
 MaxPublishSize = {{ .Values.mqtt.maxPublishSize | replace ":" "" }}
 EnforceMQTTKeepAlive = {{ .Values.mqtt.enforceKeepAlive }}
 IgnorePermissionErrors = {{ .Values.mqtt.ignorePermissionErrors }}
@@ -236,6 +236,7 @@ MessageQueueExpirationSeconds = {{ .Values.engine.messageQueueExpirationSeconds 
 MessageQueueLength = {{ .Values.engine.messageQueueLength }}
 EventQueueLength = {{ .Values.engine.eventQueueLength }}
 TerminationGracePeriodSeconds = {{ .Values.engine.terminationGracePeriodSeconds }} # Amount of seconds to wait for engine to gracefully shutdown before forcefully terminating it.
+TrackHeapUsage = {{ .Values.engine.trackHeapUsage }}
 
 [Misc]
 MaxServiceCachesPerSystem = {{ .Values.misc.maxServiceCachesPerSystem }} # max service caches per system
