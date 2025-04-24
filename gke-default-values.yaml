@@ -40,7 +40,11 @@ global:
   # enterpriseSlot: blue
 
   # Optional. Manually override the version tag for the ClearBlade container. Leave blank or comment out if not using.
+  # NO LONGER USED IN VERSION 3.1.11+
   # enterpriseTagOverride: false
+
+  # Required in version 3.1.11+ Controls image tag for both console and file hosting containers
+  enterpriseConsoleVersion:
 
   # Required. Set to "true" if this deployment uses the IOTCore Sidecar.
   iotCoreEnabled: false

@@ -165,11 +165,7 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterpriseTagOverride }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseTagOverride }}"
-          {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
-          {{- end }}
           command: ["clearblade"]
           args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
           env:
@@ -384,8 +380,6 @@ spec:
         - name: clearblade
           {{- if .Values.global.enterpriseGreenVersion }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseGreenVersion }}"
-          {{- else if .Values.global.enterpriseTagOverride }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseTagOverride }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
