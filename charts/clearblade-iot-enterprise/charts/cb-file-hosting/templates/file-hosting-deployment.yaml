@@ -31,11 +31,7 @@ spec:
         tolerationSeconds: 0
       containers:
         - name: cb-file-hosting
-          {{- if .Values.global.enterpriseConsoleVersion }}
           image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
-          {{- else }}
-          image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseBlueVersion }}"
-          {{- end }}
           ports:
             - containerPort: 8915
           resources:

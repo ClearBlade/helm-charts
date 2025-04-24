@@ -172,7 +172,7 @@ You are now in a transitional state and running two versions of ClearBlade simul
 
 You may change the `blueReplicas` value to 0, run the upgrade command, and exclusively run the new version and be done with your update.
 
-
-
+## NOTE
+The console and file hosting version, beginning in helm charts 3.1.11, is controlled by `global.enterpriseConsoleVersion`, and must be manually updated in addition to the platform version. This value can be updated prior to any of the helm upgrade commands above, which will restart those 2 containers and run the new version.
 
 
