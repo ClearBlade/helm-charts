@@ -42,12 +42,39 @@ spec:
           args:
             - -c
             - >-
-                echo "export PRIMARY_PASSWORD=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password)" >> /env/db/vars &&
-                echo "export REPLICA_PASSWORD=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-replica-password)" >> /env/db/vars &&
-                echo "export POSTGRES_PASSWORD=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password)" >> /env/db/vars
+                set -e;
+
+                echo "Waiting for Workload Identity to be ready...";
+                for i in $(seq 1 10); do
+                  if curl -s -H "Metadata-Flavor: Google" \
+                    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email" > /dev/null; then
+                    echo "Workload Identity is ready!";
+                    break;
+                  fi;
+                  echo "Metadata not ready (attempt $i), retrying in 2s...";
+                  sleep 2;
+                done;
+
+                echo "Fetching secrets with retries...";
+                for i in $(seq 1 25); do
+                  if PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password) &&
+                    REPLICA=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-replica-password) &&
+                    POSTGRES=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password); then
+
+                    echo "Secrets fetched successfully.";
+                    echo "export PRIMARY_PASSWORD=$PRIMARY" > /env/db/vars;
+                    echo "export REPLICA_PASSWORD=$REPLICA" >> /env/db/vars;
+                    echo "export POSTGRES_PASSWORD=$POSTGRES" >> /env/db/vars;
+                    break;
+                  else
+                    echo "Secret fetch failed (attempt $i), retrying in 3s...";
+                    sleep 3;
+                  fi;
+                done;
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db
+
       {{- end }}
       {{- if eq .Values.global.secretManager "asm"}}
       initContainers:

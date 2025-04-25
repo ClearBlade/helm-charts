@@ -6,6 +6,8 @@ logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
 license:
+  renewalWebhooks: ["https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal"]
+  metricsWebhooks: ["https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage"]
   autoRenew:
     enabled: true
     days: 15
@@ -16,22 +18,181 @@ requestCPU: 2
 requestMemory: 8G
 limitCPU: 2
 limitMemory: 8G
+http:
+  httpPort: :9000 # Listen port for HTTP server
+  httpMTLSPort: :9001 # Listen port for HTTP mTLS server
+  timeProfile: -1 # Enables time profiling of HTTP requests (in ms). Default is disabled (-1)
+  gzipResponses: true # gzip http responses if http client supports it
+  enableExtendedWebhookURLs: true
 mqtt:
   allowDuplicateClientID: false
   maxPublishSize: ":5000000"
   enforceKeepAlive: false
   ignorePermissionErrors: true
   allowRetainedMessages: true
+  brokerTCPPort: :1883 # Listen port for MQTT broker
+  brokerTLSPort: :1884 # TLS listen port for MQTT broker
+  brokerWSPort: :8903 # Websocket listen port for MQTT broker
+  brokerWSSPort: :8904 # TLS websocket listen port for MQTT broker
+  messagingAuthPort: :8905 # Listen port for MQTT Auth broker
+  messagingAuthWSPort: :8907 # Websocket listen port for MQTT Auth broker
+  useTLSMessaging: false # Use TLS for MQTT broker
+  useTLSMessagingWS: false # Use TLS for websocket MQTT broker
+  useTLSMessagingAuth: false # Use TLS for MQTT Auth broker
+  initialReadTimeoutSeconds: 60 # How long a client has to send us data before we disconnect them
+  useModifiedErrorCodes: false # Use error code 5 when JWT private key doesn't match cert
+  writeTimeoutSeconds: 5 # Timeout for a socket write
+  retainMessageTTL: 0 # Db TTL (# of minutes) for retained messages (0 is infinite)
+  retainMessageCleanupIntervalMinutes: 1440 # How often to clean up old retained messages. Only applies if RetainMessageTTL > 0
+  addRandomToClientIds: false # append random string to client Ids
+  maxConcurrentConnectsPerNode: -1 # Node limit on concurrent connection processing (only applies if >0)
+  postAuthDelayMs: 0 # Initial delay in milliseconds between sending suback and publish to client when authenticating
+  maxKeepAliveSeconds: 65535 # Upper limit for MQTT keep alive. Clients requesting a greater keep alive will be forced to use this value. Cannot be greater than 65535
+  allowMQTT5Clients: true # Allow MQTT5 clients to connect and interact with the broker.
+  allowDelayedWillMessages: true # Allow MQTT5 clients to specify a will delay.
+  allowSettingSendQuota: true # Allow MQTT5 clients to specify a max send quota.
+  qosMapSizeLimit: 200 # Max number of unacknowledged messages allowed for a client before we kill their connection. Set to 0 for no limit.
+  logPingResps: false # Print a google cloud debug log for each time a PINGRESP is sent to a client
+  logPubAcks: false # Print a google cloud debug log for each time a PUBACK is sent to a client
 database:
   host: "" # optional, defaults to internal postgres service if left empty
   port: "" # optional, defaults to 5432 if left empty
 iotCore:
   deviceTimestampCacheSeconds: 300
+  cloudLoggingResourceType: global
+  deviceNumIdColumn: numid # Column in the device table representing the device numerical Id in IoT Core
+  strictClientIDEnforcement: false # Reject clients if the words "project", "locations", "registries", and "devices" are missing or misspelled in their clientid, disabling will still warn.
   deviceStateCleanup:
     enabled: true
     interval: 1440
     minToKeep: 10
+    timePeriodDelete: 120
 edges:
   enabled: true
+  edgeBinaryLocation: /edge/
 rpc:
+  timeout: 120
   dataCompression: "lz4"
+  transport: tcp # Transport layer for RPC communications
+  port: 8950 # Listen port for external RPC server. Used to edge to platform communication
+  portInternal: 8952 # Listen port for internal RPC server. Used to node to node communication
+  useRPCServerTimeout: true # If a request takes longer than RPCTimeout, the server will not send a response and not count the request as in flight
+  keepaliveInterval: 60 # Keepalive interval for RPC connections
+  maxRPCPacketSizeMB: 20 # Maximum RPC packet size after which packets will be split into segments for transfer
+  segmentSizeMB: 5 # Size of each RPC packet segment. Only set on the edge
+  maxInMemorySegmentStorageSizeMB: 100 # Maximum in memory segment storage size during data transfer after which segments are stored in the database
+  maxSegmentStorageDays: 5 # Maximum number of days to store segments in the database
+  encoderDecoderType: json # Rpc encoder decoder
+  maxInFlightWorkers: 100 # Maximum number of process message goroutines at a time per RPC client
+  maxProcessMessageQueue: 10000 # Maximum number of process message goroutines at a time per RPC client
+  messageTrafficSeconds: 120 # Interval in which to dump and clear the rpc message traffic on a single node.
+  rttRefreshIntervalSeconds: 60 # Interval in which RPC round trip times are updates for all nodes in cluster.
+  rttWarnThresholdMilliseconds: 500 # Threshold in milliseconds for warning about high round trip times between nodes
+  executionWarnThresholdMilliseconds: 1000 # The amount of time an RPC function execution can take before a warning is logged. If threshold is 0 or less, no warning is logged.
+  queueWarnThresholdMilliseconds: 2000 # The amount of time an RPC message can be in the queue before a warning is logged. If threshold is 0 or less, no warning is logged.
+buckets:
+  queueEmptyIntervalSecs: 5
+  maxFilePacketSize: 2048
+  googleBucketName: clearblade-buckets
+  defaultEdgeStorageType: local
+  defaultPlatformStorageType: google
+  maxParallelSyncEvents: 10
+  rootDir: /tmp/clearblade_platform_buckets
+database:
+  mongoOperationTimeoutSeconds: 60
+  mongoMaxPoolSize: 100
+  dbStore: postgres # Database store to use. postgres for platform and sqlite for edge
+  dbType: postgres # Similar to DBStore. postgres for platform and sqlite for edge
+  dbUsername: myUser # Username for connecting to the database
+  maxMySQLDBConnections: 5 # Max number of connections to MySQL to open, per collection
+  disableDBRecoveryMode: false # Disables database recovery mode. Platform will go into a crash restart loop if it cannot connect to a database
+dataUsage:
+  dataUsageDBFlushIntervalSeconds: 300
+  maxDataUsageDataExpirationMinutes: 131400
+  googleMinMessageSizeBytes: 1024
+debug:
+  disablePprof: false # This will disable pprof output file creation and pprof web-server creation if set to true
+  pprofCPUInterval: 600 # The length of time, in seconds, to wait between successive pprof cpu profile generations
+  pprofHeapInterval: 600 # The length of time, in seconds, to wait between successive pprof heap profile generations
+  pprofLatencyInterval: 600 # The length of time, in seconds, to wait between successive pprof latency profile generations
+  pprofStackDumpInterval: 600 # The length of time, in seconds, to wait between successive stack profile generations.
+  pprofMaxFiles: 30 # The maximum number of cpu and heap profiles to retain. 0 indicates keep all of them
+  pprofMaxFileAge: 1440 # The maximum amount of time, specified in minutes, in which to retain cpu and heap profile data files
+  enablePrometheus: true # Collect debug metrics and expose prometheus exporter endpoints
+  brokerQosLogging: false # Extra debug logging around qos storage in the broker
+  prometheusLabelExpirationMinutes: 10080 # Number of minutes to wait since a label was last used before deleting it from the metrics. Defaults to 1 week. If negative, never expires.
+  qosStorageMapReportingThreshold: 10 # Start reporting qos storage map size once this threshold is exceeded
+edgeMonitoring:
+  maxEdgeMonSizeDays: 365
+engine:
+  preloaderRequestTimeoutSeconds: 60
+  maxLegacyServiceLogLines: 2500
+  hotSwapUserCtx: true
+  messageQueueExpirationSeconds: 300 # Amount of seconds to maintain MQTT shared topic message queue after all engines unsubscribe. If an engine resubscribes within this time period, the queue is maintained.
+  messageQueueLength: 10000
+  eventQueueLength: 10000
+  terminationGracePeriodSeconds: 15 # Amount of seconds to wait for engine to gracefully shutdown before forcefully terminating it.
+  trackHeapUsage: false
+kvStore:
+  localCacheReaperIntervalSeconds: 60 # How often to scan the local cache and delete expired keys
+  deviceCacheExpirySeconds: 10 # How long to keep entries in the local device cache
+  defaultCacheExpirySeconds: 1800 # Default TTL for cache entries
+leanMode:
+  enabled: false
+  storeAnalytics: true
+  defaultCodeLogsTTLMinutes: -1 # when < 0, use the db schema default (7 days) otherwise use this value.
+  maxPageSize: 1000 # Maximum page size for analytics calls
+  maxAuditTrailDays: 7 # Number of days of audit trail to keep
+  maxAuditTrailCounts: 500 # Max number of audit trail entries per (asset_class,action_type)
+  disableDebugGoroutines: false # Disable all goroutines that print debug info
+  maxNotificationHistory: 500 # Max number of notification history entries
+  failedServiceStorageTimeHours: 72 # Time to keep failed runs in the db before deletion
+  failedServiceCleanerIntervalMinutes: 60 # Time between delete calls to failed services
+  codeLogCleanerIntervalMinutes: 30 # Time between delete calls to code logs
+  codeLogCleanerVacuumThreshold: 10000 # If code log cleaner deletes more than this number of rows in one go, it will also vacuum the table.
+locks:
+  maxLockTime: 600
+  maxLockWaitTime: 900
+  bumpInterval: 60 # Number of seconds in between wait queue bumps to prevent locks getting stuck
+  checkLockLock: false # whether to check Lock(); Lock(); sequence which is valid in our javascript
+  enableBumpingWaitQueue: false # Should we periodically bump the wait queues to prevent locks getting stuck
+  lockStore: kvs # The location to store lock requests. "kvs" for the key value store or "postgres".
+logging:
+  enabled: true
+  logFormat: json
+  logfile: "" # Location of logfile. If the value "stderr" or "stdout" are supplied, then it will forward to their respective file handles
+  maxLogFileSizeInKB: 50000 # Maximum size of log file before rotation in KB. Default 50MB. Must be greater than 100 KB. -1 indicates no limit. Only used when Logfile is set and not stdout/stderr.
+  maxLogFileBackups: 1 # Maximum backups of the log file. Must be greater than 0
+  includes: "" # categories to log. If empty, all categories logged. Works in concert with log level
+  excludes: "" # categories NOT to log. If empty, no categories are excluded. Works in concert with log level
+misc:
+  maxServiceCachesPerSystem: 30 # max service caches per system
+  userCtxCacheTTLSeconds: 60 # ttl for user ctx cache
+  maxThreads: 10000 # max number of machine threads before go throws a fatal "thread exhaustion" error
+  enableDefaultThrottlers: true # Enable or Disable default throttlers
+profiler:
+  enabled: false # is profiling enabled?
+  numGatherers: 5 # Number of profiling event gatherer goroutines.
+  gathererBufferSize: 51200 # Max number of profile events to cache before writing.
+  writerType: Local File System # type of profiler writer.
+  maxDuration: 5m # Maximum duration to run a profile. Specified as a duration string.
+  rootPath: /tmp/cb_profiling # Where to store the gathered profile info at run time
+security:
+  key: "" # Location of TLS key file
+  expireDevTokens: false
+  expireTokens: true # Set to invalidate user/device tokens issued more than the system's tokenTTL (defaults to 5 days)
+  maxSocketReadSizeMB: 500 # If data to be read on any socket is greater than this number, client is disconnected
+  accessControlAllowCredentials: true # Value to use for the Access-Control-Allow-Credentials header on all responses
+  accessControlAllowOrigin: "*" # Value to use for the Access-Control-Allow-Origin header on all responses
+  addDefaultTopicPermissions: false # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
+sync:
+  syncOptimize: true # Optimizes the syncing process if set to true
+  syncOptimizeExceptions: "" # Exceptions for the sync optimization process
+  syncOptimizations: "" # List specific optimizations to run
+  perSystemOptimizerIntervalSeconds: 3600 # Interval to run the per system optimizer (Currently only for collection item in inserts)
+  allowOverlappingDeployments: false # Set to true to disable overlapping deployment check (not recommended)
+  enableReaper: true # The reaper will periodically clean old entries from the sync queue.
+  reaperIntervalMinutes: 10 # How often the reaper will reap.
+  reaperThreshold: 1000 # How many entries an edge is allowed to have in the sync queue before the reaper deletes them all.
+triggers:
+  maxExecutors: 1024
