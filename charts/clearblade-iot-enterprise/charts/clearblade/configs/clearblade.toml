@@ -33,6 +33,8 @@ MaxPublishSize = {{ .Values.mqtt.maxPublishSize | replace ":" "" }}
 EnforceMQTTKeepAlive = {{ .Values.mqtt.enforceKeepAlive }}
 IgnorePermissionErrors = {{ .Values.mqtt.ignorePermissionErrors }}
 AllowRetainedMessages = {{ .Values.mqtt.allowRetainedMessages }}
+DisableBrokerCache =  {{ .Values.mqttDisableBrokerCache }}
+ShareGroupLocalPreference = {{ .Values.mqttShareGroupLocalPreference }}
 
 [Database]
 {{- if .Values.global.externalPostgresHost }}
@@ -89,6 +91,9 @@ PerformStackTriage = true
 [Locks]
 MaxLockTime = 600
 MaxLockWaitTime = 900
+
+[Misc]
+EnableDefaultThrottlers = {{ .Values.enableDefaultThrottlers }}
 
 [KVStore]
 {{ if .Values.global.gcpMemoryStoreEnabled }}
