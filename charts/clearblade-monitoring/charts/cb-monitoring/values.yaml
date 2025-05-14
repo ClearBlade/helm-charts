@@ -32,8 +32,9 @@ alerts:
   lowMQTTConnectionsValue: 25
   MQTTDisconnectDeriv: true
   MQTTDisconnectDerivValue: 500
+  license: true
+  licenseValue: 10
   expensiveStuff: true
-  
 monitoringURL: ""
 resourceRequests:
     cpu: 1
