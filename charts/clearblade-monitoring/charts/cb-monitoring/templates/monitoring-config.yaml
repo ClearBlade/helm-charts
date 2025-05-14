@@ -28,14 +28,14 @@ data:
       {{- end}}
       {{- if $.Values.alerts.fileDescriptors }}
      - alert: {{$n.name}}TooManyOpenFileDescriptors
-       expr: node_filefd_allocated * on(instance) group_left(nodename) (node_uname_info) > 900000
+       expr: container_file_descriptors{container=~"(clearblade|cb-*.)",namespace="{{ $n.name }}"} > {{ $.Values.alerts.fileDescriptorsValue }}
        for: 2m
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} has too many open file descriptors: {{ "{{" }} $value }}/999999"
       {{- end}}
       {{- if $.Values.alerts.disk }}
      - alert: {{$n.name}}DiskUsageDB
-       expr: round(100.0 * kubelet_volume_stats_used_bytes{persistentvolumeclaim="cb-postgres-1"} / kubelet_volume_stats_capacity_bytes) > {{ $.Values.alerts.diskValue }}
+       expr: round(100.0 * kubelet_volume_stats_used_bytes{namespace="{{ $n.name }}"} / kubelet_volume_stats_capacity_bytes) > {{ $.Values.alerts.diskValue }}
        for: 2m
        annotations:
          summary: "DB disk is getting pretty full on {{ "{{" }} $labels.namespace }}: {{ "{{" }} $value }}%"
@@ -49,10 +49,60 @@ data:
       {{- end}}
       {{- if $.Values.alerts.LRS }}
      - alert: {{$n.name}}DroppingMessagesInLRS
-       expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services"}[5m]) > 0
+       expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services",namespace="{{ $n.name }}"}[5m]) > {{ $.Values.alerts.LRSValue }}
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
       {{- end}}
+      {{- if $.Values.alerts.adminConnections }}
+     - alert: HighDatabaseConnections
+       expr: pg_stat_database_numbackends{datname="admin",namespace="{{ $n.name }}"} > {{ $.Values.alerts.maxAdminConnections }}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "High number of database connections to admin database"
+         description: "The number of connections to the admin database has exceeded the threshold of {{ $.Values.alerts.maxAdminConnections }}. "
+      {{- end}}
+      {{- if $.Values.alerts.HTTPFailure }}
+     - alert: HighHttpFailureRate
+       expr: rate(clearblade_http_failed{namespace="{{ $n.name }}"}[5m]) > {{ $.Values.alerts.HTTPFailureValue }}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "High HTTP failure rate"
+         description: "The HTTP failure rate is above {{ $.Values.alerts.HTTPFailureValue }}/second for past 5 minutes"
+      {{- end}}
+      {{- if $.Values.alerts.HTTPFailureDeriv }}
+     - alert: IncreasingHttpFailures
+       expr: deriv(clearblade_http_failed{namespace="{{ $n.name }}"}[10m]) > {{ $.Values.alerts.HTTPFailureDerivValue }}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "Rapidly increasing HTTP failures"
+         description: "The number of HTTP failures is increasing rapidly"
+      {{- end}}
+      {{- if $.Values.alerts.lowMQTTConnections }}
+     - alert: LowMqttConnections
+       expr: sum(clearblade_mqtt_current_connections{namespace="{{ $n.name }}"}) < {{ $.Values.alerts.lowMQTTConnectionsValue }}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "Low MQTT connections"
+         description: "The number of MQTT connections is below 10"
+      {{- end}}
+      {{- if $.Values.alerts.MQTTDisconnectDeriv }}
+     - alert: RapidMqttConnectionLoss
+       expr: sum(-deriv(clearblade_mqtt_current_connections{namespace="{{ $n.name }}"}[10m])) > {{ $.Values.alerts.MQTTDisconnectDerivValue }}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "Rapid loss of MQTT connections"
+         description: "The number of MQTT connections is dropping rapidly."
+      {{- end }}
       {{- end }}
     {{- if $.Values.alerts.expensiveStuff }}
    - name: ExpensiveStuff

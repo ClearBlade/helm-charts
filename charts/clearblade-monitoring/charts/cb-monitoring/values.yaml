@@ -1,4 +1,5 @@
 enabled: true
+version: v3.1.0
 grafana:
   enabled: true
   clusterName: # Used to filter dashboard queries to this cluster only. Leave blank and all clusters in the project area will show in the dashboard.
@@ -18,8 +19,21 @@ alerts:
   disk: true
   diskValue: 80
   LRS: true
+  LRSValue: 0
   fileDescriptors: true
+  fileDescriptorsValue: 900000
+  adminConnections: true
+  maxAdminConnections: 450
+  HTTPFailure: true
+  HTTPFailureValue: 0.1
+  HTTPFailureDeriv: true
+  HTTPFailureDerivValue: 200
+  lowMqttConnections: false
+  lowMQTTConnectionsValue: 25
+  MQTTDisconnectDeriv: true
+  MQTTDisconnectDerivValue: 500
   expensiveStuff: true
+  
 monitoringURL: ""
 resourceRequests:
     cpu: 1
