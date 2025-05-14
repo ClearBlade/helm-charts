@@ -103,6 +103,16 @@ data:
          summary: "Rapid loss of MQTT connections"
          description: "The number of MQTT connections is dropping rapidly."
       {{- end }}
+      {{- if $.Values.alerts.license }}
+     - alert: LicenseExpiring
+       expr: clearblade_expiration{instance="clearblade-monitoring-service-0.{{ $n.name }}.svc.cluster.local"} < {{ $.Values.alerts.licenseValue }}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "License due to expire soon"
+         description: "License expires in {{ $.Values.alerts.licenseValue }} days!"
+      {{- end }}
       {{- end }}
     {{- if $.Values.alerts.expensiveStuff }}
    - name: ExpensiveStuff
