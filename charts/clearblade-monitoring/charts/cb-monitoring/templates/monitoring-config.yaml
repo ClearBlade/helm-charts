@@ -54,7 +54,7 @@ data:
          summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
       {{- end}}
       {{- if $.Values.alerts.adminConnectionsEnabled }}
-     - alert: HighDatabaseConnections
+     - alert: {{$n.name}}HighDatabaseConnections
        expr: pg_stat_database_numbackends{datname="admin",job=~".*{{ $n.name }}"} > {{ $.Values.alerts.adminConnectionsThreshold }}
        for: 5m
        labels:
@@ -64,7 +64,7 @@ data:
          description: "The number of connections to the admin database has exceeded the threshold of {{ $.Values.alerts.adminConnectionsThreshold }}. "
       {{- end}}
       {{- if $.Values.alerts.HTTPFailureEnabled }}
-     - alert: HighHttpFailureRate
+     - alert: {{$n.name}}HighHttpFailureRate
        expr: sum(rate(clearblade_http_failed{namespace="{{ $n.name }}"}[5m])) > {{ $.Values.alerts.HTTPFailureThreshold }}
        for: 5m
        labels:
@@ -74,7 +74,7 @@ data:
          description: "The HTTP failure rate is above {{ $.Values.alerts.HTTPFailureThreshold }}/second for past 5 minutes"
       {{- end}}
       {{- if $.Values.alerts.HTTPFailureIncreaseEnabled }}
-     - alert: IncreasingHttpFailures
+     - alert: {{$n.name}}IncreasingHttpFailures
        expr: ( (increase(clearblade_http_failed{namespace="{{ $n.name }}"}[10m]) - clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) / (clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) ) > ({{ $.Values.alerts.HTTPFailureIncreaseThreshold }} / 100)
        labels:
          severity: warning
@@ -83,7 +83,7 @@ data:
          description: "The number of HTTP failures is increasing rapidly"
       {{- end}}
       {{- if $.Values.alerts.lowMQTTConnectionsEnabled }}
-     - alert: LowMqttConnections
+     - alert: {{$n.name}}LowMqttConnections
        expr: sum(clearblade_mqtt_current_connections{namespace="{{ $n.name }}"}) < {{ $.Values.alerts.lowMQTTConnectionsThreshold }}
        for: 5m
        labels:
@@ -93,7 +93,7 @@ data:
          description: "The number of MQTT connections is below {{ $.Values.alerts.lowMQTTConnectionsThreshold }}"
       {{- end}}
       {{- if $.Values.alerts.MQTTDisconnectDerivEnabled }}
-     - alert: RapidMqttConnectionLoss
+     - alert: {{$n.name}}RapidMqttConnectionLoss
        expr: sum(-deriv(clearblade_mqtt_current_connections{namespace="{{ $n.name }}"}[10m])) > {{ $.Values.alerts.MQTTDisconnectDerivThreshold }}
        labels:
          severity: warning
@@ -102,7 +102,7 @@ data:
          description: "The number of MQTT connections is dropping rapidly."
       {{- end }}
       {{- if $.Values.alerts.licenseExpiryEnabled }}
-     - alert: LicenseExpiring
+     - alert: {{$n.name}}LicenseExpiring
        expr: clearblade_expiration{instance="clearblade-monitoring-service-0.{{ $n.name }}.svc.cluster.local"} < {{ $.Values.alerts.licenseExpiryThreshold }}
        for: 5m
        labels:
@@ -110,6 +110,16 @@ data:
        annotations:
          summary: "License due to expire soon"
          description: "License expires in {{ "{{" }} $value }} days!"
+      {{- end }}
+      {{- if $.Values.alerts.possibleDBConnectionMaxEnabled }}
+     - alert: {{$n.name}}PossibleDBConnectionMaxOut
+       expr: sum(clearblade_up{job=~".*{{ $n.name }}"}) * 30 > pg_settings_max_connections{job=~".*{{ $n.name }}"}
+       for: 5m
+       labels:
+         severity: warning
+       annotations:
+         summary: "Possible postgres connection max out"
+         description: "The number of clearblade nodes running can potentially max out the postgres connection pool"
       {{- end }}
       {{- end }}
     {{- if $.Values.alerts.expensiveStuff }}
