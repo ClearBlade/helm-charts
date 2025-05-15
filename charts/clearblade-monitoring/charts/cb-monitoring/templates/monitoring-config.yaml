@@ -114,7 +114,6 @@ data:
       {{- if $.Values.alerts.possibleDBConnectionMaxEnabled }}
      - alert: {{$n.name}}PossibleDBConnectionMaxOut
        expr: sum(clearblade_up{job=~".*{{ $n.name }}"}) * 30 > pg_settings_max_connections{job=~".*{{ $n.name }}"}
-       for: 5m
        labels:
          severity: warning
        annotations:
