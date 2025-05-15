@@ -91,7 +91,7 @@ data:
          severity: warning
        annotations:
          summary: "Low MQTT connections"
-         description: "The number of MQTT connections is below 10"
+         description: "The number of MQTT connections is below {{ $.Values.alerts.lowMQTTConnectionsValue }}"
       {{- end}}
       {{- if $.Values.alerts.MQTTDisconnectDeriv }}
      - alert: RapidMqttConnectionLoss
@@ -111,7 +111,7 @@ data:
          severity: warning
        annotations:
          summary: "License due to expire soon"
-         description: "License expires in {{ $.Values.alerts.licenseValue }} days!"
+         description: "License expires in {{ "{{" }} $value }} days!"
       {{- end }}
       {{- end }}
     {{- if $.Values.alerts.expensiveStuff }}
