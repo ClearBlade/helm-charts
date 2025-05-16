@@ -1,4 +1,5 @@
 enabled: true
+version: v3.1.0
 grafana:
   enabled: true
   clusterName: # Used to filter dashboard queries to this cluster only. Leave blank and all clusters in the project area will show in the dashboard.
@@ -10,15 +11,42 @@ alerts:
     enabled: false
     webhook: ""
     channel: '#alerts-testing'
-  containerRestart: true
-  highCPU: true
-  highCPUValue: 90
-  highMem: true
-  highMemValue: 90
-  disk: true
-  diskValue: 80
-  LRS: true
-  fileDescriptors: true
+  containerRestartEnabled: true
+  #container CPU percentage threshold
+  highCPUEnabled: true
+  highCPUThreshold: 90
+  #container Mem percentage threshold
+  highMemEnabled: true
+  highMemThreshold: 90
+  #Disk usage percentage threshold
+  diskUsageEnabled: true
+  diskUsageThreshold: 80
+  #Total dropped messages threshold (5m)
+  LRSDropsEnabled: true
+  LRSDropsThreshold: 0
+  #Total file descriptors in use threshold
+  fileDescriptorsEnabled: true
+  fileDescriptorsThreshold: 900000
+  #Total admin DB connections in use threshold
+  adminConnectionsEnabled: true
+  adminConnectionsThreshold: 450
+  #Rate of total HTTP failures per second over rolling 5m threshold
+  HTTPFailureEnabled: true
+  HTTPFailureThreshold: 0.1
+  #Percent increase of http failures threshold
+  HTTPFailureIncreaseEnabled: true
+  HTTPFailureIncreaseThreshold: 10
+  #Total current mqtt connections minimum threshold
+  lowMqttConnectionsEnabled: false
+  lowMQTTConnectionsThreshold: 25
+  #Total decrease in mqtt connections over 10m threshold
+  MQTTDisconnectDerivEnabled: true
+  MQTTDisconnectDerivThreshold: 500
+  #days until license expires threshold
+  licenseExpiryEnabled: true
+  licenseExpiryThreshold: 10
+  #alerts when number of clearblade nodes can possibly exceed max connections to DB
+  possibleDBConnectionMaxEnabled: true
   expensiveStuff: true
 monitoringURL: ""
 resourceRequests:
