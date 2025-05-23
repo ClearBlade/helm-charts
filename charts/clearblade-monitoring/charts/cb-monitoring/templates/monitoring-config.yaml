@@ -16,6 +16,9 @@ data:
      - alert: {{$n.name}}ContainerRestart
        expr: time() - container_start_time_seconds{container=~"(clearblade|cb-.*)",container!~".*exporter",namespace="{{ $n.name }}"} < 300
        for: 1m
+       labels:
+         priority: {{ $.Values.alerts.containerRestartPriority }}
+         severity: warning
        annotations:
          summary: "{{ "{{" }} $labels.container }} container on node {{ "{{" }} $labels.namespace }} restarted"
       {{- end}}
@@ -23,6 +26,9 @@ data:
      - alert: {{$n.name}}HighCPU
        expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highCPUThreshold }}
        for: 10m
+       labels:
+         priority: {{ $.Values.alerts.highCPUPriority }}
+         severity: warning
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} cpu is too high: {{ "{{" }} $value }}%"
       {{- end}}
@@ -30,6 +36,9 @@ data:
      - alert: {{$n.name}}TooManyOpenFileDescriptors
        expr: container_file_descriptors{container=~"(clearblade|cb-.*)",namespace="{{ $n.name }}"} > {{ $.Values.alerts.fileDescriptorsThreshold }}
        for: 2m
+       labels:
+         priority: {{ $.Values.alerts.fileDescriptorsPriority }}
+         severity: warning
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} has too many open file descriptors: {{ "{{" }} $value }}/999999"
       {{- end}}
@@ -37,6 +46,9 @@ data:
      - alert: {{$n.name}}DiskUsageDB
        expr: round(100.0 * kubelet_volume_stats_used_bytes{namespace="{{ $n.name }}"} / kubelet_volume_stats_capacity_bytes) > {{ $.Values.alerts.diskUsageThreshold }}
        for: 2m
+       labels:
+         priority: {{ $.Values.alerts.diskUsagePriority }}
+         severity: warning
        annotations:
          summary: "DB disk is getting pretty full on {{ "{{" }} $labels.namespace }}: {{ "{{" }} $value }}%"
       {{- end}}
@@ -44,12 +56,18 @@ data:
      - alert: {{$n.name}}HighMemoryUsage
        expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", container!="cb-postgres", namespace="{{ $n.name }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highMemThreshold }}
        for: 2m
+       labels:
+         priority: {{ $.Values.alerts.highMemPriority }}
+         severity: warning
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} memory usage is too high: {{ "{{" }} $value }}%"
       {{- end}}
       {{- if $.Values.alerts.LRSDropsEnabled }}
      - alert: {{$n.name}}DroppingMessagesInLRS
        expr: rate(clearblade_stream_services_dropped_messages{service_name!="all_services",namespace="{{ $n.name }}"}[5m]) > {{ $.Values.alerts.LRSDropsThreshold }}
+       labels:
+         priority: {{ $.Values.alerts.LRSDropsPriority }}
+         severity: warning
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
       {{- end}}
@@ -58,6 +76,7 @@ data:
        expr: pg_stat_database_numbackends{datname="admin",job=~".*{{ $n.name }}"} > {{ $.Values.alerts.adminConnectionsThreshold }}
        for: 5m
        labels:
+         priority: {{ $.Values.alerts.adminConnectionsPriority }}
          severity: warning
        annotations:
          summary: "High number of database connections to admin database"
@@ -68,6 +87,7 @@ data:
        expr: sum(rate(clearblade_http_failed{namespace="{{ $n.name }}"}[5m])) > {{ $.Values.alerts.HTTPFailureThreshold }}
        for: 5m
        labels:
+         priority: {{ $.Values.alerts.HTTPFailurePriority }}
          severity: warning
        annotations:
          summary: "High HTTP failure rate"
@@ -77,6 +97,7 @@ data:
      - alert: {{$n.name}}IncreasingHttpFailures
        expr: ( (increase(clearblade_http_failed{namespace="{{ $n.name }}"}[10m]) - clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) / (clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) ) > ({{ $.Values.alerts.HTTPFailureIncreaseThreshold }} / 100)
        labels:
+         priority: {{ $.Values.alerts.HTTPFailureIncreasePriority }}
          severity: warning
        annotations:
          summary: "Rapidly increasing HTTP failures"
@@ -87,6 +108,7 @@ data:
        expr: sum(clearblade_mqtt_current_connections{namespace="{{ $n.name }}"}) < {{ $.Values.alerts.lowMQTTConnectionsThreshold }}
        for: 5m
        labels:
+         priority: {{ $.Values.alerts.lowMQTTConnectionsPriority }}
          severity: warning
        annotations:
          summary: "Low MQTT connections"
@@ -96,6 +118,7 @@ data:
      - alert: {{$n.name}}RapidMqttConnectionLoss
        expr: sum(-deriv(clearblade_mqtt_current_connections{namespace="{{ $n.name }}"}[10m])) > {{ $.Values.alerts.MQTTDisconnectDerivThreshold }}
        labels:
+         priority: {{ $.Values.alerts.MQTTDisconnectDerivPriority }}
          severity: warning
        annotations:
          summary: "Rapid loss of MQTT connections"
@@ -106,6 +129,7 @@ data:
        expr: clearblade_expiration{instance="clearblade-monitoring-service-0.{{ $n.name }}.svc.cluster.local"} < {{ $.Values.alerts.licenseExpiryThreshold }}
        for: 5m
        labels:
+         priority: {{ $.Values.alerts.licenseExpiryPriority }}
          severity: warning
        annotations:
          summary: "License due to expire soon"
@@ -115,6 +139,7 @@ data:
      - alert: {{$n.name}}PossibleDBConnectionMaxOut
        expr: sum(clearblade_up{job=~".*{{ $n.name }}"}) * 30 > pg_settings_max_connections{job=~".*{{ $n.name }}"}
        labels:
+         priority: {{ $.Values.alerts.possibleDBConnectionMaxPriority }}
          severity: warning
        annotations:
          summary: "Possible postgres connection max out"
