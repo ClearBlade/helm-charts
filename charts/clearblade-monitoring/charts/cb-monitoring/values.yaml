@@ -72,7 +72,7 @@ alerts:
   #alerts when number of clearblade nodes can possibly exceed max connections to DB
   possibleDBConnectionMaxEnabled: true
   possibleDBConnectionMaxPriority: low
-  expensiveStuff: false
+  expensiveStuff: true
 monitoringURL: ""
 resourceRequests:
     cpu: 1
