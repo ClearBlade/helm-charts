@@ -25,6 +25,7 @@ stringData:
       # how long to wait to re-fire the alert if it's still alerting
       repeat_interval: 1h
 
+      receiver: 'lowReceiver'
 
       routes:
         - match:
