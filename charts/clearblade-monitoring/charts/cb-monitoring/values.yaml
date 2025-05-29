@@ -21,7 +21,7 @@ alerts:
     smtp:
       smarthost: 'smtp.gmail.com:587'
       from: 'emample@gmail.com'
-      usename: 'example@gmail.com'
+      username: 'example@gmail.com'
       password: 'password'
   containerRestartEnabled: true
   containerRestartPriority: low
