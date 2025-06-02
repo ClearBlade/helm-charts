@@ -9,44 +9,69 @@ grafana:
 alerts:
   slack:
     enabled: false
+    #default slack config for low priority
     webhook: ""
     channel: '#alerts-testing'
+    #slack config for high priority
+    webhookHigh: ""
+    channelHigh: '#alerts-testing'
+  email:
+    low: 'support@example.com'
+    high: 'oncall@example.com,ops@example.com'
+    smtp:
+      smarthost: 'smtp.gmail.com:587'
+      from: 'emample@gmail.com'
+      username: 'example@gmail.com'
+      password: 'password'
   containerRestartEnabled: true
+  containerRestartPriority: low
   #container CPU percentage threshold
   highCPUEnabled: true
   highCPUThreshold: 90
+  highCPUPriority: low
   #container Mem percentage threshold
   highMemEnabled: true
   highMemThreshold: 90
+  highMemPriority: low
   #Disk usage percentage threshold
   diskUsageEnabled: true
   diskUsageThreshold: 80
+  diskUsagePriority: low
   #Total dropped messages threshold (5m)
   LRSDropsEnabled: true
   LRSDropsThreshold: 0
+  LRSDropsPriority: low
   #Total file descriptors in use threshold
   fileDescriptorsEnabled: true
   fileDescriptorsThreshold: 900000
+  fileDescriptorsPriority: low
   #Total admin DB connections in use threshold
   adminConnectionsEnabled: true
   adminConnectionsThreshold: 450
+  adminConnectionsPriority: low
   #Rate of total HTTP failures per second over rolling 5m threshold
   HTTPFailureEnabled: true
   HTTPFailureThreshold: 0.1
+  HTTPFailurePriority: low
   #Percent increase of http failures threshold
   HTTPFailureIncreaseEnabled: true
   HTTPFailureIncreaseThreshold: 10
+  HTTPFailureIncreasePriority: low
   #Total current mqtt connections minimum threshold
   lowMqttConnectionsEnabled: false
   lowMQTTConnectionsThreshold: 25
+  lowMQTTConnectionsPriority: low
   #Total decrease in mqtt connections over 10m threshold
   MQTTDisconnectDerivEnabled: true
   MQTTDisconnectDerivThreshold: 500
+  MQTTDisconnectDerivPriority: low
   #days until license expires threshold
   licenseExpiryEnabled: true
   licenseExpiryThreshold: 10
+  licenseExpiryPriority: low
   #alerts when number of clearblade nodes can possibly exceed max connections to DB
   possibleDBConnectionMaxEnabled: true
+  possibleDBConnectionMaxPriority: low
   expensiveStuff: true
 monitoringURL: ""
 resourceRequests:

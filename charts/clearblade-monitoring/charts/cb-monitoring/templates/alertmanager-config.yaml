@@ -8,6 +8,10 @@ stringData:
   alertmanager.yml: |
     global:
       resolve_timeout: 1m
+      smtp_smarthost: '{{ .Values.alerts.email.smtp.smarthost }}'
+      smtp_from: '{{ .Values.alerts.email.smtp.from }}'
+      smtp_auth_username: '{{ .Values.alerts.email.smtp.username }}'
+      smtp_auth_password: '{{ .Values.alerts.email.smtp.password }}' 
 
     route:
       group_by: ['alertname']
@@ -21,13 +25,37 @@ stringData:
       # how long to wait to re-fire the alert if it's still alerting
       repeat_interval: 1h
 
-      receiver: 'slack'
+      receiver: 'lowReceiver'
+
+      routes:
+        - match:
+            priority: 'low'
+          receiver: 'lowReceiver'
+        - match:
+            priority: 'high'
+          receiver: 'highReceiver'
+        
 
     receivers:
-    - name: 'slack'
+
+    - name: 'highReceiver'
+      slack_configs:
+      - channel: {{ .Values.alerts.slack.channelHigh }}
+        api_url: '{{ .Values.alerts.slack.webhookHigh }}'
+        text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
+        send_resolved: true
+      email_configs:
+        - to: '{{ .Values.alerts.email.high }}'
+          send_resolved: true
+
+    # default receiver if no labels on alert
+    - name: 'lowReceiver'
       slack_configs:
       - channel: {{ .Values.alerts.slack.channel }}
         api_url: '{{ .Values.alerts.slack.webhook }}'
         text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
         send_resolved: true
+      email_configs:
+        - to: '{{ .Values.alerts.email.low }}'
+          send_resolved: true
 {{- end }}
