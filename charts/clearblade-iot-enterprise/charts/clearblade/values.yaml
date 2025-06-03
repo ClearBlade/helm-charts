@@ -185,6 +185,7 @@ security:
   accessControlAllowCredentials: true # Value to use for the Access-Control-Allow-Credentials header on all responses
   accessControlAllowOrigin: "*" # Value to use for the Access-Control-Allow-Origin header on all responses
   addDefaultTopicPermissions: false # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
+  DisableJWTAuth: false
 sync:
   syncOptimize: true # Optimizes the syncing process if set to true
   syncOptimizeExceptions: "" # Exceptions for the sync optimization process
