@@ -124,6 +124,7 @@ MaxSocketReadSizeMB = {{ .Values.security.maxSocketReadSizeMB }} # If data to be
 AccessControlAllowCredentials = {{ .Values.security.accessControlAllowCredentials }} # Value to use for the Access-Control-Allow-Credentials header on all responses
 AccessControlAllowOrigin = "{{ .Values.security.accessControlAllowOrigin }}" # Value to use for the Access-Control-Allow-Origin header on all responses
 AddDefaultTopicPermissions = {{ .Values.security.addDefaultTopicPermissions }} # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
+DisableJWTAuth = {{ .Values.security.disableJWTAuth }}
 
 [Debug]
 DisablePprof = {{ .Values.debug.disablePprof }} # This will disable pprof output file creation and pprof web-server creation if set to true
@@ -212,6 +213,8 @@ MetricsReportingWebhooks = [{{ range $i, $webhook := .Values.license.metricsWebh
 [Buckets]
 {{- if eq .Values.edges.enabled false}}
 QueueEmptyIntervalSecs = 157248000
+{{- else if .Values.global.iaEnabled }}
+QueueEmptyIntervalSecs = 60
 {{- else }}
 QueueEmptyIntervalSecs = {{ .Values.buckets.queueEmptyIntervalSecs }} # Number of secs to wait before emptying queue full of file storage system events
 {{- end }}

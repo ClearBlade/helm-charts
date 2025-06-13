@@ -44,7 +44,7 @@ spec:
       port: {{ .Values.ports.mqttWS }}
       protocol: TCP
     - name: mqtt-auth
-      targetPort: 8905
+      targetPort: 8906
       port: {{ .Values.ports.mqttAuth }}
       protocol: TCP
     - name: mqtt-ws-auth

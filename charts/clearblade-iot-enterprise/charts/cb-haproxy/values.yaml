@@ -18,7 +18,7 @@ ports:
   https: 443
   mqtt: 1884
   mqttWS: 8904
-  mqttAuth: 8905
+  mqttAuth: 8906
   mqttWSAuth: 8907
   edge: 8951
   farmer: 8765
