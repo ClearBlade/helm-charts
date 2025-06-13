@@ -167,7 +167,47 @@ spec:
         - name: clearblade
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           command: ["clearblade"]
-          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          # args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml", "-db-host=cb-postgres-01.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local", "-file-hosting-url=hello.clear.com"]
+          args:
+            - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
+          #DB
+            {{- if and (not .Values.global.externalPostgresHost) (not .Values.global.gcpCloudSQLEnabled) }}
+            #Default Postgres in these charts
+            - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- end }}
+            #CloudSQL
+            {{- if .Values.global.gcpCloudSQLEnabled}}
+            - "-db-host=127.0.0.1"
+              #DISABLETIMESCALE NEEDED HERE
+            {{- else if .Values.global.externalPostgresHost}}
+            #External DB
+            - "db-host={{ .Values.global.externalPostgresHost }}"
+            {{- end }}
+          #FH
+            - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
+          #CACHE
+            - "-store=redis"
+            - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-store-port=6379"
+          #PLATFORM
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+            - "-addr={{ .Values.http.httpPort }}"
+            - "-messaging-addr={{ .Values.mqtt.brokerTCPPort }}"
+            - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
+            - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
+            - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            - "-insecure-auth=false"
+            - "-mek-storage-location=/etc/clearblade/mek"
+            {{- if not .Values.edges.enabled }}
+            - "-queue-empty-interval-secs=157248000"
+            {{- else if .Values.global.iaEnabled }}
+            - "-queue-empty-interval-secs=60"
+            {{- else }}
+            - "-queue-empty-interval-secs={{ .Values.buckets.queueEmptyIntervalSecs }}"
+            {{- end }}
+
           env:
             - name: GODEBUG
               value: netdns=go
