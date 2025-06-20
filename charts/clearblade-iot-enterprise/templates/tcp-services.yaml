@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tcp-services
+  namespace: default
+data:
+  "1883": "bs37/clearblade-service:1883"
+  "1884": "bs37/clearblade-service:1883"
+  "8903": "bs37/clearblade-service:8903"
+  "8904": "bs37/clearblade-service:8903"
+  "8905": "bs37/clearblade-service:8905"
+  "8906": "bs37/clearblade-service:8905"
+  "8907": "bs37/clearblade-service:8907"
+  "8908": "bs37/clearblade-service:8907"
+  "8950": "bs37/clearblade-service:8950"
+  "8951": "bs37/clearblade-service:8950" 

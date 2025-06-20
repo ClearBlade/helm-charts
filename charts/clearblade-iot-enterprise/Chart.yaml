@@ -5,14 +5,16 @@ type: application
 version: 3.1.12
 
 dependencies:
+  - name: kubernetes-ingress
+    version: 1.44.4
+    condition: haproxy-kubernetes-ingress.enabled
+    repository: https://haproxytech.github.io/helm-charts
+    createNamespace: true
+    namespace: haproxy-controller
   - name: cb-postgres
     version: 3.1.12
     condition: cb-postgres.enabled
     repository: file://charts/cb-postgres
-  - name: cb-haproxy
-    version: 3.1.12
-    condition: cb-haproxy.enabled
-    repository: file://charts/cb-haproxy
   - name: clearblade
     version: 3.1.12
     repository: file://charts/clearblade
@@ -38,3 +40,55 @@ dependencies:
     version: 3.1.12
     condition: global.opsConsoleEnabled
     repository: file://charts/cb-ops-console
+
+haproxy-kubernetes-ingress:
+  enabled: true
+  controller:
+    service:
+      type: LoadBalancer
+      loadBalancerIP: 35.184.241.105
+    extraArgs:
+      - --configmap-tcp-services=default/tcp-services
+    config:
+      load-balance: "leastconn"
+      ssl-redirect: "true"
+      ssl-redirect-code: "301"
+      rate-limit: "100"
+      rate-limit-window: "1m"
+      timeout-client: "120s"
+      timeout-server: "600s"
+      ssl-default-bind-options: "no-sslv3 no-tlsv10 no-tlsv11"
+      ssl-default-bind-ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-CHACHA20-POLY1305"
+    tcp:
+      enabled: true
+      ports:
+        - port: 1883
+          targetPort: 1883
+          service: clearblade-service
+        - port: 1884
+          targetPort: 1883
+          service: clearblade-service
+        - port: 8903
+          targetPort: 8903
+          service: clearblade-service
+        - port: 8904
+          targetPort: 8903
+          service: clearblade-service
+        - port: 8905
+          targetPort: 8905
+          service: clearblade-service
+        - port: 8906
+          targetPort: 8905
+          service: clearblade-service
+        - port: 8907
+          targetPort: 8907
+          service: clearblade-service
+        - port: 8908
+          targetPort: 8907
+          service: clearblade-service
+        - port: 8950
+          targetPort: 8950
+          service: clearblade-service
+        - port: 8951
+          targetPort: 8950
+          service: clearblade-service

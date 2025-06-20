@@ -1,0 +1,225 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-console-ingress
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    haproxy.org/ssl-redirect-code: "301"
+    haproxy.org/rate-limit: "100"
+    haproxy.org/rate-limit-window: "1m"
+    haproxy.org/timeout-client: "120s"
+    haproxy.org/timeout-server: "600s"
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - "martin.clearblade.com"
+    secretName: tls-secret
+  rules:
+  - host: "martin.clearblade.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cb-console-service
+            port:
+              number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-api-ingress
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    haproxy.org/ssl-redirect-code: "301"
+    haproxy.org/rate-limit: "100"
+    haproxy.org/rate-limit-window: "1m"
+    haproxy.org/timeout-client: "120s"
+    haproxy.org/timeout-server: "600s"
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - "martin.clearblade.com"
+    secretName: tls-secret
+  rules:
+  - host: "martin.clearblade.com"
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: clearblade-service
+            port:
+              number: 9000
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: clearblade-service
+            port:
+              number: 9000
+      - path: /codeadmin
+        pathType: Prefix
+        backend:
+          service:
+            name: clearblade-service
+            port:
+              number: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-export-ingress
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    haproxy.org/ssl-redirect-code: "301"
+    haproxy.org/timeout-client: "600s"
+    haproxy.org/timeout-server: "600s"
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - "martin.clearblade.com"
+    secretName: tls-secret
+  rules:
+  - host: "martin.clearblade.com"
+    http:
+      paths:
+      - path: /console-api/batch/export
+        pathType: Prefix
+        backend:
+          service:
+            name: clearblade-service
+            port:
+              number: 9000
+{{- if .Values.global.iotCoreEnabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-iotcore-ingress
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    haproxy.org/ssl-redirect-code: "301"
+    haproxy.org/rate-limit: "100"
+    haproxy.org/rate-limit-window: "1m"
+    haproxy.org/timeout-client: "120s"
+    haproxy.org/timeout-server: "600s"
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - "martin.clearblade.com"
+    secretName: tls-secret
+  rules:
+  - host: "martin.clearblade.com"
+    http:
+      paths:
+      - path: /iot-core
+        pathType: Prefix
+        backend:
+          service:
+            name: iot-core-service
+            port:
+              number: 8080
+      - path: /iotcore
+        pathType: Prefix
+        backend:
+          service:
+            name: iot-core-service
+            port:
+              number: 8080
+{{- end }}
+{{- if .Values.global.iaEnabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-ia-ingress
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    haproxy.org/ssl-redirect-code: "301"
+    haproxy.org/rate-limit: "100"
+    haproxy.org/rate-limit-window: "1m"
+    haproxy.org/timeout-client: "120s"
+    haproxy.org/timeout-server: "600s"
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - "martin.clearblade.com"
+    secretName: tls-secret
+  rules:
+  - host: "martin.clearblade.com"
+    http:
+      paths:
+      - path: /ia
+        pathType: Prefix
+        backend:
+          service:
+            name: ia-service
+            port:
+              number: 8080
+      - path: /ia-sidecar
+        pathType: Prefix
+        backend:
+          service:
+            name: ia-service
+            port:
+              number: 8080
+      - path: /ia-admin
+        pathType: Prefix
+        backend:
+          service:
+            name: ia-service
+            port:
+              number: 8080
+{{- end }}
+{{- if .Values.global.opsConsoleEnabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-ops-console-ingress
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    haproxy.org/ssl-redirect-code: "301"
+    haproxy.org/rate-limit: "100"
+    haproxy.org/rate-limit-window: "1m"
+    haproxy.org/timeout-client: "120s"
+    haproxy.org/timeout-server: "600s"
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - "martin.clearblade.com"
+    secretName: tls-secret
+  rules:
+  - host: "martin.clearblade.com"
+    http:
+      paths:
+      - path: /ops-console
+        pathType: Prefix
+        backend:
+          service:
+            name: ops-console-service
+            port:
+              number: 8080
+      - path: /ops-console-sidecar
+        pathType: Prefix
+        backend:
+          service:
+            name: ops-console-service
+            port:
+              number: 8080
+{{- end }}

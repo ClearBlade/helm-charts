@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-tcp-loadbalancer
+  namespace: default
+  annotations:
+    cloud.google.com/neg: '{"ingress":false}'
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 35.184.241.105
+  selector:
+    app.kubernetes.io/instance: clearblade-iot-enterprise
+    app.kubernetes.io/name: kubernetes-ingress
+  ports:
+  - name: mqtt
+    port: 1883
+    targetPort: 1883
+    protocol: TCP
+  - name: mqtt-ssl
+    port: 1884
+    targetPort: 1884
+    protocol: TCP
+  - name: mqtt-ws
+    port: 8903
+    targetPort: 8903
+    protocol: TCP
+  - name: mqtt-ws-ssl
+    port: 8904
+    targetPort: 8904
+    protocol: TCP
+  - name: mqtt-auth
+    port: 8905
+    targetPort: 8905
+    protocol: TCP
+  - name: mqtt-auth-ssl
+    port: 8906
+    targetPort: 8906
+    protocol: TCP
+  - name: mqtt-ws-auth
+    port: 8907
+    targetPort: 8907
+    protocol: TCP
+  - name: mqtt-ws-auth-ssl
+    port: 8908
+    targetPort: 8908
+    protocol: TCP
+  - name: rpc
+    port: 8950
+    targetPort: 8950
+    protocol: TCP
+  - name: rpc-ssl
+    port: 8951
+    targetPort: 8951
+    protocol: TCP 

@@ -117,24 +117,24 @@ cb-file-hosting:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
-cb-haproxy:
-  replicas: 1
-  requestCPU: 1
-  requestMemory: 1G
-  limitCPU: 1
-  limitMemory: 1G
-  # Required. Set to false if using an external HAProxy deployment.
-  enabled: true
-  # Required if using this HAProxy. The primary external IP address for the deployment.
-  primaryIP:
-  # Required if utilizing external MQTT connections. Leave blank or comment out if not using.
-  mqttIP:
-  # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
-  mqttOver443: false
-  # Automatic cert renewal with letencrypt
-  certRenewal: false
-  # days out to renew cert
-  renewalDays: 5
+# cb-haproxy:
+#   replicas: 1
+#   requestCPU: 1
+#   requestMemory: 1G
+#   limitCPU: 1
+#   limitMemory: 1G
+#   # Required. Set to false if using an external HAProxy deployment.
+#   enabled: true
+#   # Required if using this HAProxy. The primary external IP address for the deployment.
+#   primaryIP:
+#   # Required if utilizing external MQTT connections. Leave blank or comment out if not using.
+#   mqttIP:
+#   # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
+#   mqttOver443: false
+#   # Automatic cert renewal with letencrypt
+#   certRenewal: false
+#   # days out to renew cert
+#   renewalDays: 5
 cb-iotcore:
   # Optional. Set to true to force the IOTCore pod to wait for the Clearblade pods before starting.
   checkClearbladeReadiness: false

@@ -43,6 +43,17 @@ rules:
     resourceNames: []  # Prevents access to all services unless explicitly named
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-manager
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "delete", "patch"]
+    resourceNames: []  # Prevents access to all services unless explicitly named
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: restrict-discovery-binding
@@ -54,4 +65,18 @@ subjects:
 roleRef:
   kind: Role
   name: restrict-discovery
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: clearblade-gsm-read-secrets
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: clearblade-gsm-read
+    namespace: {{ default "clearblade" .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: secret-manager
   apiGroup: rbac.authorization.k8s.io
