@@ -14,13 +14,51 @@ data:
       {{- range $n := .Values.global.deploymentNamespaces }}
       {{- if $.Values.alerts.containerRestartEnabled }}
      - alert: {{$n.name}}ContainerRestart
-       expr: time() - container_start_time_seconds{container=~"(clearblade|cb-.*)",container!~".*exporter",namespace="{{ $n.name }}"} < 300
+       expr: increase(kube_pod_container_status_restarts_total{namespace="{{ $n.name }}", container=~"cb-.*|clearblade"}[5m]) > 0
        for: 1m
        labels:
          priority: {{ $.Values.alerts.containerRestartPriority }}
          severity: warning
        annotations:
-         summary: "{{ "{{" }} $labels.container }} container on node {{ "{{" }} $labels.namespace }} restarted"
+         summary: "{{ "{{" }} $labels.container }} container on {{ "{{" }} $labels.namespace }} restarted"
+      {{- end}}
+      {{- if $.Values.alerts.podNotReadyEnabled }}
+     - alert: {{$n.name}}PodNotReady
+       expr: kube_pod_container_status_ready{job="kube-state-metrics",namespace="{{ $n.name }}", container=~"cb-.*|clearblade"} == 0
+       for: 15m
+       labels:
+         priority: {{ $.Values.alerts.podNotReadPriority }}
+         severity: warning
+       annotations:
+         summary: Pod {{ "{{" }} $labels.pod }} container {{ "{{" }} $labels.container }} is not ready
+         description: >
+           Container {{ "{{" }} $labels.container }} in Pod {{ "{{" }} $labels.pod }} (Namespace {{ "{{" }} $labels.namespace }})
+           has been in a not-ready state for more than 15 minutes.
+      {{- end}}
+      {{- if $.Values.alerts.podFailedEnabled }}
+      - alert: {{$n.name}}PodFailed
+        expr: kube_pod_status_phase{job="kube-state-metrics",phase="Failed",namespace="{{ $n.name }}"} == 1
+        for: 1m
+        labels:
+          priority: {{ $.Values.alerts.podFailedPriority }}
+          severity: warning
+        annotations:
+          summary: Pod {{ "{{" }} $labels.pod }} has failed
+          description: >
+            Pod {{ "{{" }} $labels.pod }} (Namespace {{ "{{" }} $labels.namespace }}) is in a Failed state.
+      {{- end}}
+      {{- if $.Values.alerts.podOOMEnabled }}
+      - alert: {{$n.name}}PodOOMKilled
+        expr: kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled",namespace="{{ $n.name }}"} == 1
+        for: 1m
+        labels:
+          priority: {{ $.Values.alerts.podOOMPriority }}
+          severity: warning
+        annotations:
+          summary: Pod {{ "{{" }} $labels.pod }} container {{ "{{" }} $labels.container }} terminated due to OOM
+          description: >
+            Container {{ "{{" }} $labels.container }} in Pod {{ "{{" }} $labels.pod }} (Namespace {{ "{{" }} $labels.namespace }})
+            was terminated with OOMKilled reason.
       {{- end}}
       {{- if $.Values.alerts.highCPUEnabled }}
      - alert: {{$n.name}}HighCPU

@@ -25,6 +25,12 @@ alerts:
       password: 'password'
   containerRestartEnabled: true
   containerRestartPriority: low
+  podNotReadyEnabled: true
+  podNotReadPriority: low
+  podFailedEnabled: true
+  podFailedPriority: low
+  podOOMEnabled: true
+  podOOMPriority: low
   #container CPU percentage threshold
   highCPUEnabled: true
   highCPUThreshold: 90
