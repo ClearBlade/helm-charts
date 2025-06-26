@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-{{- if eq (default .Values.global.gmpEnabled false) false}}
-{{- else }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -314,27 +312,6 @@ spec:
       stabilizationWindowSeconds: 3600
 ---
 apiVersion: monitoring.googleapis.com/v1
-kind: ClusterPodMonitoring
-metadata:
-  name: kube-state-metrics
-  labels:
-    app.kubernetes.io/name: managed-prom
-    app.kubernetes.io/part-of: google-cloud-managed-prometheus
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: managed-prom
-  endpoints:
-    - port: metrics
-      interval: 60s
-      metricRelabeling:
-        - action: keep
-          regex: kube_(daemonset|deployment|pod|namespace|node|statefulset)_.+
-          sourceLabels: [__name__]
-  targetLabels:
-    metadata: [] # explicitly empty so the metric labels are respected
----
-apiVersion: monitoring.googleapis.com/v1
 kind: PodMonitoring
 metadata:
   namespace: gmp-public
@@ -349,4 +326,3 @@ spec:
   endpoints:
     - port: metrics-self
       interval: 60s
-{{- end }}
