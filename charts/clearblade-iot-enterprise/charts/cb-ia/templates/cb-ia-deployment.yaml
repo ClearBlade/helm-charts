@@ -29,18 +29,18 @@ spec:
         tolerationSeconds: 0
       {{- if .Values.checkClearbladeReadiness }}
       initContainers:
-      - name: check-clearblade-readiness
-        image: ellerbrock/alpine-bash-curl-ssl
-        command:
-        - bash
-        - "-c"
-        - |
-          set -x;
-          while [ $(curl -sw '%{http_code}' "https://{{ .Values.global.enterpriseBaseURL }}/api/about" -o /dev/null) -ne 200 ]; do
-            echo waiting for clearblade; sleep 5;
-          done;
-          # Give clearblade just a little more time to really start for real
-          sleep 10;
+        - name: check-clearblade-readiness
+          image: ellerbrock/alpine-bash-curl-ssl
+          command:
+          - bash
+          - "-c"
+          - |
+            set -x;
+            while [ $(curl -sw '%{http_code}' "https://{{ .Values.global.enterpriseBaseURL }}/api/about" -o /dev/null) -ne 200 ]; do
+              echo waiting for clearblade; sleep 5;
+            done;
+            # Give clearblade just a little more time to really start for real
+            sleep 10;
       {{- end }}
       containers:
         - name: cb-ia
