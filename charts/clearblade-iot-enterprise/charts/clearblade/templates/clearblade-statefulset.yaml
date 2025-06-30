@@ -179,17 +179,32 @@ spec:
             #CloudSQL
             {{- if .Values.global.gcpCloudSQLEnabled}}
             - "-db-host=127.0.0.1"
-              #DISABLETIMESCALE NEEDED HERE
+            {{- if not .Values.global.disableTimescale }}
+            - "-disable-timescale=true"
+            {{- end }}
             {{- else if .Values.global.externalPostgresHost}}
             #External DB
-            - "db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-port={{ .Values.global.externalPostgresPort}}"
             {{- end }}
+            {{- if .Values.global.disableTimescale }}
+            - "-disable-timescale=true"
+            {{- end }}
+            - "-db-type={{ .Values.database.dbType }}"
+            - "-db={{ .Values.database.dbStore }}"
+            - "-mongo-operations-timeout={{ .Values.database.mongoOperationTimeoutSeconds }}"
+            - "-mongo-max-pool-size={{ .Values.database.mongoMaxPoolSize }}"
           #FH
             - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
           #CACHE
-            - "-store=redis"
+            {{ if .Values.global.gcpMemoryStoreEnabled }}
+            - "-skip-setting-notify-keyspace-events=true"
+            - "-store-addr={{ .Values.global.gcpMemoryStoreAddress }}"
+            {{- else}}
             - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
             - "-store-port=6379"
+            - "-store=redis"
           #PLATFORM
             - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
             - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
@@ -206,6 +221,19 @@ spec:
             - "-queue-empty-interval-secs=60"
             {{- else }}
             - "-queue-empty-interval-secs={{ .Values.buckets.queueEmptyIntervalSecs }}"
+            {{- end }}
+            {{- if .Values.license.key }}
+            - "-pkey={{ .Values.license.key }}"
+            {{- end }}
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
+            - "-license-renewal-webhooks=[\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal\"]"
+            - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
+            - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
+            {{- if .Values.global.mtlsClearBlade }}
+            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-enable-mutual-tls-auth=true"
+            - "check-certificate-cn-for-mtls=true"
             {{- end }}
 
           env:
@@ -424,7 +452,73 @@ spec:
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
           command: ["clearblade"]
-          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          args:
+            - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
+          #DB
+            {{- if and (not .Values.global.externalPostgresHost) (not .Values.global.gcpCloudSQLEnabled) }}
+            #Default Postgres in these charts
+            - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- end }}
+            #CloudSQL
+            {{- if .Values.global.gcpCloudSQLEnabled}}
+            - "-db-host=127.0.0.1"
+            {{- if not .Values.global.disableTimescale }}
+            - "-disable-timescale=true"
+            {{- end }}
+            {{- else if .Values.global.externalPostgresHost}}
+            #External DB
+            - "-db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-port={{ .Values.global.externalPostgresPort}}"
+            {{- end }}
+            {{- if .Values.global.disableTimescale }}
+            - "-disable-timescale=true"
+            {{- end }}
+            - "-db-type={{ .Values.database.dbType }}"
+            - "-db={{ .Values.database.dbStore }}"
+            - "-mongo-operations-timeout={{ .Values.database.mongoOperationTimeoutSeconds }}"
+            - "-mongo-max-pool-size={{ .Values.database.mongoMaxPoolSize }}"
+          #FH
+            - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
+          #CACHE
+            {{ if .Values.global.gcpMemoryStoreEnabled }}
+            - "-skip-setting-notify-keyspace-events=true"
+            - "-store-addr={{ .Values.global.gcpMemoryStoreAddress }}"
+            {{- else}}
+            - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
+            - "-store-port=6379"
+            - "-store=redis"
+          #PLATFORM
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+            - "-addr={{ .Values.http.httpPort }}"
+            - "-messaging-addr={{ .Values.mqtt.brokerTCPPort }}"
+            - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
+            - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
+            - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            - "-insecure-auth=false"
+            - "-mek-storage-location=/etc/clearblade/mek"
+            {{- if not .Values.edges.enabled }}
+            - "-queue-empty-interval-secs=157248000"
+            {{- else if .Values.global.iaEnabled }}
+            - "-queue-empty-interval-secs=60"
+            {{- else }}
+            - "-queue-empty-interval-secs={{ .Values.buckets.queueEmptyIntervalSecs }}"
+            {{- end }}
+            {{- if .Values.license.key }}
+            - "-pkey={{ .Values.license.key }}"
+            {{- end }}
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
+            - "-license-renewal-webhooks=[\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal\"]"
+            - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
+            - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
+            {{- if .Values.global.mtlsClearBlade }}
+            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-enable-mutual-tls-auth=true"
+            - "check-certificate-cn-for-mtls=true"
+            {{- end }}
           env:
             - name: GODEBUG
               value: netdns=go

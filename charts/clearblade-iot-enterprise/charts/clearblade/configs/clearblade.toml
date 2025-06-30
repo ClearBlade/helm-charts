@@ -1,79 +1,10 @@
 Title = "ClearBlade IoT Enterprise Configuration File"
 
-[License]
-PKey = "{{ .Values.license.key }}"
-RegistrationKey = "{{ .Values.global.enterpriseRegistrationKey }}"
-AutoRenewLicense = {{ .Values.license.autoRenew.enabled }}
-LicenseRenewalWebhook = "https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal"
-LicenseRenewalWebhooks = [{{ range $i, $webhook := .Values.license.renewalWebhooks }}{{ if $i }}, {{ end }}"{{ $webhook }}"{{ end }}]
-LicenseAutoRenewDays = {{ .Values.license.autoRenew.days }}
-PlatformID = "{{ .Values.global.enterpriseInstanceID }}"
-
 [Database]
-{{- if .Values.global.externalPostgresHost }}
-DBHost = "{{ .Values.global.externalPostgresHost }}"
-{{- else if .Values.global.gcpCloudSQLEnabled }}
-DBHost = "127.0.0.1"
-DisableTimescale = true
-{{- else }}
-DBHost = "cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
-{{- end }}
-{{- if .Values.global.externalPostgresPort }}
-DBPort = "{{ .Values.global.externalPostgresPort}}"
-{{- else }}
-DBPort = "5432"
-{{- end }}
 DBPassword = "{db_password}"
-MongoOperationTimeoutSeconds = {{ .Values.database.mongoOperationTimeoutSeconds }}
-MongoMaxPoolSize = {{ .Values.database.mongoMaxPoolSize }}
-{{- if .Values.global.disableTimescale }}
-DisableTimescale = {{ .Values.global.disableTimescale }}
-{{- end }}
-DBStore = "{{ .Values.database.dbStore }}" # Database store to use. postgres for platform and sqlite for edge
-DBType = "{{ .Values.database.dbType }}" # Similar to DBStore. postgres for platform and sqlite for edge
-MaxMySQLDBConnections = {{ .Values.database.maxMySQLDBConnections }} # Max number of connections to MySQL to open, per collection
-DisableDBRecoveryMode = {{ .Values.database.disableDBRecoveryMode }} # Disables database recovery mode. Platform will go into a crash restart loop if it cannot connect to a database
-
-[Security]
-ExpireDevTokens = {{ .Values.security.expireDevTokens }}
-InsecureAuth = false
-MEKStorageLocation = "/etc/clearblade/mek"
-{{- if .Values.global.mtlsClearBlade }}
-# uses first cert in chain if multiple
-Cert = "/etc/clearblade/ssl/clearblade-0.pem"
-EnableMutualTLSAuth = true
-CheckCertificateCNForMTLS = true
-{{- else if .Values.global.mtlsHAProxy }}
-EnableMutualTLSAuth = true
-CheckCertificateCNForMTLS = true
-{{- end}}
-Key = "{{ .Values.security.key }}" # Location of TLS key file
-ExpireTokens = {{ .Values.security.expireTokens }} # Set to invalidate user/device tokens issued more than the system's tokenTTL (defaults to 5 days)
-MaxSocketReadSizeMB = {{ .Values.security.maxSocketReadSizeMB }} # If data to be read on any socket is greater than this number, client is disconnected
-AccessControlAllowCredentials = {{ .Values.security.accessControlAllowCredentials }} # Value to use for the Access-Control-Allow-Credentials header on all responses
-AccessControlAllowOrigin = "{{ .Values.security.accessControlAllowOrigin }}" # Value to use for the Access-Control-Allow-Origin header on all responses
-AddDefaultTopicPermissions = {{ .Values.security.addDefaultTopicPermissions }} # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
-DisableJWTAuth = {{ .Values.security.disableJWTAuth }}
 
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
-
-[KVStore]
-{{ if .Values.global.gcpMemoryStoreEnabled }}
-SkipSettingNotifyKeyspaceEvents = true
-Address = "{{ .Values.global.gcpMemoryStoreAddress }}"
-{{ else }}
-SkipSettingNotifyKeyspaceEvents = false
-Address = "cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
-{{- end }}
-Port = "6379"
-Store = "redis"
-IsCluster = false # Specifies if the cache is clusterized
-NumCacheNodes = 0 # Number of cache nodes in the cache cluster
-Password = "" # Redis username. Empty if using local store
-LocalCacheReaperIntervalSeconds = {{ .Values.kvStore.localCacheReaperIntervalSeconds }} # How often to scan the local cache and delete expired keys
-DeviceCacheExpirySeconds = {{ .Values.kvStore.deviceCacheExpirySeconds }} # How long to keep entries in the local device cache
-DefaultCacheExpirySeconds = {{ .Values.kvStore.defaultCacheExpirySeconds }} # Default TTL for cache entries
 
 {{- if .Values.additionalToml }}
 {{ .Values.additionalToml }}
