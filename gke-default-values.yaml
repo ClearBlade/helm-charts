@@ -191,3 +191,14 @@ clearblade:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
+  # Place any additional clearblade configs here. REQUIRES ClearBlade 2025.2.0 or newer!
+  # additionalToml: |
+    
+  #   # Custom configurations added via values.yaml
+  #   [Blah]
+  #   IP = "0.0.0.0"
+  #   path = "/api/v1"
+
+  #   [Bluh]
+  #   featureEnabled = true
+  #   adminMode = false
