@@ -1,8 +1,8 @@
-{{- range $i, $e := until (.Values.replicas | int)}}
+{{- range $i, $e := until (.Values.replicas | int) }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ default "clearblade" $.Values.global.namespace}}-postgres-{{$i}}
+  name: {{ default "clearblade" $.Values.global.namespace }}-postgres-{{$i}}
   namespace: {{ default "clearblade" $.Values.global.namespace }}
 spec:
   storageClassName: {{ $.Values.global.storageClassName }}
@@ -19,8 +19,22 @@ spec:
     volumeHandle: "projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.postgresDiskName }}-{{$i}}"
     fsType: ext4
   {{- else if eq $.Values.global.cloud "aws" }}
-  driver: ebs.csi.aws.com
-  volumeHandle: {{ $.Values.volumeHandle }}
+    driver: ebs.csi.aws.com
+    volumeHandle: {{ $.Values.volumeHandle }}
+  {{- else if eq $.Values.global.cloud "azure" }}
+    driver: disk.csi.azure.com
+    volumeHandle: /subscriptions/{{ $.Values.global.azure.subscriptionID }}/resourceGroups/{{ $.Values.global.azure.resourceGroup }}/providers/Microsoft.Compute/disks/{{ default "clearblade" $.Values.global.namespace }}-postgres-{{$i}}
+    fsType: ext4
+    volumeAttributes:
+      requestedZone: southcentralus-1
   {{- end }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values:
+                - southcentralus-1
 ---
 {{- end }}

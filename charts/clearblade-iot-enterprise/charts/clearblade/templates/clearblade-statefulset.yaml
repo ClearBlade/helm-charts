@@ -78,14 +78,18 @@ spec:
           {{- if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
           {{- end }}
+          {{- if eq .Values.global.secretManager "aks"}}
+          image: google/cloud-sdk:slim
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
+              {{- end }}
+
+              {{- if .Values.global.mtlsClearBlade }}
               certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
@@ -94,29 +98,35 @@ spec:
                 echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
-              {{- end}}
+              {{- end }}
+
               set -ex
               # Generate clearblade host from pod ordinal index.
               [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
-              # Copy appropriate conf.d files from config-map to emptyDir.
+
+              # Copy config from ConfigMap to writable volume.
               cp /config-map/clearblade.toml /etc/clearblade/conf/clearblade/clearblade.toml
-              # Add an offset to avoid reserved server-id=0 value.
-              sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
-              # Add blue/green slot to host address
-              sed -i 's|{slot}|''|g'  /etc/clearblade/conf/clearblade/clearblade.toml
-              {{- if eq .Values.global.secretManager "gsm"}}
+
+              # Replace placeholders in TOML
+              sed -i 's|{clearblade_node_number}|'$ordinal'|g' /etc/clearblade/conf/clearblade/clearblade.toml
+              sed -i 's|{slot}|''|g' /etc/clearblade/conf/clearblade/clearblade.toml
+
+              {{- if eq .Values.global.secretManager "gsm" }}
               dbpassword=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password)
-              {{- end }}
-              {{- if eq .Values.global.secretManager "asm"}}
+              {{- else if eq .Values.global.secretManager "asm" }}
               dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
+              {{- else }}
+              dbpassword="$dbpassword"
               {{- end }}
+
               {{ if .Values.global.gcpCloudSQLConnectionName }}
               sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- else }}
               escaped_dbpassword=$(printf '%s\n' "$dbpassword" | sed -e 's/[\/&]/\\&/g')
               sed -i 's|{db_password}|'$escaped_dbpassword'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- end }}
+
               {{- if eq .Values.global.secretManager "gsm"}}
               gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
               {{- else if eq .Values.global.secretManager "asm"}}
@@ -147,7 +157,7 @@ spec:
             {{- if .Values.global.mtlsClearBlade}}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
-            {{- end}}
+            {{- end}}    
       containers:
         {{- if .Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy

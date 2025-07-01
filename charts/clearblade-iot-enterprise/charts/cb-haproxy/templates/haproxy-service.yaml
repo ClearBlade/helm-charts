@@ -12,7 +12,7 @@ metadata:
   {{- end }}
 spec:
   type: LoadBalancer
-  {{- if eq .Values.global.cloud "gcp" }}
+  {{- if or (eq .Values.global.cloud "gcp") (eq .Values.global.cloud "azure") }}
   loadBalancerIP: {{.Values.primaryIP}}
   {{- end }}
   externalTrafficPolicy: Local

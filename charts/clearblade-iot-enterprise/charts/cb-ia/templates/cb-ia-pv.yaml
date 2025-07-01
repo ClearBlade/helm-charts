@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ default "clearblade" .Values.global.namespace}}-ia-pv
-  namespace: {{ default "clearblade" .Values.global.namespace}}
+  name: {{ default "clearblade" .Values.global.namespace }}-ia-pv
+  namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   storageClassName: {{ .Values.global.storageClassName }}
-  {{- if eq .Values.global.cloud "aws" }}
+  {{- if or (eq .Values.global.cloud "aws") (eq .Values.global.cloud "azure") }}
   persistentVolumeReclaimPolicy: Retain
   {{- end }}
   capacity:
@@ -16,11 +16,28 @@ spec:
     namespace: {{ default "clearblade" .Values.global.namespace }}
     name: cb-ia-pvc
   csi:
-  {{- if eq .Values.global.cloud "gcp" }}
+    {{- if eq .Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io
     volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ default "clearblade" .Values.global.namespace }}-ia
     fsType: ext4
-  {{- else if eq .Values.global.cloud "aws" }}
-  driver: ebs.csi.aws.com
-  volumeHandle: {{ .Values.volumeHandle }}
+    {{- else if eq .Values.global.cloud "aws" }}
+    driver: ebs.csi.aws.com
+    volumeHandle: {{ .Values.volumeHandle }}
+    fsType: ext4
+    {{- else if eq .Values.global.cloud "azure" }}
+    driver: disk.csi.azure.com
+    volumeHandle: /subscriptions/{{ .Values.global.azure.subscriptionID }}/resourceGroups/{{ .Values.global.azure.resourceGroup }}/providers/Microsoft.Compute/disks/{{ default "clearblade" .Values.global.namespace }}-ia
+    fsType: ext4
+    volumeAttributes:
+      requestedZone: southcentralus-1
+    {{- end }}
+  {{- if eq .Values.global.cloud "azure" }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values:
+                - southcentralus-1
   {{- end }}
