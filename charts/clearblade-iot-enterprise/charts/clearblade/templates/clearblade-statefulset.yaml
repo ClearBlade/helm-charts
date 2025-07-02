@@ -225,9 +225,8 @@ spec:
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
-            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks=[\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal\"]"
+            - "-license-renewal-webhook={{ .Values.license.renewalWebhooks }}
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
@@ -509,9 +508,8 @@ spec:
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
-            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks=[\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal\"]"
+            - "-license-renewal-webhook={{ .Values.license.renewalWebhooks }}
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
