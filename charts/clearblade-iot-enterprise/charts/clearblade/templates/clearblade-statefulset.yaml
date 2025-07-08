@@ -178,16 +178,11 @@ spec:
             #CloudSQL
             {{- if .Values.global.gcpCloudSQLEnabled}}
             - "-db-host=127.0.0.1"
-            {{- if not .Values.global.disableTimescale }}
             - "-disable-timescale=true"
-            {{- end }}
             {{- else if .Values.global.externalPostgresHost}}
             #External DB
             - "-db-host={{ .Values.global.externalPostgresHost }}"
             - "-db-port={{ .Values.global.externalPostgresPort}}"
-            {{- end }}
-            {{- if .Values.global.disableTimescale }}
-            - "-disable-timescale=true"
             {{- end }}
             - "-db-type={{ .Values.database.dbType }}"
             - "-db={{ .Values.database.dbStore }}"
@@ -224,7 +219,6 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
             {{- end }}
-
           env:
             - name: GODEBUG
               value: netdns=go
@@ -452,16 +446,11 @@ spec:
             #CloudSQL
             {{- if .Values.global.gcpCloudSQLEnabled}}
             - "-db-host=127.0.0.1"
-            {{- if not .Values.global.disableTimescale }}
             - "-disable-timescale=true"
-            {{- end }}
             {{- else if .Values.global.externalPostgresHost}}
             #External DB
             - "-db-host={{ .Values.global.externalPostgresHost }}"
             - "-db-port={{ .Values.global.externalPostgresPort}}"
-            {{- end }}
-            {{- if .Values.global.disableTimescale }}
-            - "-disable-timescale=true"
             {{- end }}
             - "-db-type={{ .Values.database.dbType }}"
             - "-db={{ .Values.database.dbStore }}"
