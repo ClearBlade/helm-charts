@@ -167,7 +167,6 @@ spec:
         - name: clearblade
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           command: ["clearblade"]
-          # args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml", "-db-host=cb-postgres-01.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local", "-file-hosting-url=hello.clear.com"]
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
           #DB
@@ -192,8 +191,6 @@ spec:
             {{- end }}
             - "-db-type={{ .Values.database.dbType }}"
             - "-db={{ .Values.database.dbStore }}"
-            - "-mongo-operations-timeout={{ .Values.database.mongoOperationTimeoutSeconds }}"
-            - "-mongo-max-pool-size={{ .Values.database.mongoMaxPoolSize }}"
           #FH
             - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
           #CACHE
@@ -213,20 +210,13 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
-            - "-insecure-auth=false"
             - "-mek-storage-location=/etc/clearblade/mek"
-            {{- if not .Values.edges.enabled }}
-            - "-queue-empty-interval-secs=157248000"
-            {{- else if .Values.global.iaEnabled }}
-            - "-queue-empty-interval-secs=60"
-            {{- else }}
-            - "-queue-empty-interval-secs={{ .Values.buckets.queueEmptyIntervalSecs }}"
-            {{- end }}
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhook={{ .Values.license.renewalWebhooks }}
+            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
@@ -475,8 +465,6 @@ spec:
             {{- end }}
             - "-db-type={{ .Values.database.dbType }}"
             - "-db={{ .Values.database.dbStore }}"
-            - "-mongo-operations-timeout={{ .Values.database.mongoOperationTimeoutSeconds }}"
-            - "-mongo-max-pool-size={{ .Values.database.mongoMaxPoolSize }}"
           #FH
             - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
           #CACHE
@@ -496,20 +484,13 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
-            - "-insecure-auth=false"
             - "-mek-storage-location=/etc/clearblade/mek"
-            {{- if not .Values.edges.enabled }}
-            - "-queue-empty-interval-secs=157248000"
-            {{- else if .Values.global.iaEnabled }}
-            - "-queue-empty-interval-secs=60"
-            {{- else }}
-            - "-queue-empty-interval-secs={{ .Values.buckets.queueEmptyIntervalSecs }}"
-            {{- end }}
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhook={{ .Values.license.renewalWebhooks }}
+            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
