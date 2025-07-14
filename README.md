@@ -84,7 +84,7 @@ After all above resources exists, using the `gke-default-values.yaml` as a start
 
 #### ClearBlade TOML configuration
 
-Most commonly used ClearBlade options and configurations can be set directly through a helm value, as shown in the `gke-default-values.yaml` file. These configurations will be set via container flag. However, beginning in helm chart version 3.2.0 and ClearBlade version 2025.2.0, you may add additional configurations not supported in these charts via the `additionalToml` helm value in the ClearBlade section. This is a multiline value that will be read into the `clearblade.toml` configuration file. NOTE: flags will override any configs set with this method.
+Most commonly used ClearBlade options and configurations can be set directly through a helm value, as shown in the `gke-default-values.yaml` file. These configurations will be set via container flag. However, beginning in helm chart version 3.2.0 and ClearBlade version 2025.2.0, you may add additional configurations not supported in these charts via the `clearbladeConfig` helm value in the ClearBlade section. This is a multiline value that will be read into the `clearblade.toml` configuration file. NOTE: flags will override any configs set with this method.
 
 ### Installation
 
