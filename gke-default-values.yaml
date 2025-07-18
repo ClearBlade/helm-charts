@@ -191,3 +191,15 @@ clearblade:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
+  # Place any additional clearblade configs here. REQUIRES ClearBlade 2025.2.0 or newer!
+  # clearbladeConfig: |
+    
+    # Custom configurations added via values.yaml
+    # [Security]
+    # InsecureAuth = false
+    # MEKStorageLocation = "/etc/clearblade/mek"
+
+    # [Debug]
+    # DisablePprof = false
+    # PprofCPUInterval = 600
+    # PprofHeapInterval = 600

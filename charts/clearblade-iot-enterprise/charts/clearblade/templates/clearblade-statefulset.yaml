@@ -167,7 +167,58 @@ spec:
         - name: clearblade
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           command: ["clearblade"]
-          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          args:
+            - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
+          #DB
+            {{- if and (not .Values.global.externalPostgresHost) (not .Values.global.gcpCloudSQLEnabled) }}
+            #Default Postgres in these charts
+            - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- end }}
+            #CloudSQL
+            {{- if .Values.global.gcpCloudSQLEnabled}}
+            - "-db-host=127.0.0.1"
+            - "-disable-timescale=true"
+            {{- else if .Values.global.externalPostgresHost}}
+            #External DB
+            - "-db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-port={{ .Values.global.externalPostgresPort}}"
+            {{- end }}
+            - "-db-type={{ .Values.database.dbType }}"
+            - "-db={{ .Values.database.dbStore }}"
+          #FH
+            - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
+          #CACHE
+            {{ if .Values.global.gcpMemoryStoreEnabled }}
+            - "-skip-setting-notify-keyspace-events=true"
+            - "-store-addr={{ .Values.global.gcpMemoryStoreAddress }}"
+            {{- else}}
+            - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
+            - "-store-port=6379"
+            - "-store=redis"
+          #PLATFORM
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+            - "-addr={{ .Values.http.httpPort }}"
+            - "-messaging-addr={{ .Values.mqtt.brokerTCPPort }}"
+            - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
+            - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
+            - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            - "-mek-storage-location=/etc/clearblade/mek"
+            {{- if .Values.license.key }}
+            - "-pkey={{ .Values.license.key }}"
+            {{- end }}
+            - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
+            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
+            - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
+            {{- if .Values.global.mtlsClearBlade }}
+            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-enable-mutual-tls-auth=true"
+            - "check-certificate-cn-for-mtls=true"
+            {{- end }}
           env:
             - name: GODEBUG
               value: netdns=go
@@ -384,7 +435,58 @@ spec:
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
           command: ["clearblade"]
-          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          args:
+            - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
+          #DB
+            {{- if and (not .Values.global.externalPostgresHost) (not .Values.global.gcpCloudSQLEnabled) }}
+            #Default Postgres in these charts
+            - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- end }}
+            #CloudSQL
+            {{- if .Values.global.gcpCloudSQLEnabled}}
+            - "-db-host=127.0.0.1"
+            - "-disable-timescale=true"
+            {{- else if .Values.global.externalPostgresHost}}
+            #External DB
+            - "-db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-port={{ .Values.global.externalPostgresPort}}"
+            {{- end }}
+            - "-db-type={{ .Values.database.dbType }}"
+            - "-db={{ .Values.database.dbStore }}"
+          #FH
+            - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
+          #CACHE
+            {{ if .Values.global.gcpMemoryStoreEnabled }}
+            - "-skip-setting-notify-keyspace-events=true"
+            - "-store-addr={{ .Values.global.gcpMemoryStoreAddress }}"
+            {{- else}}
+            - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
+            - "-store-port=6379"
+            - "-store=redis"
+          #PLATFORM
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+            - "-addr={{ .Values.http.httpPort }}"
+            - "-messaging-addr={{ .Values.mqtt.brokerTCPPort }}"
+            - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
+            - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
+            - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            - "-mek-storage-location=/etc/clearblade/mek"
+            {{- if .Values.license.key }}
+            - "-pkey={{ .Values.license.key }}"
+            {{- end }}
+            - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
+            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
+            - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
+            {{- if .Values.global.mtlsClearBlade }}
+            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-enable-mutual-tls-auth=true"
+            - "check-certificate-cn-for-mtls=true"
+            {{- end }}
           env:
             - name: GODEBUG
               value: netdns=go
