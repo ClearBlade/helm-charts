@@ -1,3 +1,4 @@
+{{- if not .Values.global.disableHaproxy }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -235,5 +236,6 @@ spec:
   endpoints:
     - port: metrics
       interval: 5s
+{{- end }}
 {{- end }}
 {{- end }}

@@ -85,15 +85,19 @@ spec:
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
+              {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
+              echo "here 1"
               certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
+              echo "here 2 ${certificates}"
               for i in "${certificate_array[@]}"
               do
+                echo "here 3"
                 echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
+              echo "here 4"
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -144,7 +148,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -218,6 +222,16 @@ spec:
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
+            {{- else if .Values.global.useGateway }}
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
+            - "-key=/etc/clearblade/ssl/clearblade-0.pem"
+            - "-use-tls-http=true"
+            - "-message-use-tls=true"
+            - "-message-auth-use-tls=true"
+            - "-message-ws-use-tls=true"
+            - "-message-auth-ws-use-tls=true"
+            - "-use-reverse-proxy=true"
+            - "-console-host=cb-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
             {{- end }}
           env:
             - name: GODEBUG
@@ -227,7 +241,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -257,7 +271,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
@@ -349,7 +363,7 @@ spec:
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
+              {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
               certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
@@ -408,7 +422,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -486,6 +500,16 @@ spec:
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
+            {{- else if .Values.global.useGateway }}
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
+            - "-key=/etc/clearblade/ssl/clearblade-0.pem"
+            - "-use-tls-http=true"
+            - "-message-use-tls=true"
+            - "-message-auth-use-tls=true"
+            - "-message-ws-use-tls=true"
+            - "-message-auth-ws-use-tls=true"
+            - "-use-reverse-proxy=true"
+            - "-console-host=cb-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
             {{- end }}
           env:
             - name: GODEBUG
@@ -495,7 +519,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -525,7 +549,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}

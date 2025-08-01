@@ -1,0 +1,129 @@
+{{- if .Values.global.useGateway }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: clearblade-vs
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.enterpriseBaseURL }}
+  gateways:
+    - clearblade-gateway
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - {{ .Values.global.enterpriseBaseURL }}
+      route:
+        - destination:
+            host: clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+            port:
+              number: 9000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mqtt-tls-vs
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.enterpriseBaseURL }}
+  gateways:
+    - clearblade-gateway
+  tls:
+    - match:
+        - port: 1884
+          sniHosts:
+            - {{ .Values.global.enterpriseBaseURL }}
+      route:
+        - destination:
+            host: clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+            port:
+              number: 1884
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mqtt-ws-tls-vs
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.enterpriseBaseURL }}
+  gateways:
+    - clearblade-gateway
+  tls:
+    - match:
+        - port: 8904
+          sniHosts:
+            - {{ .Values.global.enterpriseBaseURL }}
+      route:
+        - destination:
+            host: clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+            port:
+              number: 8904
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mqtt-auth-tls-vs
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.enterpriseBaseURL }}
+  gateways:
+    - clearblade-gateway
+  tls:
+    - match:
+        - port: 8905
+          sniHosts:
+            - {{ .Values.global.enterpriseBaseURL }}
+      route:
+        - destination:
+            host: clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+            port:
+              number: 8905
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mqtt-ws-auth-tls-vs
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.enterpriseBaseURL }}
+  gateways:
+    - clearblade-gateway
+  tls:
+    - match:
+        - port: 8907
+          sniHosts:
+            - {{ .Values.global.enterpriseBaseURL }}
+      route:
+        - destination:
+            host: clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+            port:
+              number: 8907
+---
+{{- if .Values.global.mtlsClearBlade }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mtls-vs
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.enterpriseBaseURL }}
+  gateways:
+    - clearblade-gateway
+  tls:
+    - match:
+        - port: 444
+          sniHosts:
+            - {{ .Values.global.enterpriseBaseURL }}
+      route:
+        - destination:
+            host: clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local
+            port:
+              number: 9001
+{{- end }}
+{{- end }}

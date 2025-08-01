@@ -1,0 +1,61 @@
+{{- if .Values.global.useGateway }}
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: clearblade-gateway
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - {{ .Values.global.enterpriseBaseURL }}
+    - port:
+        number: 1884
+        name: tls-mqtt
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - {{ .Values.global.enterpriseBaseURL }}
+    - port:
+        number: 8904
+        name: tls-mqtt-ws
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - {{ .Values.global.enterpriseBaseURL }}
+    - port:
+        number: 8905
+        name: tls-mqtt-auth
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - {{ .Values.global.enterpriseBaseURL }}
+    - port:
+        number: 8907
+        name: tls-mqtt-ws-auth
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - {{ .Values.global.enterpriseBaseURL }}
+    {{- if .Values.global.mtlsClearBlade }}
+     - port:
+        number: 444
+        name: tls-mtls
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - {{ .Values.global.enterpriseBaseURL }}
+    {{- end }}
+{{- end }}

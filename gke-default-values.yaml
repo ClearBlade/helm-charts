@@ -97,6 +97,9 @@ global:
   # Optional. Set to true if you wish to enable mTLS support on the ClearBlade pods. Leave blank or comment out if not using.
   # mtlsClearBlade:
 
+  # Optional. Set to true if you wish to enable TLS HTTP support on the ClearBlade pods. Leave blank or comment out if not using.
+  # useGateway: false
+
   # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
   # mtlsHAProxy:
 

@@ -1,3 +1,4 @@
+{{- if not .Values.global.disableHaproxy }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -6,3 +7,4 @@ metadata:
 data:
   haproxy.cfg: |
 {{ (tpl (.Files.Get "configs/haproxy.cfg") .) | b64enc | indent 4 }}
+{{- end }}

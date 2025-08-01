@@ -37,6 +37,37 @@ spec:
       targetPort: 9000
       port: {{ .Values.global.externalHaproxy.clearbladeHTTP }}
       protocol: TCP
+  {{- else if .Values.global.useGateway }}
+  type: ClusterIP
+  ports:
+    - name: tls-mqtt
+      port: 1884
+      targetPort: 1884
+      protocol: TCP
+    - name: tls-mqtt-ws
+      targetPort: 8904
+      port: 8904
+      protocol: TCP
+    - name: tls-mqtt-auth
+      targetPort: 8905
+      port: 8905
+      protocol: TCP
+    - name: tls-mqtt-ws-auth
+      targetPort: 8907
+      port: 8907
+      protocol: TCP
+    - name: edge-rpc
+      targetPort: 8950
+      port: 8950
+      protocol: TCP
+    - name: tls
+      targetPort: 9000
+      port: 9000
+      protocol: TCP
+    - name: tls-mtls
+      targetPort: 9001
+      port: 9001
+      protocol: TCP
   {{- else }}
   ports:
     - name: mqtt

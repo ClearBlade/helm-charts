@@ -20,6 +20,7 @@ limitCPU: 2
 limitMemory: 8G
 http:
   httpPort: :9000 # Listen port for HTTP server
+  useGateway: false
   httpMTLSPort: :9001 # Listen port for HTTP mTLS server
   timeProfile: -1 # Enables time profiling of HTTP requests (in ms). Default is disabled (-1)
   gzipResponses: true # gzip http responses if http client supports it
