@@ -54,9 +54,6 @@ mqtt:
   qosMapSizeLimit: 200 # Max number of unacknowledged messages allowed for a client before we kill their connection. Set to 0 for no limit.
   logPingResps: false # Print a google cloud debug log for each time a PINGRESP is sent to a client
   logPubAcks: false # Print a google cloud debug log for each time a PUBACK is sent to a client
-database:
-  host: "" # optional, defaults to internal postgres service if left empty
-  port: "" # optional, defaults to 5432 if left empty
 iotCore:
   deviceTimestampCacheSeconds: 300
   cloudLoggingResourceType: global
@@ -99,6 +96,8 @@ buckets:
   maxParallelSyncEvents: 10
   rootDir: /tmp/clearblade_platform_buckets
 database:
+  host: "" # optional, defaults to internal postgres service if left empty
+  port: "" # optional, defaults to 5432 if left empty
   mongoOperationTimeoutSeconds: 60
   mongoMaxPoolSize: 100
   dbStore: postgres # Database store to use. postgres for platform and sqlite for edge

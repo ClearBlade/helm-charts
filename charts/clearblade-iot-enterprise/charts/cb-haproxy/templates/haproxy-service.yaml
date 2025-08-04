@@ -47,6 +47,12 @@ spec:
       targetPort: 8906
       port: {{ .Values.ports.mqttAuth }}
       protocol: TCP
+      {{- if .Values.mqttAuthOver8905 }}
+    - name: mqtt-auth-unsecure
+      targetPort: 8905
+      port: {{ .Values.ports.mqttAuthUnsecure }}
+      protocol: TCP
+      {{- end }}
     - name: mqtt-ws-auth
       targetPort: 8907
       port: {{ .Values.ports.mqttWSAuth }}
@@ -55,12 +61,12 @@ spec:
       targetPort: 8951
       port: {{ .Values.ports.edge }}
       protocol: TCP
-    {{- if .Values.mqttOver1883}}
+      {{- if .Values.mqttOver1883}}
     - name: mqtt-old
       targetPort: 1883
       port: 1883
       protocol: TCP
-    {{- end }}
+      {{- end }}
   selector:
     app: cb-haproxy
 ---
