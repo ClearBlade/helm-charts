@@ -9,7 +9,7 @@ limitMemory: 1G
 runAsRoot: true
 mqttOver443: true
 mqttOver1883: false
-certRenewal: false
+certRenewal: true
 renewalDays: 30
 ip:
   primary: 0.0.0.0
@@ -20,6 +20,7 @@ ports:
   mqtt: 1884
   mqttWS: 8904
   mqttAuth: 8906
+  mqttAuthUnsecure: 8905
   mqttWSAuth: 8907
   edge: 8951
   farmer: 8765

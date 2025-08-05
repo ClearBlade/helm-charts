@@ -132,7 +132,7 @@ cb-haproxy:
   # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
   mqttOver443: false
   # Automatic cert renewal with letencrypt
-  certRenewal: false
+  certRenewal: true
   # days out to renew cert
   renewalDays: 5
 cb-iotcore:
@@ -191,3 +191,15 @@ clearblade:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
+  # Place any additional clearblade configs here. REQUIRES ClearBlade 2025.2.0 or newer!
+  # clearbladeConfig: |
+    
+    # Custom configurations added via values.yaml
+    # [Security]
+    # InsecureAuth = false
+    # MEKStorageLocation = "/etc/clearblade/mek"
+
+    # [Debug]
+    # DisablePprof = false
+    # PprofCPUInterval = 600
+    # PprofHeapInterval = 600
