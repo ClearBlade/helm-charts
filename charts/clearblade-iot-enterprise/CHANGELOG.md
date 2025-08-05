@@ -7,3 +7,7 @@ Let's Encrypt Certificate Auto-Renewal: The chart now defaults to enabling autom
 ## [3.2.2] - 2025-08-05
 
 Port Additions: Added optional configurable unsecure ports for mtls-auth
+
+## [3.3.0] - 2025-08-05
+
+GDC Supprt: Added required functionality to support GDC deployments

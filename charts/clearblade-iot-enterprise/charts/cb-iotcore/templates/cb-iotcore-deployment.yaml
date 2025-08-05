@@ -44,7 +44,11 @@ spec:
       {{- end }}
       containers:
         - name: cb-iotcore
+          {{- if .Values.imageURL }}
+          image: {{- .Values.imageURL }}
+          {{- else }}
           image: gcr.io/api-project-320446546234/iotcore:{{ .Values.version }}
+          {{- end }}
           command:  ["iotcore"]
           args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-regions={{ .Values.regions }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}"]
           volumeMounts:

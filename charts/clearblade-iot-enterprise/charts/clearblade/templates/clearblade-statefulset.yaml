@@ -165,7 +165,11 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
+          {{- if .Values.imageURLBlue }}
+          image: {{- .Values.imageURLBlue }}
+          {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
+          {{- end }}
           command: ["clearblade"]
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
@@ -429,7 +433,9 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterpriseGreenVersion }}
+          {{- if .Values.imageURLGreen }}
+          image: {{- .Values.imageURLGreen }}
+          {{- else if .Values.global.enterpriseGreenVersion }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseGreenVersion }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"

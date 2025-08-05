@@ -146,8 +146,10 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
+          {{- if .Values.runAsRoot }}
           securityContext:
             runAsUser: 0
+          {{- end }}
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
