@@ -6,6 +6,7 @@ requestCPU: 1
 requestMemory: 1G
 limitCPU: 1
 limitMemory: 1G
+runAsRoot: true
 mqttOver443: true
 mqttOver1883: false
 certRenewal: false

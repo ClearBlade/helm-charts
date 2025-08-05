@@ -146,7 +146,7 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
-          {{- if not .Values.global.gdcEnabled }}
+          {{- if .Values.runAsRoot }}
           securityContext:
             runAsUser: 0
           {{- end }}
