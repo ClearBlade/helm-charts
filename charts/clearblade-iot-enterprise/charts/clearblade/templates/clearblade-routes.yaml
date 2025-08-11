@@ -1,0 +1,119 @@
+{{- if .Values.global.useGateway }}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: https-route
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: https # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - backendRefs:
+        - name: clearblade-service
+          port: 9002
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-route
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: http # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /.well-known/acme-challenge
+      backendRefs:
+      - name: clearblade-service
+        port: 9000
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: mqtt-tlsroute
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: tls-mqtt  # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - backendRefs:
+        - name: clearblade-service
+          port: 1884
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: mqtt-ws-tlsroute
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: tls-mqtt-ws  # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - backendRefs:
+        - name: clearblade-service
+          port: 8904
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: mqtt-auth-tlsroute
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: tls-mqtt-auth  # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - backendRefs:
+        - name: clearblade-service
+          port: 8905
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: mqtt-ws-auth-tlsroute
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: tls-mqtt-ws-auth  # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - backendRefs:
+        - name: clearblade-service
+          port: 8907
+---
+{{- if .Values.global.mtlsClearBlade }}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: mtls-tlsroute
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  parentRefs:
+    - name: clearblade-gateway
+      sectionName: tls-mtls  # This matches the listener name in the Gateway
+  hostnames:
+    - {{ .Values.global.enterpriseBaseURL }}
+  rules:
+    - backendRefs:
+        - name: clearblade-service
+          port: 9001
+{{- end }}
+{{- end }}

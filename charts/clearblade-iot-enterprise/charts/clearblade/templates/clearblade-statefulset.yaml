@@ -86,18 +86,14 @@ spec:
               yum install -y hostname
               {{- end}}
               {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-              echo "here 1"
               certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
-              echo "here 2 ${certificates}"
               for i in "${certificate_array[@]}"
               do
-                echo "here 3"
                 echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
-              echo "here 4"
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -149,7 +145,7 @@ spec:
             - name: mek
               mountPath: /etc/clearblade/mek/
             {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-            - name: mtls-cert-volume
+            - name: cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
       containers:
@@ -230,8 +226,18 @@ spec:
             - "-message-auth-use-tls=true"
             - "-message-ws-use-tls=true"
             - "-message-auth-ws-use-tls=true"
-            - "-use-reverse-proxy=true"
+            - "-enable-reverse-proxy=true"
             - "-console-host=cb-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-ia-host=cb-ia-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-iotcore-host=cb-iotcore-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-ops-console-host=cb-ops-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- if .Values.global.certRenewal }}
+            - "-enable-automatic-certificate-renewal=true"
+            - "-renewal-max-days={{ .Values.global.renewalDays }}"
+            - "-cert-renewal-email={{ .Values.global.certRenewalEmail }}"
+            - "-cert-renewal-project-id={{ .Values.global.gcpProject }}"
+            - "-cert-renewal-namespace={{ default "clearblade" .Values.global.namespace }}"
+            {{- end }}
             {{- end }}
           env:
             - name: GODEBUG
@@ -242,7 +248,7 @@ spec:
             - name: mek
               mountPath: /etc/clearblade/mek/
             {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-            - name: mtls-cert-volume
+            - name: cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
           resources:
@@ -272,7 +278,7 @@ spec:
         - name: mek
           emptyDir: {}
         {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-        - name: mtls-cert-volume
+        - name: cert-volume
           emptyDir: {}
         {{- end}}
 ---
@@ -423,7 +429,7 @@ spec:
             - name: mek
               mountPath: /etc/clearblade/mek/
             {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-            - name: mtls-cert-volume
+            - name: cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
       containers:
@@ -508,8 +514,11 @@ spec:
             - "-message-auth-use-tls=true"
             - "-message-ws-use-tls=true"
             - "-message-auth-ws-use-tls=true"
-            - "-use-reverse-proxy=true"
+            - "-enable-reverse-proxy=true"
             - "-console-host=cb-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-ia-host=cb-ia-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-iotcore-host=cb-iotcore-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-ops-console-host=cb-ops-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
             {{- end }}
           env:
             - name: GODEBUG
@@ -520,7 +529,7 @@ spec:
             - name: mek
               mountPath: /etc/clearblade/mek/
             {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-            - name: mtls-cert-volume
+            - name: cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
           resources:
@@ -550,6 +559,6 @@ spec:
         - name: mek
           emptyDir: {}
         {{- if or (.Values.global.mtlsClearBlade) (.Values.global.useGateway) }}
-        - name: mtls-cert-volume
+        - name: cert-volume
           emptyDir: {}
         {{- end}}

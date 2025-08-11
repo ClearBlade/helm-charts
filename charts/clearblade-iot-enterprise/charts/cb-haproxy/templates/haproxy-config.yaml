@@ -1,4 +1,4 @@
-{{- if not .Values.global.disableHaproxy }}
+{{- if not .Values.global.useGateway }}
 apiVersion: v1
 kind: Secret
 metadata:

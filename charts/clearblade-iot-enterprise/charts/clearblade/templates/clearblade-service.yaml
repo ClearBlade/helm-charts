@@ -60,14 +60,24 @@ spec:
       targetPort: 8950
       port: 8950
       protocol: TCP
-    - name: tls
+    - name: http
       targetPort: 9000
       port: 9000
+      protocol: TCP
+    - name: tls
+      targetPort: 9002
+      port: 9002
       protocol: TCP
     - name: tls-mtls
       targetPort: 9001
       port: 9001
       protocol: TCP
+    {{- if .Values.global.certRenewal }}
+    - name: acme
+      targetPort: 5001
+      port: 5001
+      protocol: TCP
+    {{- end }}
   {{- else }}
   ports:
     - name: mqtt
