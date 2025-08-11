@@ -25,7 +25,7 @@ http:
   gzipResponses: true # gzip http responses if http client supports it
   enableExtendedWebhookURLs: true
 mqtt:
-  allowDuplicateClientID: false
+  allowDuplicateClientID: true
   maxPublishSize: ":5000000"
   enforceKeepAlive: false
   ignorePermissionErrors: true

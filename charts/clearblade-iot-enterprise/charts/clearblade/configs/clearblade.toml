@@ -79,6 +79,7 @@ AllowSettingSendQuota = {{ .Values.mqtt.allowSettingSendQuota }} # Allow MQTT5 c
 QosMapSizeLimit = {{ .Values.mqtt.qosMapSizeLimit }} # Max number of unacknowledged messages allowed for a client before we kill their connection. Set to 0 for no limit.
 LogPingResps = {{ .Values.mqtt.logPingResps }} # Print a google cloud debug log for each time a PINGRESP is sent to a client
 LogPubAcks = {{ .Values.mqtt.logPubAcks }} # Print a google cloud debug log for each time a PUBACK is sent to a client
+ShareGroupLocalPreference = {{ .Values.mqttShareGroupLocalPreference }}
 
 [Database]
 {{- if .Values.global.externalPostgresHost }}
@@ -172,7 +173,7 @@ MaxLockWaitTime = {{ .Values.locks.maxLockWaitTime}}
 BumpInterval = {{ .Values.locks.bumpInterval}} # Number of seconds in between wait queue bumps to prevent locks getting stuck
 CheckLockLock = {{ .Values.locks.checkLockLock}} # whether to check Lock(); Lock(); sequence which is valid in our javascript
 EnableBumpingWaitQueue = {{ .Values.locks.enableBumpingWaitQueue}} # Should we periodically bump the wait queues to prevent locks getting stuck
-LockStore = "{{ .Values.locks.lockStore}}" # The location to store lock requests. "kvs" for the key value store or "postgres".
+LockStore = "kvs" #"{{ .Values.locks.lockStore}}" The location to store lock requests. "kvs" for the key value store or "postgres".
 
 [KVStore]
 {{ if .Values.global.gcpMemoryStoreEnabled }}
