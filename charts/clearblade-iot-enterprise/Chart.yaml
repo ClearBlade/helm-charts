@@ -13,6 +13,10 @@ dependencies:
     version: 3.2.0
     condition: cb-haproxy.enabled
     repository: file://charts/cb-haproxy
+  - name: cb-gateway
+    version: 3.2.0
+    condition: cb-gateway.enabled
+    repository: file://charts/cb-gateway
   - name: clearblade
     version: 3.2.0
     repository: file://charts/clearblade

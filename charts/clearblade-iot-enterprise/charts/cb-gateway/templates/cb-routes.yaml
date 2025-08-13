@@ -6,7 +6,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: https # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}
@@ -22,7 +22,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: http # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}
@@ -42,7 +42,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: tls-mqtt  # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}
@@ -58,7 +58,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: tls-mqtt-ws  # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}
@@ -74,7 +74,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: tls-mqtt-auth  # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}
@@ -90,7 +90,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: tls-mqtt-ws-auth  # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}
@@ -107,7 +107,7 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   parentRefs:
-    - name: clearblade-gateway
+    - name: cb-gateway
       sectionName: tls-mtls  # This matches the listener name in the Gateway
   hostnames:
     - {{ .Values.global.enterpriseBaseURL }}

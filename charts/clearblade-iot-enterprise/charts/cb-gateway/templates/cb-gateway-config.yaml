@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cb-gateway-config
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+data:
+  deployment: |
+    spec:
+      replicas: {{ .Values.replicas }}
+      template:
+        spec:
+          containers:
+            - name: istio-proxy
+              resources:
+                requests:
+                  cpu: "{{ .Values.requestCPU }}"
+                  memory: "{{ .Values.requestMemory }}"
+                limits:
+                  cpu: "{{ .Values.limitCPU }}"
+                  memory: "{{ .Values.limitMemory }}"
+
+  service: |
+    spec:
+      loadBalancerIP: {{ .Values.ip.primary }}

@@ -1,0 +1,7 @@
+replicas: 1
+requestCPU: 2
+requestMemory: 8Gi
+limitCPU: 2
+limitMemory: 8Gi
+ip:
+  primary: 0.0.0.0

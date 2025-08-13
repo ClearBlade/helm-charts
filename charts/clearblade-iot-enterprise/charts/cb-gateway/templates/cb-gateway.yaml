@@ -2,9 +2,14 @@
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: Gateway
 metadata:
-  name: clearblade-gateway
+  name: cb-gateway
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
+  infrastructure:
+    parametersRef:
+      group: ""
+      kind: ConfigMap
+      name: cb-gateway-config
   gatewayClassName: istio
   listeners:
     - name: http
