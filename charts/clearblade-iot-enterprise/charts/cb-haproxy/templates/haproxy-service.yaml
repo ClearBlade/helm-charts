@@ -105,6 +105,10 @@ spec:
       targetPort: 1884
       port: 8883
       protocol: TCP
+    - name: http
+      targetPort: 8080
+      port: 80
+      protocol: TCP
   selector:
     app: cb-haproxy
 {{- end }}
