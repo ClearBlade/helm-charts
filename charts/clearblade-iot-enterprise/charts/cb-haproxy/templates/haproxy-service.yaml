@@ -17,54 +17,70 @@ spec:
   {{- end }}
   externalTrafficPolicy: Local
   ports:
+      {{- if .Values.ports.httpEnabled }}
     - name: http
       targetPort: 8080
       port: {{ .Values.ports.http }}
       protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.httpsEnabled }}
     - name: https
       targetPort: 8443
       port: {{ .Values.ports.https }}
       protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.mtlsEnabled }}
     - name: mtls
       targetPort: 444
-      port: 8444
+      port: {{ .Values.ports.mtls }}
       protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.mqttEnabled }}
     - name: mqtt
       targetPort: 1884
       port: {{ .Values.ports.mqtt }}
       protocol: TCP
-      {{- if .Values.ports.secondaryMqtt }}
+      {{- end }}
+      {{- if .Values.ports.secondaryMqttEnabled }}
     - name: secondary-mqtt
       targetPort: 1884
       port: {{ .Values.ports.secondaryMqtt }}
       protocol: TCP
       {{- end }}
+      {{- if .Values.ports.mqttWSEnabled }}
     - name: mqtt-ws
       targetPort: 8904
       port: {{ .Values.ports.mqttWS }}
       protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.mqttAuthEnabled }}
     - name: mqtt-auth
       targetPort: 8906
       port: {{ .Values.ports.mqttAuth }}
       protocol: TCP
-      {{- if .Values.mqttAuthOver8905 }}
+      {{- end }}
+      {{- if .Values.ports.mqttAuthUnsecureEnabled }}
     - name: mqtt-auth-unsecure
       targetPort: 8905
       port: {{ .Values.ports.mqttAuthUnsecure }}
       protocol: TCP
       {{- end }}
+      {{- if .Values.ports.mqttWSAuthEnabled }}
     - name: mqtt-ws-auth
       targetPort: 8907
       port: {{ .Values.ports.mqttWSAuth }}
       protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.edgeRPCEnabled }}
     - name: edge-rpc
       targetPort: 8951
       port: {{ .Values.ports.edge }}
       protocol: TCP
-      {{- if .Values.mqttOver1883}}
+      {{- end }}
+      {{- if .Values.ports.mqttUnsecureEnabled}}
     - name: mqtt-old
       targetPort: 1883
-      port: 1883
+      port: {{ .Values.ports.mqttUnsecure }}
       protocol: TCP
       {{- end }}
   selector:
@@ -97,14 +113,18 @@ spec:
   loadBalancerIP: {{.Values.mqttIP}}
   externalTrafficPolicy: Local
   ports:
+      {{- if .Values.ports.mqttURLMQTTEnabled }}
     - name: mqtt
       targetPort: 1884
-      port: 443
+      port: {{ .Values.ports.mqttURLMQTT }}
       protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.mqttURLSecondaryMQTTEnabled }}
     - name: mqtt-secondary
       targetPort: 1884
-      port: 8883
+      port: {{ .Values.ports.mqttURLSecondaryMQTT }}
       protocol: TCP
+      {{- end }}
   selector:
     app: cb-haproxy
 {{- end }}
