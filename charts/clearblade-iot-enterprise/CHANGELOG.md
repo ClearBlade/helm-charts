@@ -15,3 +15,7 @@ GDC Support: Added required functionality to support GDC deployments
 ## [3.3.1] - 2025-08-14
 
 Haproxy Controller: Added functionality to support secondary MQTT URL in certificates generated. Opened port 80 on MQTT URL
+
+## [3.3.2] - 2025-08-22
+
+Ports: All ports for both the primary and mqtt URL's are now configurable. Bug fix in metric and license renewal webhooks
