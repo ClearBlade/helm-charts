@@ -10,4 +10,8 @@ Port Additions: Added optional configurable unsecure ports for mtls-auth
 
 ## [3.3.0] - 2025-08-05
 
-GDC Supprt: Added required functionality to support GDC deployments
+GDC Support: Added required functionality to support GDC deployments
+
+## [3.3.1] - 2025-08-14
+
+Haproxy Controller: Added functionality to support secondary MQTT URL in certificates generated. Opened port 80 on MQTT URL

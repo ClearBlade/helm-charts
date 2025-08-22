@@ -169,6 +169,10 @@ spec:
           env: 
             - name: PLATFORM_URL
               value: "{{ .Values.global.enterpriseBaseURL }}"
+              {{- if .Values.global.enterpriseMQTTURL }}
+            - name: MQTT_URL
+              value: "{{ .Values.global.enterpriseMQTTURL }}"
+              {{- end }}
             - name: TESTING_MODE
               value: "false"
             - name: CERT_PATH

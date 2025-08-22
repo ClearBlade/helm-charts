@@ -124,7 +124,10 @@ spec:
       targetPort: 1884
       port: {{ .Values.ports.mqttURLSecondaryMQTT }}
       protocol: TCP
-      {{- end }}
+    - name: http
+      targetPort: 8080
+      port: 80
+      protocol: TCP
   selector:
     app: cb-haproxy
 {{- end }}
