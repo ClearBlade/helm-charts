@@ -19,3 +19,9 @@ Haproxy Controller: Added functionality to support secondary MQTT URL in certifi
 ## [3.3.2] - 2025-08-22
 
 Ports: All ports for both the primary and mqtt URL's are now configurable. Bug fix in metric and license renewal webhooks
+
+## [3.3.3] - 2025-08-28
+
+Ciphers: Haproxy allows the use of weaker ciphers for backwards compatitibility. Disabled by default. New value cb-haproxy.useWeakCiphers
+
+Log Format: ClearBlade now sets the config flag 'log-format' to json. This cannot be overwritten.
