@@ -210,6 +210,7 @@ spec:
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
             - "-mek-storage-location=/etc/clearblade/mek"
+            - "-log-format=json"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
@@ -480,6 +481,7 @@ spec:
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
             - "-mek-storage-location=/etc/clearblade/mek"
+            - "-log-format=json"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
