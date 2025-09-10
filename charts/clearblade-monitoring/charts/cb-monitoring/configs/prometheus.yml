@@ -26,27 +26,21 @@ scrape_configs:
     kubernetes_sd_configs:
     - role: endpoints
     scheme: https
-
     tls_config:
       ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-
     relabel_configs:
     - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
       action: keep
       regex: default;kubernetes;https
 
   - job_name: 'kubernetes-nodes'
-
     scheme: https
-
     tls_config:
       ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-
     kubernetes_sd_configs:
     - role: node
-
     relabel_configs:
     - action: labelmap
       regex: __meta_kubernetes_node_label_(.+)
@@ -58,10 +52,8 @@ scrape_configs:
       replacement: /api/v1/nodes/${1}/proxy/metrics     
   
   - job_name: 'kubernetes-pods'
-
     kubernetes_sd_configs:
     - role: pod
-
     relabel_configs:
     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
       action: keep
@@ -86,7 +78,7 @@ scrape_configs:
   
   - job_name: 'kube-state-metrics'
     static_configs:
-      - targets: ['kube-state-metrics.gmp-public.svc.cluster.local:8080']
+    - targets: ['kube-state-metrics.gmp-public.svc.cluster.local:8080']
 
   - job_name: 'kubernetes-cadvisor'
 
@@ -231,3 +223,19 @@ scrape_configs:
     static_configs:
     - targets:
       - cb-haproxy-monitoring-service.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:9101
+
+
+  {{- range $n := .Values.global.bladeRunnerNamespace }}
+  - job_name: 'blade-runner-monitoring'
+    scrape_interval: 15s
+    metric_relabel_configs:
+    - source_labels: [instance]
+      regex: '(.*):.*'
+      replacement: '$1'
+      target_label: instance
+    static_configs:
+    - targets:
+      {{- range $i, $e := until ($.Values.bladeRunnerReplicas | int)}}
+      - blade-runner-monitoring-service-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
+      {{- end}}
+    {{- end }}

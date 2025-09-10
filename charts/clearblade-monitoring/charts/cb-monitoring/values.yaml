@@ -24,13 +24,13 @@ alerts:
       username: 'example@gmail.com'
       password: 'password'
   containerRestartEnabled: true
-  containerRestartPriority: low
+  containerRestartPriority: high
   podNotReadyEnabled: true
   podNotReadPriority: low
   podFailedEnabled: true
   podFailedPriority: low
   podOOMEnabled: true
-  podOOMPriority: low
+  podOOMPriority: high
   #container CPU percentage threshold
   highCPUEnabled: true
   highCPUThreshold: 90
