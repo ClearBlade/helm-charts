@@ -27,3 +27,7 @@ Requires platform version 2025.2.2
 Ciphers: Haproxy allows the use of weaker ciphers for backwards compatitibility. Disabled by default. New value cb-haproxy.useWeakCiphers
 
 Log Format: ClearBlade now sets the config flag 'log-format' to json. This cannot be overwritten.
+
+## [3.3.4] - 2025-09-10
+
+Haproxy: Updates the log format to add detail for debugging
