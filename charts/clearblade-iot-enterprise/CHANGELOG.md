@@ -22,6 +22,8 @@ Ports: All ports for both the primary and mqtt URL's are now configurable. Bug f
 
 ## [3.3.3] - 2025-08-28
 
+Requires platform version 2025.2.2
+
 Ciphers: Haproxy allows the use of weaker ciphers for backwards compatitibility. Disabled by default. New value cb-haproxy.useWeakCiphers
 
 Log Format: ClearBlade now sets the config flag 'log-format' to json. This cannot be overwritten.
