@@ -165,7 +165,7 @@ spec:
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
-          image: "gcr.io/api-project-320446546234/cb_controller:latest"
+          image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
           env: 
             - name: PLATFORM_URL
               value: "{{ .Values.global.enterpriseBaseURL }}"
@@ -191,6 +191,14 @@ spec:
               value: "serversupport@clearblade.com"
             - name: RENEWAL_DAYS
               value: "{{ .Values.renewalDays}}"
+            - name: ACME_DIRECTORY
+              value: "{{ .Values.acmeDirectory }}"
+            - name: ACME_EMAIL
+              value: "{{ .Values.acmeEmail }}"
+            - name: ACME_EAB_KID
+              value: "{{ .Values.acmeEabKid }}"
+            - name: ACME_EAB_KEY
+              value: "{{ .Values.acmeEabKey }}"
           ports:
             - containerPort: 9999
               name: controller
