@@ -11,10 +11,7 @@ mqttOver443: true
 certRenewal: true
 renewalDays: 30
 controllerVersion: latest
-acmeDirectory: ""
-acmeEmail: ""
-acmeEabKid: ""
-acmeEabKey: ""
+acmeConfig: []
 ip:
   primary: 0.0.0.0
   mqtt: 0.0.0.0

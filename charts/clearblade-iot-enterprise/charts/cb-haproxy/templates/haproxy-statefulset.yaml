@@ -191,14 +191,8 @@ spec:
               value: "serversupport@clearblade.com"
             - name: RENEWAL_DAYS
               value: "{{ .Values.renewalDays}}"
-            - name: ACME_DIRECTORY
-              value: "{{ .Values.acmeDirectory }}"
-            - name: ACME_EMAIL
-              value: "{{ .Values.acmeEmail }}"
-            - name: ACME_EAB_KID
-              value: "{{ .Values.acmeEabKid }}"
-            - name: ACME_EAB_KEY
-              value: "{{ .Values.acmeEabKey }}"
+            - name: ACME_CONFIG_PATH
+              value: "usr/local/etc/haproxy/acme.json"
           ports:
             - containerPort: 9999
               name: controller
