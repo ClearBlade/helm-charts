@@ -35,6 +35,9 @@ spec:
           secret:
             secretName: cb-haproxy-config 
         {{- if .Values.certRenewal }}
+        - name: haproxy-acme-volume
+          configMap:
+            name: cb-haproxy-acme
         - name: haproxy-controller-volume
           emptyDir: {}
         {{- end }}
@@ -73,9 +76,9 @@ spec:
           - "-c"
           - |
             set -x;
-            while [ $(curl -sw '%{http_code}' "clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
-              echo waiting for clearblade; sleep 5;
-            done;
+            # while [ $(curl -sw '%{http_code}' "clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
+            #   echo waiting for clearblade; sleep 5;
+            # done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
         {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
@@ -158,6 +161,8 @@ spec:
             {{- if .Values.certRenewal }}
             - name: haproxy-controller-volume
               mountPath: /var/run
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             {{- end }}
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
@@ -165,7 +170,7 @@ spec:
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
-          image: "gcr.io/api-project-320446546234/cb_controller:latest"
+          image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
           env: 
             - name: PLATFORM_URL
               value: "{{ .Values.global.enterpriseBaseURL }}"
@@ -191,6 +196,8 @@ spec:
               value: "serversupport@clearblade.com"
             - name: RENEWAL_DAYS
               value: "{{ .Values.renewalDays}}"
+            - name: ACME_CONFIG_PATH
+              value: "usr/local/etc/acme/acme.json"
           ports:
             - containerPort: 9999
               name: controller
@@ -206,6 +213,8 @@ spec:
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl/
             - name: haproxy-controller-volume
