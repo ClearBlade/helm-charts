@@ -37,7 +37,7 @@ spec:
         {{- if .Values.certRenewal }}
         - name: haproxy-acme-volume
           configMap:
-            configMapName: cb-haproxy-acme
+            name: cb-haproxy-acme
         - name: haproxy-controller-volume
           emptyDir: {}
         {{- end }}
