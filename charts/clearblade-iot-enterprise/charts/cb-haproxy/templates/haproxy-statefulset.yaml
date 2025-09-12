@@ -170,7 +170,7 @@ spec:
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
-          image: "gcr.io/api-project-320446546234/cb_controller:0.0.1"
+          image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
           env: 
             - name: PLATFORM_URL
               value: "{{ .Values.global.enterpriseBaseURL }}"
