@@ -156,8 +156,6 @@ spec:
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
-            - name: haproxy-acme-volume
-              mountPath: /usr/local/etc/acme/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl
             {{- if .Values.certRenewal }}
@@ -167,6 +165,8 @@ spec:
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
