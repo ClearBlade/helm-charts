@@ -31,6 +31,9 @@ spec:
                         - cb-haproxy
                 topologyKey: "topology.kubernetes.io/zone"
       volumes:
+        - name: haproxy-acme-volume
+          configMap:
+            configMapName: cb-haproxy-acme
         - name: haproxy-config-volume
           secret:
             secretName: cb-haproxy-config 
@@ -153,6 +156,8 @@ spec:
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl
             {{- if .Values.certRenewal }}
@@ -192,7 +197,7 @@ spec:
             - name: RENEWAL_DAYS
               value: "{{ .Values.renewalDays}}"
             - name: ACME_CONFIG_PATH
-              value: "usr/local/etc/haproxy/acme.json"
+              value: "usr/local/etc/acme/acme.json"
           ports:
             - containerPort: 9999
               name: controller
@@ -208,6 +213,8 @@ spec:
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl/
             - name: haproxy-controller-volume

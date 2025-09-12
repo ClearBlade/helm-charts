@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cb-haproxy-acme
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+data:
+  acme.json: |
+    {{ .Values.acmeConfig | toJson }}

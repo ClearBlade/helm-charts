@@ -5,6 +5,4 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 data:
   haproxy.cfg: |
-    {{ (tpl (.Files.Get "configs/haproxy.cfg") .) | b64enc | indent 4 }}
-  acme.json: |
-    {{ .Values.acmeConfig | toJson }}
+{{ (tpl (.Files.Get "configs/haproxy.cfg") .) | b64enc | indent 4 }}
