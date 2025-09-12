@@ -78,7 +78,7 @@ spec:
             set -x;
             # while [ $(curl -sw '%{http_code}' "clearblade-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
             #   echo waiting for clearblade; sleep 5;
-            done;
+            # done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
         {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
