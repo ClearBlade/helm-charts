@@ -31,13 +31,13 @@ spec:
                         - cb-haproxy
                 topologyKey: "topology.kubernetes.io/zone"
       volumes:
-        - name: haproxy-acme-volume
-          configMap:
-            configMapName: cb-haproxy-acme
         - name: haproxy-config-volume
           secret:
             secretName: cb-haproxy-config 
         {{- if .Values.certRenewal }}
+        - name: haproxy-acme-volume
+          configMap:
+            configMapName: cb-haproxy-acme
         - name: haproxy-controller-volume
           emptyDir: {}
         {{- end }}
@@ -161,12 +161,12 @@ spec:
             {{- if .Values.certRenewal }}
             - name: haproxy-controller-volume
               mountPath: /var/run
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             {{- end }}
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
               mountPath: /etc/mtls/
-            - name: haproxy-acme-volume
-              mountPath: /usr/local/etc/acme/
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
