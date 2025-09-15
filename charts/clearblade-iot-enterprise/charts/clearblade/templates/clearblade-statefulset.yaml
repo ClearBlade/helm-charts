@@ -214,8 +214,8 @@ spec:
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
-            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
@@ -484,8 +484,8 @@ spec:
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
-            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
