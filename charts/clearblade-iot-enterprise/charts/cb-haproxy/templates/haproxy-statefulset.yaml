@@ -180,6 +180,7 @@ spec:
               {{- end }}
             - name: TESTING_MODE
               value: "false"
+              # TODO: UPDATE THIS TO CERT_DIR
             - name: CERT_PATH
               value: etc/ssl/clearblade-0.pem
             - name: MQTT_CERT_PATH
@@ -199,7 +200,7 @@ spec:
             - name: ACME_CONFIG_PATH
               value: "usr/local/etc/acme/acme.json"
           ports:
-            - containerPort: 9999
+            - containerPort: 5001
               name: controller
           resources:
             limits:
