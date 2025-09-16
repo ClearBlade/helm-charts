@@ -180,9 +180,8 @@ spec:
               {{- end }}
             - name: TESTING_MODE
               value: "false"
-              # TODO: UPDATE THIS TO CERT_DIR
-            - name: CERT_PATH
-              value: etc/ssl/clearblade-0.pem
+            - name: CERT_DIR
+              value: etc/ssl
             - name: MQTT_CERT_PATH
               value: etc/ssl/clearblade-1.pem
             - name: CONFIG_PATH
