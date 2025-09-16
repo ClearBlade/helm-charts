@@ -93,12 +93,8 @@ spec:
           args:
             - -c
             - |
-              {{- if eq .Values.global.secretManager "gsm"}}
-              certificates="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)"
-              {{- end }}
               {{- if eq .Values.global.secretManager "asm"}}
               certificates="$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_tls-certificates --region us-east-1 --query SecretString --output text)"
-              {{- end }}
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               for each in "${certificate_array[@]}"
               do
@@ -110,6 +106,7 @@ spec:
                 echo "$i" > /etc/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
+            {{- end }}
             {{- if .Values.certRenewal }}
               apk add ca-certificates
               mkdir -p /etc/ssl/certs
@@ -172,18 +169,8 @@ spec:
         - name: haproxy-controller
           image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
           env: 
-            - name: PLATFORM_URL
-              value: "{{ .Values.global.enterpriseBaseURL }}"
-              {{- if .Values.global.enterpriseMQTTURL }}
-            - name: MQTT_URL
-              value: "{{ .Values.global.enterpriseMQTTURL }}"
-              {{- end }}
-            - name: TESTING_MODE
-              value: "false"
             - name: CERT_DIR
               value: etc/ssl
-            - name: MQTT_CERT_PATH
-              value: etc/ssl/clearblade-1.pem
             - name: CONFIG_PATH
               value: usr/local/etc/haproxy/haproxy.cfg
             - name: ADDRESS
@@ -192,8 +179,6 @@ spec:
               value: {{ .Values.global.gcpProject }}
             - name: NAMESPACE
               value: {{ .Values.global.namespace }}
-            - name: EMAIL
-              value: "serversupport@clearblade.com"
             - name: RENEWAL_DAYS
               value: "{{ .Values.renewalDays}}"
             - name: ACME_CONFIG_PATH

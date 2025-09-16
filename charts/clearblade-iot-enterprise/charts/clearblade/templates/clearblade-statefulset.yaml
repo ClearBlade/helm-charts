@@ -79,6 +79,7 @@ spec:
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
+          # TODO: IF the certificate is in the secret manager and matches to enterpriseBaseURL, save it to disk.
           args:
             - -c
             - |
@@ -350,6 +351,7 @@ spec:
           args:
             - -c
             - |
+            # TODO: NEED TO SUPPORT THE NEW FORMAT HERE. Check the CN of the certificate and see if it matches the enterpriseBaseURL
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}

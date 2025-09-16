@@ -5,4 +5,27 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 data:
   acme.json: |
-    {{ .Values.acmeConfig | toJson }}
+    {{- $config := .Values.acmeConfig | default (list) }}
+
+    {{- if eq (len $config) 0}}
+      {{- $domains := list .Values.global.enterpriseBaseURL }}
+      {{- if .Values.global.enterpriseMQTTURL }}
+        {{- $domains = append $domains .Values.global.enterpriseMQTTURL }}
+      {{- end }}
+
+      {{- $defaultConfig := list
+        (dict 
+          "directory" "https://acme-v02.api.letsencrypt.org/directory" 
+          "key_type" "rsa" 
+          "email" "serversupport@clearblade.com" 
+          "domains" $domains 
+          "file_name" "clearblade-0.pem"
+        )
+      }}
+
+      {{- $_ := set $ "finalConfig" $defaultConfig }}
+    {{- else}}
+      {{- $_ := set $ "finalConfig" $config }}
+    {{- end }}
+
+    {{ .finalConfig | toJson }}
