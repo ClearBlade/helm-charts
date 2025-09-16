@@ -34,7 +34,6 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "cb-postgres.labels" -}}
-helm.sh/chart: {{ include "cb-postgres.chart" . }}
 {{ include "cb-postgres.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
