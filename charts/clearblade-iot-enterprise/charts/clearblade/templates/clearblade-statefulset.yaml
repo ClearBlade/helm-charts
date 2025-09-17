@@ -71,6 +71,36 @@ spec:
               sleep 5
             done
           {{- end }}
+        {{- if .Values.global.mtlsClearBlade}}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -79,22 +109,11 @@ spec:
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
-          # TODO: IF the certificate is in the secret manager and matches to enterpriseBaseURL, save it to disk.
           args:
             - -c
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -227,6 +246,7 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
+            - "-log-format=json"
           env:
             - name: GODEBUG
               value: netdns=go
@@ -343,6 +363,37 @@ spec:
               sleep 5
             done
           {{- end }}
+
+        {{- if .Values.global.mtlsClearBlade}}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -351,22 +402,11 @@ spec:
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
-          # TODO: NEED TO SUPPORT THE NEW FORMAT HERE. Check the CN of the certificate and see if it matches the enterpriseBaseURL
           args:
             - -c
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -501,6 +541,7 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
+            - "-log-format=json"
           env:
             - name: GODEBUG
               value: netdns=go
