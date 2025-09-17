@@ -35,3 +35,9 @@ Haproxy: Updates the log format to add detail for debugging
 ## [3.3.5] - 2025-09-11
 
 ClearBlade: Adds helm value for database config toml
+
+## [3.3.6] - 2025-09-17
+
+ClearBlade: Add platform flag config for messagingURL
+
+Haproxy: Add new optional port for secondary unsecure mqtt traffic 
