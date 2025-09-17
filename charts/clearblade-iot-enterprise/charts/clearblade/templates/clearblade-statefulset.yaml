@@ -210,6 +210,9 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            {{- if .Valus.global.enterpriseMQTTURL}}
+            - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
@@ -481,6 +484,9 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            {{- if .Valus.global.enterpriseMQTTURL}}
+            - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"

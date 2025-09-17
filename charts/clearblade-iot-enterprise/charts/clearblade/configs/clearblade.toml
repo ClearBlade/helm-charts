@@ -2,6 +2,9 @@ Title = "ClearBlade IoT Enterprise Configuration File"
 
 [Database]
 DBPassword = "{db_password}"
+{{- if .Values.databaseConfig }}
+{{ .Values.databaseConfig }}
+{{- end }}
 
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"

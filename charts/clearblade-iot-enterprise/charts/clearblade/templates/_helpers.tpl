@@ -34,7 +34,6 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "clearblade.labels" -}}
-helm.sh/chart: {{ include "clearblade.chart" . }}
 {{ include "clearblade.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}

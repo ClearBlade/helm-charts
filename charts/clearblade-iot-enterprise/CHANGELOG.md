@@ -31,3 +31,13 @@ Log Format: ClearBlade now sets the config flag 'log-format' to json. This canno
 ## [3.3.4] - 2025-09-10
 
 Haproxy: Updates the log format to add detail for debugging
+
+## [3.3.5] - 2025-09-11
+
+ClearBlade: Adds helm value for database config toml
+
+## [3.3.6] - 2025-09-17
+
+ClearBlade: Add platform flag config for messagingURL
+
+Haproxy: Add new optional port for secondary unsecure mqtt traffic 
