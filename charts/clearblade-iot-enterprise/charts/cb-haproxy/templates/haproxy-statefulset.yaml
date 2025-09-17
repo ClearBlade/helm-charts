@@ -86,7 +86,7 @@ spec:
           image: gcr.io/api-project-320446546234/cb_controller:cli-latest
           env: 
             - name: CERT_DIR
-              value: etc/ssl
+              value: etc/haproxy-ssl
             - name: PROJECT
               value: {{ .Values.global.gcpProject }}
             - name: NAMESPACE
@@ -96,7 +96,7 @@ spec:
 
           volumeMounts:
             - name: haproxy-cert-volume
-              mountPath: /etc/ssl/
+              mountPath: /etc/haproxy-ssl/
         {{- end }}
         {{- if eq .Values.global.secretManager "asm" }}
         - name: init
@@ -180,7 +180,7 @@ spec:
           image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
           env: 
             - name: CERT_DIR
-              value: etc/ssl
+              value: etc/haproxy-ssl
             - name: CONFIG_PATH
               value: usr/local/etc/haproxy/haproxy.cfg
             - name: ADDRESS
@@ -211,7 +211,7 @@ spec:
             - name: haproxy-acme-volume
               mountPath: /usr/local/etc/acme/
             - name: haproxy-cert-volume
-              mountPath: /etc/ssl/
+              mountPath: /etc/haproxy-ssl/
             - name: haproxy-controller-volume
               mountPath: /var/run
         {{- end }}
