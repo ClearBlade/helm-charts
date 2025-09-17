@@ -2,6 +2,49 @@ apiVersion: v1
 entries:
   clearblade-iot-enterprise:
   - apiVersion: v2
+    created: "2025-09-17T14:54:20.062679384Z"
+    dependencies:
+    - condition: cb-postgres.enabled
+      name: cb-postgres
+      repository: file://charts/cb-postgres
+      version: 3.3.6
+    - condition: cb-haproxy.enabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 3.3.6
+    - name: clearblade
+      repository: file://charts/clearblade
+      version: 3.3.6
+    - name: cb-console
+      repository: file://charts/cb-console
+      version: 3.3.6
+    - name: cb-file-hosting
+      repository: file://charts/cb-file-hosting
+      version: 3.3.6
+    - condition: cb-redis.enabled
+      name: cb-redis
+      repository: file://charts/cb-redis
+      version: 3.3.6
+    - condition: global.iotCoreEnabled
+      name: cb-iotcore
+      repository: file://charts/cb-iotcore
+      version: 3.3.6
+    - condition: global.iaEnabled
+      name: cb-ia
+      repository: file://charts/cb-ia
+      version: 3.3.6
+    - condition: global.opsConsoleEnabled
+      name: cb-ops-console
+      repository: file://charts/cb-ops-console
+      version: 3.3.6
+    description: ClearBlade IoT Enterprise
+    digest: 35ef6d736b9de533104a1e45ea30c488d17f7d4da98755590322f201c785d803
+    name: clearblade-iot-enterprise
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.3.6/clearblade-iot-enterprise-3.3.6.tgz
+    version: 3.3.6
+  - apiVersion: v2
     created: "2025-09-12T02:13:59.564576184Z"
     dependencies:
     - condition: cb-postgres.enabled
@@ -1400,6 +1443,24 @@ entries:
     version: 2.13.1
   clearblade-monitoring:
   - apiVersion: v2
+    created: "2025-09-17T14:54:20.260943571Z"
+    dependencies:
+    - condition: cb-monitoring.enabled
+      name: cb-monitoring
+      repository: file://charts/cb-monitoring
+      version: 2.14.7
+    - condition: cb-haproxy.enabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 2.14.7
+    description: ClearBlade IoT Enterprise monitoring
+    digest: d180fcafe472a9f2194fa7ddb4ac7b69438bdf6f6ffee45413c943c4679816ca
+    name: clearblade-monitoring
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.14.7/clearblade-monitoring-2.14.7.tgz
+    version: 2.14.7
+  - apiVersion: v2
     created: "2025-06-26T14:58:24.527454089Z"
     dependencies:
     - condition: cb-monitoring.enabled
@@ -1633,4 +1694,4 @@ entries:
     urls:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.0/clearblade-monitoring-2.13.0.tgz
     version: 2.13.0
-generated: "2025-09-12T02:13:59.565190188Z"
+generated: "2025-09-17T14:54:20.261444963Z"
