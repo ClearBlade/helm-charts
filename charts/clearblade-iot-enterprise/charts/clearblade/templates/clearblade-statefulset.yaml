@@ -211,6 +211,8 @@ spec:
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
             {{- if .Values.global.enterpriseMQTTURL}}
             - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- else }}
+            - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
             {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
             - "-log-format=json"
@@ -485,6 +487,8 @@ spec:
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
             {{- if .Values.global.enterpriseMQTTURL}}
             - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- else }}
+            - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
             {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
             - "-log-format=json"
