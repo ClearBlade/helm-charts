@@ -71,9 +71,9 @@ spec:
               sleep 5
             done
           {{- end }}
-        {{- if not .Values.global.mtlsClearBlade }}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: pull-mtls-certificate
-          image: gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
           env: 
             - name: CERT_DIR
               value: etc/clearblade/ssl
@@ -165,7 +165,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if not .Values.global.mtlsClearBlade }}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -242,7 +242,7 @@ spec:
             - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
-            {{- if not .Values.global.mtlsClearBlade }}
+            {{- if .Values.global.mtlsClearBlade }}
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
@@ -256,7 +256,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if not .Values.global.mtlsClearBlade }}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -286,7 +286,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if not .Values.global.mtlsClearBlade }}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
@@ -365,9 +365,9 @@ spec:
             done
           {{- end }}
 
-        {{- if not .Values.global.mtlsClearBlade }}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: pull-mtls-certificate
-          image: gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
           env: 
             - name: CERT_DIR
               value: etc/clearblade/ssl
@@ -458,7 +458,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if not .Values.global.mtlsClearBlade }}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -537,7 +537,7 @@ spec:
             - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
-            {{- if not .Values.global.mtlsClearBlade }}
+            {{- if .Values.global.mtlsClearBlade }}
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
@@ -551,7 +551,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if not .Values.global.mtlsClearBlade }}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -581,7 +581,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if not .Values.global.mtlsClearBlade }}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
