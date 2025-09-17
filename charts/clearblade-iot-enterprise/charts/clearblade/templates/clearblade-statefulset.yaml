@@ -354,7 +354,6 @@ spec:
               sleep 5
             done
           {{- end }}
-
         {{- if .Values.global.mtlsClearBlade }}
         - name: pull-mtls-certificate
           image: gcr.io/api-project-320446546234/cb_controller:cli-latest

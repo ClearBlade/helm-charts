@@ -47,7 +47,6 @@ spec:
             value: {{ .Values.global.namespace }}
           - name: PULL_ONLY
             value: "true"
-
         volumeMounts:
           - name: haproxy-cert-volume
             mountPath: /etc/ssl/
