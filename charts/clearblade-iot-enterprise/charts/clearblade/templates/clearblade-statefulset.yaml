@@ -71,7 +71,7 @@ spec:
               sleep 5
             done
           {{- end }}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if not .Values.global.mtlsClearBlade }}
         - name: pull-mtls-certificate
           image: gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}
           env: 
@@ -109,6 +109,7 @@ spec:
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
+          # TODO: IF the controller version is latest, then we need to do it via CLI
           args:
             - -c
             - |
@@ -164,7 +165,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if not .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -229,7 +230,7 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
-            {{- if .Valus.global.enterpriseMQTTURL}}
+            {{- if .Values.global.enterpriseMQTTURL}}
             - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
             {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
@@ -241,7 +242,7 @@ spec:
             - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
-            {{- if .Values.global.mtlsClearBlade }}
+            {{- if not .Values.global.mtlsClearBlade }}
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
@@ -255,7 +256,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if not .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -285,7 +286,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if not .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
@@ -364,7 +365,7 @@ spec:
             done
           {{- end }}
 
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if not .Values.global.mtlsClearBlade }}
         - name: pull-mtls-certificate
           image: gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}
           env: 
@@ -457,7 +458,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if not .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -524,7 +525,7 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
-            {{- if .Valus.global.enterpriseMQTTURL}}
+            {{- if .Values.global.enterpriseMQTTURL}}
             - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
             {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
@@ -536,7 +537,7 @@ spec:
             - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
-            {{- if .Values.global.mtlsClearBlade }}
+            {{- if not .Values.global.mtlsClearBlade }}
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
@@ -550,7 +551,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if not .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -580,7 +581,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if not .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
