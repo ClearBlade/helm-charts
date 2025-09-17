@@ -36,24 +36,21 @@ spec:
           emptyDir: {}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       initContainers:
-        - name: init
-          image: google/cloud-sdk:slim
-          command: ["/bin/bash"]
-          args:
-            - -c
-            # TODO: NEED TO USE THE CONTROLLER TO GRAB THESE
-            - |
-              certificates="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)"
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
-          volumeMounts:
-           - name: haproxy-cert-volume
-             mountPath: /etc/ssl/
+      - name: pull-certificates
+        image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+        env: 
+          - name: CERT_DIR
+            value: etc/ssl
+          - name: PROJECT
+            value: {{ .Values.global.gcpProject }}
+          - name: NAMESPACE
+            value: {{ .Values.global.namespace }}
+          - name: PULL_ONLY
+            value: "true"
+
+        volumeMounts:
+          - name: haproxy-cert-volume
+            mountPath: /etc/ssl/
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}

@@ -81,19 +81,30 @@ spec:
             done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
-        {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+        {{- if eq .Values.global.secretManager "gsm"}}
+        - name: pull-certificates
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+
+          volumeMounts:
+            - name: haproxy-cert-volume
+              mountPath: /etc/ssl/
+        {{- end }}
+        {{- if eq .Values.global.secretManager "asm" }}
         - name: init
-          {{- if eq .Values.global.secretManager "gsm"}}
-          image: google/cloud-sdk:slim
-          {{- end }}
-          {{- if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
-          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
-              {{- if eq .Values.global.secretManager "asm"}}
               certificates="$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_tls-certificates --region us-east-1 --query SecretString --output text)"
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               for each in "${certificate_array[@]}"
@@ -106,7 +117,6 @@ spec:
                 echo "$i" > /etc/ssl/clearblade-$x.pem
                 ((x=x+1))
               done
-            {{- end }}
             {{- if .Values.certRenewal }}
               apk add ca-certificates
               mkdir -p /etc/ssl/certs

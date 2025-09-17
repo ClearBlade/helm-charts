@@ -88,15 +88,6 @@ spec:
             - name: OUTPUT_FILE
               value: clearblade-0.pem
 
-          resources:
-            limits:
-              cpu: 250m
-              memory: 180Mi
-            requests:
-              cpu: 102m
-              memory: 180Mi
-          securityContext:
-            runAsUser: 0
           volumeMounts:
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
@@ -109,7 +100,6 @@ spec:
           image: amazon/aws-cli:latest
           {{- end }}
           command: ["/bin/bash"]
-          # TODO: IF the controller version is latest, then we need to do it via CLI
           args:
             - -c
             - |
@@ -382,13 +372,6 @@ spec:
             - name: OUTPUT_FILE
               value: clearblade-0.pem
 
-          resources:
-            limits:
-              cpu: 250m
-              memory: 180Mi
-            requests:
-              cpu: 102m
-              memory: 180Mi
           securityContext:
             runAsUser: 0
           volumeMounts:
