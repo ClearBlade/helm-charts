@@ -83,6 +83,12 @@ spec:
       port: {{ .Values.ports.mqttUnsecure }}
       protocol: TCP
       {{- end }}
+      {{- if .Values.ports.mqttUnsecureSecondaryEnabled}}
+    - name: mqtt-unsecure-secondary
+      targetPort: 1883
+      port: {{ .Values.ports.mqttUnsecureSecondary }}
+      protocol: TCP
+      {{- end }}
   selector:
     app: cb-haproxy
 ---
