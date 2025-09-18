@@ -41,3 +41,7 @@ ClearBlade: Adds helm value for database config toml
 ClearBlade: Add platform flag config for messagingURL
 
 Haproxy: Add new optional port for secondary unsecure mqtt traffic 
+
+## [3.3.7] - 2025-09-18
+
+ClearBlade: changed order of flag configurations due to platform bug

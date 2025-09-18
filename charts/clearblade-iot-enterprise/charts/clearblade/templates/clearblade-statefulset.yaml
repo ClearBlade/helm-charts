@@ -215,7 +215,6 @@ spec:
             - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
             {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
-            - "-log-format=json"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
@@ -229,6 +228,7 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
             {{- end }}
+            - "-log-format=json"
           env:
             - name: GODEBUG
               value: netdns=go
@@ -491,7 +491,6 @@ spec:
             - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
             {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
-            - "-log-format=json"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
@@ -505,6 +504,7 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
             {{- end }}
+            - "-log-format=json"
           env:
             - name: GODEBUG
               value: netdns=go
