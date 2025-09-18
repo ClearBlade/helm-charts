@@ -226,7 +226,7 @@ spec:
             {{- if .Values.global.mtlsClearBlade }}
             - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
             - "-enable-mutual-tls-auth=true"
-            - "check-certificate-cn-for-mtls=true"
+            - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             - "-log-format=json"
           env:
@@ -500,9 +500,9 @@ spec:
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
-            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             - "-enable-mutual-tls-auth=true"
-            - "check-certificate-cn-for-mtls=true"
+            - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             - "-log-format=json"
           env:
