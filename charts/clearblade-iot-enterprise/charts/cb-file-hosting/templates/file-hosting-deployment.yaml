@@ -45,9 +45,11 @@ spec:
           volumeMounts:
             - name: file-hosting-data
               mountPath: /data
-          args:
-            - "--data-dir=/data"
-            - "--port=80"
+          env: 
+            - name: BASE_DIR
+              value: "/data"
+            - name: PORT
+              value: "80"
           resources:
             requests:
               memory: {{ .Values.requestMemory }}
