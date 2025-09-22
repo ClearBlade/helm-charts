@@ -44,4 +44,4 @@ Haproxy: Add new optional port for secondary unsecure mqtt traffic
 
 ## [3.4.0] - 2025-09-17
 
-Haproxy Controller: ACME can now be done with multiple domains and any ACME directory
+Haproxy Controller: ACME can now be done with multiple domains and any ACME directory. The `clearblade-gsm-read` service account must have the Secret Manager Admin role.
