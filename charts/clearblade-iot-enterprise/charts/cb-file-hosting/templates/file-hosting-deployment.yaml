@@ -29,6 +29,10 @@ spec:
         operator: Exists
         effect: NoExecute
         tolerationSeconds: 0
+      volumes:
+        - name: file-hosting-data
+          persistentVolumeClaim:
+            claimName: cb-file-hosting-pvc
       containers:
         - name: cb-file-hosting
           {{- if .Values.imageURL }}
@@ -37,7 +41,13 @@ spec:
           image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
           {{- end }}
           ports:
-            - containerPort: 8915
+            - containerPort: 80
+          volumeMounts:
+            - name: file-hosting-data
+              mountPath: /data
+          args:
+            - "--data-dir=/data"
+            - "--port=80"
           resources:
             requests:
               memory: {{ .Values.requestMemory }}
