@@ -2,3 +2,5 @@ requestCPU: 1
 requestMemory: 1G
 limitCPU: 1
 limitMemory: 1G
+storageSize: 10Gi
+volumeHandle:
