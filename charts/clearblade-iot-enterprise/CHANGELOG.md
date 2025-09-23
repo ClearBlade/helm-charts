@@ -48,3 +48,6 @@ ClearBlade: changed order of flag configurations due to platform bug; Fixed mtls
 
 ## [3.3.8] - 2025-09-22
 ClearBlade: Add persistent volume to file hosting container
+
+## [3.4.0] - 2025-09-23
+Haproxy Controller: ACME can now be done with multiple domains and any ACME directory. The `clearblade-gsm-read` service account must have the Secret Manager Admin role.

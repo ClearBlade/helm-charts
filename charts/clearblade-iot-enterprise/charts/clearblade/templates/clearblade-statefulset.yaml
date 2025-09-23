@@ -71,6 +71,27 @@ spec:
               sleep 5
             done
           {{- end }}
+        {{- if .Values.global.mtlsClearBlade }}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -84,16 +105,6 @@ spec:
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -144,7 +155,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -219,8 +230,8 @@ spec:
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
-            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
@@ -237,7 +248,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -267,7 +278,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
@@ -345,6 +356,29 @@ spec:
               sleep 5
             done
           {{- end }}
+        {{- if .Values.global.mtlsClearBlade }}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -358,16 +392,6 @@ spec:
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -418,7 +442,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -495,8 +519,8 @@ spec:
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
-            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
@@ -513,7 +537,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -543,7 +567,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
