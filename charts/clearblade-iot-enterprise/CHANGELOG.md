@@ -42,6 +42,12 @@ ClearBlade: Add platform flag config for messagingURL
 
 Haproxy: Add new optional port for secondary unsecure mqtt traffic 
 
-## [3.4.0] - 2025-09-17
+## [3.3.7] - 2025-09-18
 
+ClearBlade: changed order of flag configurations due to platform bug; Fixed mtls config bug in charts
+
+## [3.3.8] - 2025-09-22
+ClearBlade: Add persistent volume to file hosting container
+
+## [3.4.0] - 2025-09-23
 Haproxy Controller: ACME can now be done with multiple domains and any ACME directory. The `clearblade-gsm-read` service account must have the Secret Manager Admin role.
