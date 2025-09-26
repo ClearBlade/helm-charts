@@ -111,8 +111,9 @@ spec:
   claimRef:
     namespace: {{ default "monitoring" .Values.global.namespace }}
     name: prometheus-pvc
-  gcePersistentDisk:
-    pdName: {{ .Values.prometheusDisk}}
+  csi:
+    driver: pd.csi.storage.gke.io
+    volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ .Values.prometheusDisk}}
     fsType: ext4
 {{- end }}
 {{- end}}

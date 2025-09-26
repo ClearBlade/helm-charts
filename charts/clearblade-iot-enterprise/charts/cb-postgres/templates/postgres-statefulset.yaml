@@ -216,7 +216,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
