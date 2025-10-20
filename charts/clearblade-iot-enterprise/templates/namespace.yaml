@@ -55,3 +55,73 @@ roleRef:
   kind: Role
   name: restrict-discovery
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cb-postgres
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cb-redis
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cb-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: {{ add .Values.clearblade.blueReplicas .Values.clearblade.greenReplicas}}
+  selector:
+    matchLabels:
+      app: clearblade
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hap-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: {{ index .Values "cb-haproxy" "replicas" }}
+  selector:
+    matchLabels:
+      app: cb-haproxy
+---
+{{- if .Values.global.iotcoreEnabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: iotcore-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cb-iotcore
+---
+{{- end }}
+{{- if .Values.global.iaEnabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ia-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cb-ia
+{{- end }}

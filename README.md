@@ -76,7 +76,7 @@ The default name for you Service Account should be `clearblade-gsm-read`. If you
 
 This Service Account is required to have the following Roles:
 
-- Secret Manager Secret Accessor
+- Secret Manager Admin
 
 ### Configuration
 

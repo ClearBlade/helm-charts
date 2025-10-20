@@ -6,21 +6,44 @@ requestCPU: 1
 requestMemory: 1G
 limitCPU: 1
 limitMemory: 1G
+runAsRoot: true
 mqttOver443: true
-mqttOver1883: false
-certRenewal: false
+certRenewal: true
 renewalDays: 30
+controllerVersion: latest
+acmeConfig: []
 ip:
   primary: 0.0.0.0
   mqtt: 0.0.0.0
 ports:
+  httpEnabled: true
   http: 80
+  httpsEnabled: true
   https: 443
+  mtlsEnabled: true
+  mtls: 8444
+  mqttEnabled: true
   mqtt: 1884
+  secondaryMqttEnabled: false
+  secondaryMqtt: 8883
+  mqttWSEnabled: true
   mqttWS: 8904
+  mqttAuthEnabled: true
   mqttAuth: 8906
+  mqttAuthUnsecureEnabled: false
+  mqttAuthUnsecure: 8905
+  mqttWSAuthEnabled: true
   mqttWSAuth: 8907
+  mqttUnsecureEnabled: false
+  mqttUnsecure: 1883
+  mqttUnsecureSecondaryEnabled: false
+  mqttUnsecureSecondary: 1885
+  edgeRPCEnabled: true
   edge: 8951
   farmer: 8765
   monitoring: 9090
+  mqttURLMQTTEnabled: true
+  mqttURLMQTT: 443
+  mqttURLSecondaryMQTTEnabled: true
+  mqttURLSecondaryMQTT: 8883
 stats_auth: clearblade

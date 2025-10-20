@@ -44,7 +44,11 @@ spec:
       {{- end }}
       containers:
         - name: cb-iotcore
+          {{- if .Values.imageURL }}
+          image: {{- .Values.imageURL }}
+          {{- else }}
           image: gcr.io/api-project-320446546234/iotcore:{{ .Values.version }}
+          {{- end }}
           command:  ["iotcore"]
           args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-regions={{ .Values.regions }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}"]
           volumeMounts:
@@ -64,7 +68,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}

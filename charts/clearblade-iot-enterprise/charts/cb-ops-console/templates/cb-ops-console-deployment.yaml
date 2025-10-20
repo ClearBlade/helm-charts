@@ -44,7 +44,11 @@ spec:
       {{- end }}
       containers:
         - name: cb-ops-console
+          {{- if .Values.imageURL }}
+          image: {{- .Values.imageURL }}
+          {{- else }}
           image: gcr.io/api-project-320446546234/ops-console:{{ .Values.version }}
+          {{- end }}
           command:  ["ops-console-sidecar"]
           args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-message-port=8904", "-message-tls=true"]
           volumeMounts:
@@ -64,7 +68,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}

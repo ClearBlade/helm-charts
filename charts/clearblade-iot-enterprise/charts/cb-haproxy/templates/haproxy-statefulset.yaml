@@ -36,6 +36,9 @@ spec:
           secret:
             secretName: cb-haproxy-config 
         {{- if .Values.certRenewal }}
+        - name: haproxy-acme-volume
+          configMap:
+            name: cb-haproxy-acme
         - name: haproxy-controller-volume
           emptyDir: {}
         {{- end }}
@@ -79,24 +82,31 @@ spec:
             done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
-        {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+        {{- if eq .Values.global.secretManager "gsm"}}
+        - name: pull-certificates
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/haproxy-ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+
+          volumeMounts:
+            - name: haproxy-cert-volume
+              mountPath: /etc/haproxy-ssl/
+        {{- end }}
+        {{- if eq .Values.global.secretManager "asm" }}
         - name: init
-          {{- if eq .Values.global.secretManager "gsm"}}
-          image: google/cloud-sdk:slim
-          {{- end }}
-          {{- if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
-          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
-              {{- if eq .Values.global.secretManager "gsm"}}
-              certificates="$(gcloud secrets versions access "latest" --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)"
-              {{- end }}
-              {{- if eq .Values.global.secretManager "asm"}}
               certificates="$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_tls-certificates --region us-east-1 --query SecretString --output text)"
-              {{- end }}
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               for each in "${certificate_array[@]}"
               do
@@ -129,7 +139,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
@@ -147,8 +160,10 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
+          {{- if .Values.runAsRoot }}
           securityContext:
             runAsUser: 0
+          {{- end }}
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
@@ -157,6 +172,8 @@ spec:
             {{- if .Values.certRenewal }}
             - name: haproxy-controller-volume
               mountPath: /var/run
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             {{- end }}
             {{- if .Values.global.mtlsHAProxy}}
             - name: haproxy-mtls-cert-volume
@@ -164,16 +181,10 @@ spec:
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
-          image: "gcr.io/api-project-320446546234/cb_controller:latest"
+          image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
           env: 
-            - name: PLATFORM_URL
-              value: "{{ .Values.global.enterpriseBaseURL }}"
-            - name: TESTING_MODE
-              value: "false"
-            - name: CERT_PATH
-              value: etc/ssl/clearblade-0.pem
-            - name: MQTT_CERT_PATH
-              value: etc/ssl/clearblade-1.pem
+            - name: CERT_DIR
+              value: etc/haproxy-ssl
             - name: CONFIG_PATH
               value: usr/local/etc/haproxy/haproxy.cfg
             - name: ADDRESS
@@ -182,12 +193,12 @@ spec:
               value: {{ .Values.global.gcpProject }}
             - name: NAMESPACE
               value: {{ .Values.global.namespace }}
-            - name: EMAIL
-              value: "serversupport@clearblade.com"
             - name: RENEWAL_DAYS
               value: "{{ .Values.renewalDays}}"
+            - name: ACME_CONFIG_PATH
+              value: "usr/local/etc/acme/acme.json"
           ports:
-            - containerPort: 9999
+            - containerPort: 5001
               name: controller
           resources:
             limits:
@@ -201,8 +212,10 @@ spec:
           volumeMounts:
             - name: haproxy-config-volume
               mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
             - name: haproxy-cert-volume
-              mountPath: /etc/ssl/
+              mountPath: /etc/haproxy-ssl/
             - name: haproxy-controller-volume
               mountPath: /var/run
         {{- end }}

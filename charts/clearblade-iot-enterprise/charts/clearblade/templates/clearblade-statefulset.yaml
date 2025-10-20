@@ -71,6 +71,27 @@ spec:
               sleep 5
             done
           {{- end }}
+        {{- if .Values.global.mtlsClearBlade }}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -165,7 +186,11 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
+          {{- if .Values.imageURLBlue }}
+          image: {{- .Values.imageURLBlue }}
+          {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
+          {{- end }}
           command: ["clearblade"]
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
@@ -205,17 +230,22 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            {{- if .Values.global.enterpriseMQTTURL}}
+            - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- else }}
+            - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
+            {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
-            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
-            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
             {{- else if .Values.global.useGateway }}
@@ -240,6 +270,7 @@ spec:
             - "-cert-renewal-namespace={{ default "clearblade" .Values.global.namespace }}"
             {{- end }}
             {{- end }}
+            - "-log-format=json"
           env:
             - name: GODEBUG
               value: netdns=go
@@ -266,7 +297,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
@@ -356,6 +390,29 @@ spec:
               sleep 5
             done
           {{- end }}
+        {{- if .Values.global.mtlsClearBlade }}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -450,7 +507,9 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterpriseGreenVersion }}
+          {{- if .Values.imageURLGreen }}
+          image: {{- .Values.imageURLGreen }}
+          {{- else if .Values.global.enterpriseGreenVersion }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseGreenVersion }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
@@ -494,17 +553,22 @@ spec:
             - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
             - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
             - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            {{- if .Values.global.enterpriseMQTTURL}}
+            - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- else }}
+            - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
+            {{- end }}
             - "-mek-storage-location=/etc/clearblade/mek"
             {{- if .Values.license.key }}
             - "-pkey={{ .Values.license.key }}"
             {{- end }}
             - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
-            - "-license-renewal-webhooks={{ .Values.license.renewalWebhooks }}"
-            - "-metrics-reporting-webhooks={{ .Values.license.metricsWebhooks }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
             {{- if .Values.global.mtlsClearBlade }}
-            - "-cert=\"/etc/clearblade/ssl/clearblade-0.pem\""
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             - "-enable-mutual-tls-auth=true"
             - "check-certificate-cn-for-mtls=true"
             {{- else if .Values.global.useGateway }}
@@ -522,6 +586,7 @@ spec:
             - "-iotcore-host=cb-iotcore-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
             - "-ops-console-host=cb-ops-console-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
             {{- end }}
+            - "-log-format=json"
           env:
             - name: GODEBUG
               value: netdns=go
@@ -548,7 +613,13 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.greenNodeSelector}}
+      nodeSelector:
+        {{ .Values.greenNodeSelector }}
+      {{- else if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
