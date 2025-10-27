@@ -62,7 +62,7 @@ data:
       {{- end}}
       {{- if $.Values.alerts.highCPUEnabled }}
      - alert: {{$n.name}}HighCPU
-       expr: round(sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highCPUThreshold }}
+       expr: round(100.0 * sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highCPUThreshold }}
        for: 10m
        labels:
          priority: {{ $.Values.alerts.highCPUPriority }}
@@ -92,7 +92,7 @@ data:
       {{- end}}
       {{- if $.Values.alerts.highMemEnabled }}
      - alert: {{$n.name}}HighMemoryUsage
-       expr: round(sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", container!="cb-postgres", namespace="{{ $n.name }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highMemThreshold }}
+       expr: round(100.0 * sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", container!="cb-postgres", namespace="{{ $n.name }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highMemThreshold }}
        for: 2m
        labels:
          priority: {{ $.Values.alerts.highMemPriority }}
