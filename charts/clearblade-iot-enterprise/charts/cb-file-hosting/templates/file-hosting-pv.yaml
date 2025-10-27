@@ -1,3 +1,4 @@
+{{- if ne $.Values.global.cloud "gdc" }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -24,3 +25,4 @@ spec:
   driver: ebs.csi.aws.com
   volumeHandle: {{ .Values.volumeHandle }}
   {{- end }}
+{{- end }}

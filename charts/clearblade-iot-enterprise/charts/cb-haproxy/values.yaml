@@ -1,5 +1,6 @@
 replicas: 1
 monitoringEnabled: false
+checkClearBladeReadiness: true
 image: haproxy
 imageTag: 2.9-alpine
 requestCPU: 1

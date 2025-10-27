@@ -1,0 +1,150 @@
+global:
+  # Required. Supported clouds are "aws" and "gcp". As this values file is for GKE, the value should be "gcp".
+  cloud: gdc
+
+  # Optional. Namespace to deploy to. Default is "clearblade"
+  namespace: user-project
+
+  # Required. Manually define the image puller secret key needed to pull the container images from GCR. Leave blank or comment out if not using.
+  imagePullerSecret: 
+
+  # Required. The base URL the platform will be reachable at. Format: "example.com"
+  enterpriseBaseURL: localhost.clearblade.com
+
+  # Optional. The URL the ClearBlade Console will be reachable at. Format: "example.com". Leave blank or comment out if not using.
+  # enterpriseConsoleURL:
+
+  # Optional. Highly recommended to create a unique registration key for new users to register with the platform. Leave blank or comment out if not using.
+  enterpriseRegistrationKey: 
+
+  # Optional. Utilized during Blue/Green upgrades. See README for detailed process explanation. Leave blank or comment out if not using.
+  # enterpriseSlot: blue
+
+  # Required. Set to true if you are using GCP's Cloud SQL instead of postgres.
+  gcpCloudSQLEnabled: false
+
+  # Required if using Cloud SQL. Leave blank or comment out if not using.
+  # gcpCloudSQLConnectionName:
+
+  # Required. Set to true if you are using GCP's MemoryStore instead of redis.
+  gcpMemoryStoreEnabled: false
+
+  # Required if using MemoryStore. Leave blank or comment out if not using.
+  # gcpMemoryStoreAddress:
+
+  # Optional. Set to true if you manage the namespace outside of Helm. Leave blank or comment out if not using.
+  predefinedNamespace: true
+
+  # Required in GDC. Directly input your TLS certificate.
+  tlsCertificate: |
+    -----BEGIN CERTIFICATE-----
+    
+    -----END CERTIFICATE-----
+    -----BEGIN PRIVATE KEY-----
+
+    -----END PRIVATE KEY-----
+
+  # Required in GDC. Directly input your mekfile provided by ClearBlade if not using a secret manager. Leave blank or comment out if not using.
+  mekfile: |
+    {}
+
+  # Required in GDC. Directly input your postgres password if not using a secret manager. Leave blank or comment out if not using.
+  postgresPassword: password
+
+  # Optional. Define the storage class used by all Persistent Volume Claims in the deployment. Leave blank or comment out if not using.
+  storageClassName: standard-rwo
+
+  # Optional. Set to true if you wish to enable mTLS support on the ClearBlade pods. Leave blank or comment out if not using.
+  # mtlsClearBlade:
+
+  # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
+  # mtlsHAProxy:
+
+  # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
+  # monitoringEnabled:
+
+  # Optional. Set to true if you are using Google Managed Prometheus. Leave blank or comment out if not using.
+  # gmpEnabled:
+
+# Requests and limits for CPU/memory have default settings in each chart values file. They can be overidden for each chart below.
+cb-console:
+  imageURL: "repo:tag"
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+cb-file-hosting:
+  imageURL: "repo:tag"
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+cb-haproxy:
+  # imageURL: "user-haas-instance-user-project.org-1.zone1.google.gdch.test/clearblade/fh:cb"
+  image: repo
+  imageTag: tag
+  initImage: "repo:tag"
+  checkClearBladeReadiness: true
+  replicas: 1
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  # Required. Set to false if using an external HAProxy deployment.
+  enabled: true
+  # Required if using this HAProxy. The primary external IP address for the deployment.
+  primaryIP:
+  # Required if utilizing external MQTT connections. Leave blank or comment out if not using.
+  mqttIP:
+  # Required. Set to true if you would like MQTT connections to work over 443. MQTT IP required
+  mqttOver443: false
+  # Leave false for GDC
+  certRenewal: false
+cb-postgres:
+  # Required. Set to false if using an external postgres deployment.
+  image: repo
+  imageTag: tag
+  enabled: true
+  replicas: 1
+  requestCPU: 1
+  requestMemory: 2G
+  limitCPU: 1
+  limitMemory: 2G
+cb-redis:
+  image: repo
+  imageTag: tag
+  enabled: true
+  # Not available in GDC
+  highAvailability: false
+  requestCPU: 1
+  requestMemory: 2G
+  limitCPU: 1
+  limitMemory: 2G
+clearblade:
+  # Required. If not using blue/green deployments, blue is the default. See the README for an explanation on blue/green deployments.
+  blueReplicas: 1
+  imageURLBlue: "repo:tag"
+  # Required. If not using blue/green deployments, set to 0. See the README for an explanation on blue/green deployments.
+  greenReplicas: 0
+  init: false
+  initImage: "repo:tag"
+  # Required. Set to true to allow duplicate client IDs. Set to false to reject duplicate connections.
+  mqttAllowDuplicateClientID: true
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  license:
+    key: ""
+  # Place any additional clearblade configs here. REQUIRES ClearBlade 2025.2.0 or newer!
+  # clearbladeConfig: |
+    
+    # Custom configurations added via values.yaml
+    # [Security]
+    # InsecureAuth = false
+    # MEKStorageLocation = "/etc/clearblade/mek"
+
+    # [Debug]
+    # DisablePprof = false
+    # PprofCPUInterval = 600
+    # PprofHeapInterval = 600
