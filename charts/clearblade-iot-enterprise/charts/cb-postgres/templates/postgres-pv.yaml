@@ -1,4 +1,4 @@
-{{- if ne $.Values.global.cloud "gdc" }}
+{{- if or (ne $.Values.global.cloud "gdc") ($.Values.global.enablePersistentVolumes) }}
 {{- range $i, $e := until (.Values.replicas | int)}}
 apiVersion: v1
 kind: PersistentVolume
@@ -17,8 +17,16 @@ spec:
   csi:
   {{- if eq $.Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io
+    {{- if $.Values.volumeHandle}}
+    volumeHandle: "{{ $.Values.volumeHandle }}"
+    {{- else }}
     volumeHandle: "projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.postgresDiskName }}-{{$i}}"
+    {{- end }}
     fsType: ext4
+  {{- else if eq $.Values.global.cloud "gdc"}}
+    driver: "{{ $.Values.global.driver }}"
+    volumeHandle: "{{ $.Values.global.postgresVolumeHandle }}"
+    fsType: "{{ $.Values.global.fsType }}"
   {{- else if eq $.Values.global.cloud "aws" }}
   driver: ebs.csi.aws.com
   volumeHandle: {{ $.Values.volumeHandle }}

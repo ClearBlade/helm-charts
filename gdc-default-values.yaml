@@ -35,6 +35,22 @@ global:
   # Optional. Set to true if you manage the namespace outside of Helm. Leave blank or comment out if not using.
   predefinedNamespace: true
 
+  #Optional. Set to true to enable the use of persistent volumes. If set to true, the following values MUST be set as well: driver, fsType, postgresVolumeHandle, and fileHostingVolumeHandle. Can only be disabled in GDC envs
+  enablePersistentVolumes: false
+
+  #GDC specific, used for Persistent Volumes attached to disks. Required if enablePersistentVolumes is set to true in GDC deployments
+  #driver: 
+
+  #GDC specific, used for Persistent Volumes attached to disks. Required if enablePersistentVolumes is set to true in GDC deployments
+  #fsType: 
+
+  #GDC specific, used for Persistent Volumes attached to disks. Required if enablePersistentVolumes is set to true in GDC deployments
+  #postgresVolumeHandle: 
+
+  #GDC specific, used for Persistent Volumes attached to disks. Required if enablePersistentVolumes is set to true in GDC deployments
+  #fileHostingVolumeHandle: 
+  
+
   # Required in GDC. Directly input your TLS certificate.
   tlsCertificate: |
     -----BEGIN CERTIFICATE-----
