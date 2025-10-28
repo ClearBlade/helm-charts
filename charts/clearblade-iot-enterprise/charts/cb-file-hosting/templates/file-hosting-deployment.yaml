@@ -36,7 +36,7 @@ spec:
       containers:
         - name: cb-file-hosting
           {{- if .Values.imageURL }}
-          image: {{- .Values.imageURL }}
+          image: "{{- .Values.imageURL }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
           {{- end }}

@@ -18,6 +18,10 @@ spec:
         app: cb-haproxy
         app.kubernetes.io/name: managed-prom
     spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -69,8 +73,13 @@ spec:
         effect: NoExecute
         tolerationSeconds: 0
       initContainers:
+      {{- if .Values.checkClearBladeReadiness }}
         - name: check-clearblade-readiness
+          {{- if .Values.initImage }}
+          image: "{{- .Values.initImage }}"
+          {{- else }}
           image: ellerbrock/alpine-bash-curl-ssl
+          {{- end }}
           command:
           - bash
           - "-c"
@@ -81,6 +90,7 @@ spec:
             done;
             # Give clearblade just a little more time to really start for real
             sleep 10;
+      {{- end }}
         {{- if eq .Values.global.secretManager "gsm"}}
         - name: pull-certificates
           image: gcr.io/api-project-320446546234/cb_controller:cli-latest

@@ -1,3 +1,4 @@
+{{- if or (ne $.Values.global.cloud "gdc") ($.Values.global.enablePersistentVolumes) }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -18,9 +19,18 @@ spec:
   csi:
   {{- if eq .Values.global.cloud "gcp" }}
     driver: pd.csi.storage.gke.io
+    {{- if $.Values.volumeHandle}}
+    volumeHandle: "{{ .Values.volumeHandle }}"
+    {{- else }}
     volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ default "clearblade" .Values.global.namespace }}-file-hosting
+    {{- end }}
     fsType: ext4
+  {{- else if eq $.Values.global.cloud "gdc"}}
+    driver: "{{ .Values.global.driver }}"
+    volumeHandle: "{{ .Values.global.fileHostingVolumeHandle }}"
+    fsType: "{{ .Values.global.fsType }}"
   {{- else if eq .Values.global.cloud "aws" }}
   driver: ebs.csi.aws.com
   volumeHandle: {{ .Values.volumeHandle }}
   {{- end }}
+{{- end }}

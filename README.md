@@ -182,3 +182,24 @@ You may change the `blueReplicas` value to 0, run the upgrade command, and exclu
 The console and file hosting version, beginning in helm charts 3.1.11, is controlled by `global.enterpriseConsoleVersion`, and must be manually updated in addition to the platform version. This value can be updated prior to any of the helm upgrade commands above, which will restart those 2 containers and run the new version.
 
 
+# GDC
+
+In order to install this platform on a GDC air-gapped environment, a minumum of helm chart version 3.4.2 is required. Using the gdc-default-values.yaml template file, follow the following steps to deploy:
+
+## Steps
+
+Upload the required images to Harbor or your local image repositories. ClearBlade minimum version 2025.3.1 is required.
+
+Fill out the template yaml file with the required image repositories and tags. Aquire mekfile and license from ClearBlade, and place in corresponding helm value overrides.
+
+Create an image puller secret and place base64 encoded into values yaml file
+
+Set your desired resource requests and limits.
+
+Run
+
+`helm install <release-name> -f <path to values yaml file> <path to clearblade-iot-enterprise tgz file> --namespace <desired namespace to host helm deployment>`
+
+Create DNS record of your base URL at the external IP of the cb-haproxy-service
+
+You should now be able to access the dev console from within your air-gapped network at your baseURL/console . You can register using your set registration key and grant yourself admin priveledge by running `clearblade setadmin user@example.com` on any running ClearBlade container.

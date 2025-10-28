@@ -32,7 +32,7 @@ spec:
       containers:
         - name: cb-console
           {{- if .Values.imageURL }}
-          image: {{- .Values.imageURL }}
+          image: "{{- .Values.imageURL }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/cb_console:{{ .Values.global.enterpriseConsoleVersion }}"
           {{- end }}

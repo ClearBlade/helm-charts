@@ -2,6 +2,7 @@ monitoringEnabled: true
 namespace: clearblade
 blueReplicas: 3
 greenReplicas: 0
+checkReadiness: true
 logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
