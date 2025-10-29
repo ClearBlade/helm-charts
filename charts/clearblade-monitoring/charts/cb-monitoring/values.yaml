@@ -73,8 +73,8 @@ alerts:
   MQTTDisconnectDerivPriority: low
   #days until license expires threshold
   licenseExpiryEnabled: true
-  licenseExpiryThreshold: 10
-  licenseExpiryPriority: low
+  licenseExpiryThreshold: 7
+  licenseExpiryPriority: high
   #alerts when number of clearblade nodes can possibly exceed max connections to DB
   possibleDBConnectionMaxEnabled: true
   possibleDBConnectionMaxPriority: low
