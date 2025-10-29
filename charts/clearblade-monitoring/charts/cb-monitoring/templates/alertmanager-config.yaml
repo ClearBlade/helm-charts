@@ -29,6 +29,20 @@ stringData:
 
       routes:
         - match:
+            frequency: 'daily'
+            
+          # Override the global repeat_interval (1h)
+          repeat_interval: 24h
+
+          routes:
+            - match:
+                priority: 'high'
+              receiver: 'highReceiver'
+            - match:
+                priority: 'low'
+              receiver: 'lowReceiver'
+
+        - match:
             priority: 'low'
           receiver: 'lowReceiver'
         - match:
