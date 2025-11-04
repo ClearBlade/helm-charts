@@ -49,7 +49,7 @@ data:
       {{- end}}
       {{- if $.Values.alerts.podOOMEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} PodOOMKilled
-       expr: kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled",namespace="{{ $n.name }}"} == 1
+       expr: increase(kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled",namespace="{{ $n.name }}"}[5m]) > 0
        for: 1m
        labels:
          priority: {{ $.Values.alerts.podOOMPriority }}

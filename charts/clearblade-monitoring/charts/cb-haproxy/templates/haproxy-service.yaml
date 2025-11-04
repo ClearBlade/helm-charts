@@ -15,18 +15,18 @@ spec:
       targetPort: 8443
       port: {{ .Values.ports.https }}
       protocol: TCP
-    - name: prometheus
-      targetPort: 9090
-      port: 9090
-      protocol: TCP
+      {{- if .Values.global.gmpEnabled }}
     - name: prometheus-managed
       targetPort: 9000
       port: 9000
       protocol: TCP
+      {{- end }}
+      {{- if .Values.grafanaEnabled }}  
     - name: grafana
       targetPort: 3000
       port: 3000
-      protocol: TCP   
+      protocol: TCP
+      {{- end }}   
     - name: exporter
       targetPort: 9876
       port: 9876
