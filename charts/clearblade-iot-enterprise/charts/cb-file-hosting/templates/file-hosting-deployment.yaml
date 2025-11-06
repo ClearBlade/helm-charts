@@ -40,6 +40,9 @@ spec:
           {{- else }}
           image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
           {{- end }}
+          env:
+          - name: PORT
+            value: "80"
           ports:
             - containerPort: 80
           volumeMounts:
