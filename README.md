@@ -66,7 +66,17 @@ The following 5 Secrets are required, and must follow the specific naming patter
 | `<namespace>_postgres-postgres-password` | Postgres superuser password     |
 | `<namespace>_postgres-primary-password`    | Postgres primary password    |
 | `<namespace>_postgres-replica-password`    | Postgres replic password    |
-| `<namespace>_tls-certificates`    | TLS Certificate and Key for the domain you will be accessing your instance at in `.pem` format    |
+| `<namespace>_tls-certificates`    | JSON Object where each key is the filename for a TLS certificate and the value is the base64 encoded pem contents of the cetificate and key.  |
+
+For example, the `tls-certificates` secrets should look like this:
+```
+{
+    "clearblade-0.pem": "<base64 .pem file>",
+    "clearblade-1.pem": "<base64 .pem file>",
+}
+```
+
+The certificates can be referenced by filename when specifying values for `platformCertName` and `mqttCertName`.
 
 #### Service Account
 
@@ -203,6 +213,3 @@ Run
 Create DNS record of your base URL at the external IP of the cb-haproxy-service
 
 You should now be able to access the dev console from within your air-gapped network at your baseURL/console . You can register using your set registration key and grant yourself admin priveledge by running `clearblade setadmin user@example.com` on any running ClearBlade container.
-
-
-// TODO: Update docs for secret and add new version
