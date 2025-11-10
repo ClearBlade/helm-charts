@@ -203,3 +203,6 @@ Run
 Create DNS record of your base URL at the external IP of the cb-haproxy-service
 
 You should now be able to access the dev console from within your air-gapped network at your baseURL/console . You can register using your set registration key and grant yourself admin priveledge by running `clearblade setadmin user@example.com` on any running ClearBlade container.
+
+
+// TODO: Update docs for secret and add new version
