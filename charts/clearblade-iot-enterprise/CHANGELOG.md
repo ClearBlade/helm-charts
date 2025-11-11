@@ -60,4 +60,4 @@ All pods: All pods now have individual nodeselectors, allowing for fine grained 
 
 ## [3.4.3] - 2025-11-10
 
-Haproxy: The MQTT listener can serve a different TLS certificates than other listeners.
+Haproxy: MQTT listeners can serve a different TLS certificate than other listeners.
