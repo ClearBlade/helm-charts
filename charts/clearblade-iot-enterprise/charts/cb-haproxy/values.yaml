@@ -13,6 +13,8 @@ certRenewal: true
 renewalDays: 30
 controllerVersion: latest
 acmeConfig: []
+platformCertName: ""
+mqttCertName: ""
 ip:
   primary: 0.0.0.0
   mqtt: 0.0.0.0

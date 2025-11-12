@@ -57,3 +57,7 @@ Haproxy Controller: ACME can now be done with multiple domains and any ACME dire
 ## [3.4.1] - 2025-09-26
 
 All pods: All pods now have individual nodeselectors, allowing for fine grained node distribution
+
+## [3.4.3] - 2025-11-10
+
+Haproxy: MQTT listeners can serve a different TLS certificate than other listeners.
