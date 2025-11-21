@@ -33,6 +33,9 @@ spec:
         - name: file-hosting-data
           persistentVolumeClaim:
             claimName: cb-file-hosting-pvc
+        - name: file-hosting-config
+          secret:
+            secretName: cb-file-hosting-config 
       containers:
         - name: cb-file-hosting
           {{- if .Values.imageURL }}
@@ -45,11 +48,15 @@ spec:
           volumeMounts:
             - name: file-hosting-data
               mountPath: /data
+            - name: file-hosting-config
+              mountPath: /etc/clearblade/conf
           env: 
             - name: BASE_DIR
               value: "/data"
             - name: PORT
               value: "80"
+            - name: HMAC_SECRET_FILE
+              value: "/etc/clearblade/conf/hmac_secret.txt"
           resources:
             requests:
               memory: {{ .Values.requestMemory }}
