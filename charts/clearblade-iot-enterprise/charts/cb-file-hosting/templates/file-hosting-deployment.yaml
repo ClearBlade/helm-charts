@@ -36,6 +36,31 @@ spec:
         - name: file-hosting-config
           secret:
             secretName: cb-file-hosting-config 
+      initContainers:
+        - name: pull-hmac-secret
+          {{- if eq .Values.global.secretManager "gsm"}}
+          image: google/cloud-sdk:slim
+          {{- end }}
+          {{- if eq .Values.global.secretManager "asm"}}
+          image: amazon/aws-cli:latest
+          {{- end }}
+          {{- if eq .Values.global.cloud "gdc"}}
+          image: "{{ .Values.initImage }}"
+          {{- end }}
+          command: ["/bin/bash"]
+          args:
+            - -c
+            - |
+              {{- if eq .Values.global.secretManager "asm"}}
+              yum install -y hostname
+              {{- end}}
+              set -ex
+              # Generate clearblade host from pod ordinal index.
+              {{- if eq .Values.global.secretManager "gsm" }}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
+              {{- else if eq .Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
+              {{- end }}
       containers:
         - name: cb-file-hosting
           {{- if .Values.imageURL }}
@@ -56,7 +81,7 @@ spec:
             - name: PORT
               value: "80"
             - name: HMAC_SECRET_FILE
-              value: "/etc/clearblade/conf/hmac_secret.txt"
+              value: "/etc/clearblade/filehosting_hmac_secret"
           resources:
             requests:
               memory: {{ .Values.requestMemory }}
