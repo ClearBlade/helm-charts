@@ -55,9 +55,10 @@ spec:
               yum install -y hostname
               {{- end}}
               set -ex
-              # Generate clearblade host from pod ordinal index.
+              echo "Pulling hmac secret"
               {{- if eq .Values.global.secretManager "gsm" }}
               gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
+              echo "did the pull"
               {{- else if eq .Values.global.secretManager "asm"}}
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
               {{- end }}
