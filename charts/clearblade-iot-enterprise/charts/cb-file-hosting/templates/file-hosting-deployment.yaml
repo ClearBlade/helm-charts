@@ -16,6 +16,9 @@ spec:
         app: cb-file-hosting
         app.kubernetes.io/name: managed-prom
     spec:
+      {{- if eq .Values.global.secretManager "gsm" }}
+      serviceAccountName: clearblade-gsm-read
+      {{- end }}
       {{- if .Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
@@ -34,8 +37,7 @@ spec:
           persistentVolumeClaim:
             claimName: cb-file-hosting-pvc
         - name: file-hosting-config
-          secret:
-            secretName: cb-file-hosting-config 
+          emptyDir: {}
       initContainers:
         - name: pull-hmac-secret
           {{- if eq .Values.global.secretManager "gsm"}}
@@ -55,13 +57,14 @@ spec:
               yum install -y hostname
               {{- end}}
               set -ex
-              echo "Pulling hmac secret"
               {{- if eq .Values.global.secretManager "gsm" }}
               gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
-              echo "did the pull"
               {{- else if eq .Values.global.secretManager "asm"}}
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
               {{- end }}
+          volumeMounts:
+            - name: file-hosting-config
+              mountPath: /etc/clearblade/
       containers:
         - name: cb-file-hosting
           {{- if .Values.imageURL }}
@@ -75,7 +78,7 @@ spec:
             - name: file-hosting-data
               mountPath: /data
             - name: file-hosting-config
-              mountPath: /etc/clearblade/conf
+              mountPath: /etc/clearblade/
           env: 
             - name: BASE_DIR
               value: "/data"
