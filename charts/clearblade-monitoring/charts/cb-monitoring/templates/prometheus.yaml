@@ -25,6 +25,11 @@ spec:
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus/"
+          {{- if .Values.retentionLength}}
+            - "--storage.tsdb.retention.time=30d"
+          {{- else}}
+            - "--storage.tsdb.retention.size={{ .Values.retentionSize }}"
+          {{- end }}
           resources:
             requests:
               cpu: {{ .Values.requestCPU }}
