@@ -61,7 +61,17 @@ spec:
               gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
               {{- else if eq .Values.global.secretManager "asm"}}
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
+              {{- else }}
+              echo $filehosting_hmac_file >> /etc/clearblade/filehosting_hmac_secret
               {{- end }}
+          {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
+          env:
+            - name: filehosting_hmac_secret
+              valueFrom:
+                secretKeyRef:
+                  name: clearblade-secrets
+                  key: filehosting_hmac_secret
+          {{- end }}
           volumeMounts:
             - name: file-hosting-config
               mountPath: /etc/clearblade/
