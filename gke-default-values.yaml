@@ -88,6 +88,9 @@ global:
   # Optional. Directly input your mekfile provided by ClearBlade if not using a secret manager. Leave blank or comment out if not using.
   # mekfile:
 
+  # Optional. Directly input your filehosting hmac secret if not using a secret manager. Leave blank or comment out if not using.
+  # filehosting_hmac_secret:
+
   # Optional. Directly input your postgres password if not using a secret manager. Leave blank or comment out if not using.
   # postgresPassword:
 
