@@ -70,6 +70,9 @@ global:
   # Optional. Define the storage class used by all Persistent Volume Claims in the deployment. Leave blank or comment out if not using.
   storageClassName: standard-rwo
 
+  # Optional. Directly input your filehosting hmac secret if not using a secret manager. Leave blank or comment out if not using.
+  # filehosting_hmac_secret:
+
   # Optional. Set to true if you wish to enable mTLS support on the ClearBlade pods. Leave blank or comment out if not using.
   # mtlsClearBlade:
 

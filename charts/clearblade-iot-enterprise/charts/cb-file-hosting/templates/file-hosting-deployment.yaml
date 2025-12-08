@@ -16,6 +16,9 @@ spec:
         app: cb-file-hosting
         app.kubernetes.io/name: managed-prom
     spec:
+      {{- if eq .Values.global.secretManager "gsm" }}
+      serviceAccountName: clearblade-gsm-read
+      {{- end }}
       {{- if .Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
@@ -33,6 +36,45 @@ spec:
         - name: file-hosting-data
           persistentVolumeClaim:
             claimName: cb-file-hosting-pvc
+        - name: file-hosting-config
+          emptyDir: {}
+      initContainers:
+        - name: pull-hmac-secret
+          {{- if eq .Values.global.secretManager "gsm"}}
+          image: google/cloud-sdk:slim
+          {{- end }}
+          {{- if eq .Values.global.secretManager "asm"}}
+          image: amazon/aws-cli:latest
+          {{- end }}
+          {{- if eq .Values.global.cloud "gdc"}}
+          image: "{{ .Values.initImage }}"
+          {{- end }}
+          command: ["/bin/bash"]
+          args:
+            - -c
+            - |
+              {{- if eq .Values.global.secretManager "asm"}}
+              yum install -y hostname
+              {{- end}}
+              set -ex
+              {{- if eq .Values.global.secretManager "gsm" }}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
+              {{- else if eq .Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
+              {{- else }}
+              echo $filehosting_hmac_file >> /etc/clearblade/filehosting_hmac_secret
+              {{- end }}
+          {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
+          env:
+            - name: filehosting_hmac_secret
+              valueFrom:
+                secretKeyRef:
+                  name: clearblade-secrets
+                  key: filehosting_hmac_secret
+          {{- end }}
+          volumeMounts:
+            - name: file-hosting-config
+              mountPath: /etc/clearblade/
       containers:
         - name: cb-file-hosting
           {{- if .Values.imageURL }}
@@ -45,11 +87,15 @@ spec:
           volumeMounts:
             - name: file-hosting-data
               mountPath: /data
+            - name: file-hosting-config
+              mountPath: /etc/clearblade/
           env: 
             - name: BASE_DIR
               value: "/data"
             - name: PORT
               value: "80"
+            - name: HMAC_SECRET_FILE
+              value: "/etc/clearblade/filehosting_hmac_secret"
           resources:
             requests:
               memory: {{ .Values.requestMemory }}

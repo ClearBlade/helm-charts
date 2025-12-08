@@ -61,3 +61,7 @@ All pods: All pods now have individual nodeselectors, allowing for fine grained 
 ## [3.4.3] - 2025-11-10
 
 Haproxy: MQTT listeners can serve a different TLS certificate than other listeners.
+
+## [3.5.0] - 2025-11-24
+
+File Hosting: Add HMAC secret to verify signature of incoming requests.
