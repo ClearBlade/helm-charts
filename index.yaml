@@ -174,6 +174,53 @@ entries:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.4.1/clearblade-iot-enterprise-3.4.1.tgz
     version: 3.4.1
   - apiVersion: v2
+    created: "2025-12-09T20:03:49.8216354Z"
+    dependencies:
+    - condition: cb-postgres.enabled
+      name: cb-postgres
+      repository: file://charts/cb-postgres
+      version: 3.3.12
+    - condition: cb-haproxy.enabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 3.3.12
+    - name: clearblade
+      repository: file://charts/clearblade
+      version: 3.3.12
+    - name: cb-console
+      repository: file://charts/cb-console
+      version: 3.3.12
+    - name: cb-file-hosting
+      repository: file://charts/cb-file-hosting
+      version: 3.3.12
+    - condition: cb-redis.enabled
+      name: cb-redis
+      repository: file://charts/cb-redis
+      version: 3.3.12
+    - condition: global.iotCoreEnabled
+      name: cb-iotcore
+      repository: file://charts/cb-iotcore
+      version: 3.3.12
+    - condition: global.iaEnabled
+      name: cb-ia
+      repository: file://charts/cb-ia
+      version: 3.3.12
+    - condition: global.opsConsoleEnabled
+      name: cb-ops-console
+      repository: file://charts/cb-ops-console
+      version: 3.3.12
+    - condition: global.tilesEnabled
+      name: cb-tiles
+      repository: file://charts/cb-tiles
+      version: 3.3.12
+    description: ClearBlade IoT Enterprise
+    digest: ce2df76298297a318d03d06178e8aa6b63daa1ccf7d9833d2251466259ff9bd2
+    name: clearblade-iot-enterprise
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.3.12/clearblade-iot-enterprise-3.3.12.tgz
+    version: 3.3.12
+  - apiVersion: v2
     created: "2025-11-06T17:29:00.145477356Z"
     dependencies:
     - condition: cb-postgres.enabled
@@ -2103,4 +2150,4 @@ entries:
     urls:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.0/clearblade-monitoring-2.13.0.tgz
     version: 2.13.0
-generated: "2025-12-09T20:00:17.873456434Z"
+generated: "2025-12-09T20:03:49.821947692Z"
