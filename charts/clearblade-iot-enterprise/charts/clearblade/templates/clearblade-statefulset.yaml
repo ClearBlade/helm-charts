@@ -86,7 +86,11 @@ spec:
               yum install -y hostname
               {{- end}}
               {{- if .Values.global.mtlsClearBlade}}
+              {{- if .Values.mtlsCustomCert}}
+              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_mtls-certificates)
+              {{- else }}
               certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
+              {{- end }}
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
               for i in "${certificate_array[@]}"
@@ -255,7 +259,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: 
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
@@ -360,7 +367,11 @@ spec:
               yum install -y hostname
               {{- end}}
               {{- if .Values.global.mtlsClearBlade}}
+              {{- if .Values.mtlsCustomCert}}
+              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_mtls-certificates)
+              {{- else }}
               certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
+              {{- end }}
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               x=0
               for i in "${certificate_array[@]}"
@@ -531,7 +542,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: 
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}

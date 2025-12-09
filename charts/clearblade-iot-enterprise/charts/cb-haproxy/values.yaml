@@ -36,6 +36,10 @@ ports:
   mqttUnsecure: 1883
   mqttUnsecureSecondaryEnabled: false
   mqttUnsecureSecondary: 1885
+  tertiaryMqttEnabled: false
+  tertiaryMqtt: 1888
+  mqttUnsecureTertiaryEnabled: false
+  mqttUnsecureTertiary: 1887
   edgeRPCEnabled: true
   edge: 8951
   farmer: 8765

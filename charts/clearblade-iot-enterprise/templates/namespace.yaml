@@ -124,4 +124,17 @@ spec:
   selector:
     matchLabels:
       app: cb-ia
+---
+{{- end }}
+{{- if .Values.global.tilesEnabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tiles-pdb
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cb-tiles
 {{- end }}

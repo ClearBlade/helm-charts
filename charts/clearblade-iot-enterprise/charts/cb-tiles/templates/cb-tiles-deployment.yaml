@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cb-ia
+  name: cb-tiles
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   selector:
     matchLabels:
-      app: cb-ia
+      app: cb-tiles
   replicas: 1
   template:
     metadata:
       labels:
-        app: cb-ia
+        app: cb-tiles
         app.kubernetes.io/name: managed-prom
     spec:
       {{- if .Values.global.imagePullerSecret }}
@@ -27,35 +27,20 @@ spec:
         operator: Exists
         effect: NoExecute
         tolerationSeconds: 0
-      {{- if .Values.checkClearbladeReadiness }}
-      initContainers:
-      - name: check-clearblade-readiness
-        image: ellerbrock/alpine-bash-curl-ssl
-        command:
-        - bash
-        - "-c"
-        - |
-          set -x;
-          while [ $(curl -sw '%{http_code}' "https://{{ .Values.global.enterpriseBaseURL }}/api/about" -o /dev/null) -ne 200 ]; do
-            echo waiting for clearblade; sleep 5;
-          done;
-          # Give clearblade just a little more time to really start for real
-          sleep 10;
-      {{- end }}
       containers:
-        - name: cb-ia
+        - name: cb-tiles
           {{- if .Values.imageURL }}
           image: {{- .Values.imageURL }}
           {{- else }}
-          image: gcr.io/api-project-320446546234/ia:{{ .Values.version }}
+          image: gcr.io/api-project-320446546234/tiles:{{ .Values.version }}
           {{- end }}
-          command:  ["ia-sidecar"]
-          args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-instance-id={{ .Values.global.enterpriseInstanceID }}", "-tilesService=cb-tiles-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:7777"]
+          command:  [./tiles]
+          args: []
           volumeMounts:
-          - name: ia
-            mountPath: /etc/clearblade/conf/ia
+          - name: tiles
+            mountPath: /tiles/tilesets
           ports:
-            - containerPort: 8080
+            - containerPort: 7777
           imagePullPolicy: Always
           resources:
             requests:
@@ -73,6 +58,6 @@ spec:
         {{ .Values.global.nodeSelector }}
       {{- end }}
       volumes:
-        - name: ia
+        - name: tiles
           persistentVolumeClaim:
-            claimName: cb-ia-pvc
+            claimName: cb-tiles-pvc

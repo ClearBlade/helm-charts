@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cb-tiles
+description: ClearBlade IoT Enterprise - Tiles
+type: application
+version: 3.3.12
