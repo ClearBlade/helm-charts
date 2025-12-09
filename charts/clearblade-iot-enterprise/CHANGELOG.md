@@ -65,3 +65,9 @@ Haproxy: MQTT listeners can serve a different TLS certificate than other listene
 ## [3.5.0] - 2025-11-24
 
 File Hosting: Add HMAC secret to verify signature of incoming requests.
+
+## [3.5.1] - 2025-12-09
+
+Redis: Added configurable setting for maxconnections to redis
+
+ClearBlade: Added optional env variable for GODEBUG: madvdontneed=1

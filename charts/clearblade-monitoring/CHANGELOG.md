@@ -27,3 +27,7 @@ Corrected PVC size request
 Added Retention rate to prometheus, defaulting to 70% of disk size
 
 Added image puller secret to haproxy for init container
+
+## [2.15.6] - 2025-12-09
+
+Added alert for Redis connection pool nearing max out

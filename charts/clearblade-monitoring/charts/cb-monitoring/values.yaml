@@ -78,6 +78,9 @@ alerts:
   #alerts when number of clearblade nodes can possibly exceed max connections to DB
   possibleDBConnectionMaxEnabled: true
   possibleDBConnectionMaxPriority: low
+  #alerts when number of redis connections is over 80% of maximum
+  redisConnectionMaxEnabled: true
+  redisConnectionMaxPriority: low
   expensiveStuff: true
 monitoringURL: ""
 resourceRequests:
