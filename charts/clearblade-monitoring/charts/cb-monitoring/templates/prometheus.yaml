@@ -25,6 +25,15 @@ spec:
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus/"
+          {{- if .Values.retentionLength}}
+            - "--storage.tsdb.retention.time={{ .Values.retentionLength }}" #example 30d
+          {{- else if .Values.retentionSize}}
+            - "--storage.tsdb.retention.size={{ .Values.retentionSize }}"  #example 70GB
+          {{- else }}
+            {{- $raw := trimSuffix "G" .Values.prometheusDiskSize | toInt }}
+            {{- $calc := mul $raw 0.7 | int }}
+            - "--storage.tsdb.retention.size={{ printf \"%dGB\" $calc }}"
+          {{- end }}
           resources:
             requests:
               cpu: {{ .Values.requestCPU }}

@@ -21,3 +21,9 @@ OOM alerts now resolve correctly
 Closed unnecessary ports
 
 Corrected PVC size request
+
+## [2.15.5] - 2025-11-25
+
+Added Retention rate to prometheus, defaulting to 70% of disk size
+
+Added image puller secret to haproxy for init container
