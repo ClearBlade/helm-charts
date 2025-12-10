@@ -183,6 +183,16 @@ data:
          summary: "Possible postgres connection max out"
          description: "The number of clearblade nodes running can potentially max out the postgres connection pool"
       {{- end }}
+      {{- if $.Values.alerts.redisConnectionMaxEnabled }}
+     - alert: {{ $.Values.global.customerName }} {{$n.name}} RedisConnectionsMaxOutWarning
+       expr: (redis_connected_clients{job=~".*{{ $n.name }}"}/redis_max_clients{job=~".*{{ $n.name }}"})*100 > 80
+       labels:
+         priority: {{ $.Values.alerts.redisConnectionMaxPriority }}
+         severity: warning
+       annotations:
+         summary: "The Redis connection pool is filling up"
+         description: "The number of connections to redis is using 80% of the connection pool"
+      {{- end }}
       {{- end }}
     {{- if $.Values.alerts.expensiveStuff }}
    - name: ExpensiveStuff
