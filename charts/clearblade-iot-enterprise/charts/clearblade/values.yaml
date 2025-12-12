@@ -5,6 +5,7 @@ greenReplicas: 0
 logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
+goMadvDontNeed: true
 license:
   renewalWebhooks: [\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal\"]
   metricsWebhooks: [\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage\"]

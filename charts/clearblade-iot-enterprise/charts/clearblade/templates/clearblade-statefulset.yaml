@@ -233,9 +233,15 @@ spec:
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             - "-log-format=json"
+          {{- if .Values.goMadvDontNeed}}
+          env:
+            - name: GODEBUG
+              value: netdns=go,madvdontneed=1
+          {{- else}}
           env:
             - name: GODEBUG
               value: netdns=go
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
@@ -516,9 +522,15 @@ spec:
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             - "-log-format=json"
+          {{- if or (.Values.goMadvDontNeed) (.Values.greenGoMadvDontNeed) }}
+          env:
+            - name: GODEBUG
+              value: netdns=go,madvdontneed=1
+          {{- else}}
           env:
             - name: GODEBUG
               value: netdns=go
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
