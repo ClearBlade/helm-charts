@@ -71,3 +71,9 @@ File Hosting: Add HMAC secret to verify signature of incoming requests.
 Redis: Added configurable setting for maxconnections to redis
 
 ClearBlade: Added optional env variable for GODEBUG: madvdontneed=1
+
+## [3.5.2] - 2025-12-17
+
+IA, IoTCore and File Hosting: Changed deployment strategy from rolling update to recreate
+
+ClearBlade: Changed statefulsets to allow for rollout partitions on changes
