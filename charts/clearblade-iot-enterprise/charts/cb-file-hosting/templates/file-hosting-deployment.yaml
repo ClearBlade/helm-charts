@@ -10,6 +10,8 @@ spec:
     matchLabels:
       app: cb-file-hosting
   replicas: 1
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:

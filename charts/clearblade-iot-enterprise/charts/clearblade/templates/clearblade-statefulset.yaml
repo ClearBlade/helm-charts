@@ -12,6 +12,10 @@ spec:
       slot: blue
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .Values.blueReplicas }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: {{- .Values.bluePartition }}
   template:
     metadata:
       labels:
@@ -324,6 +328,10 @@ spec:
       slot: green
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .Values.greenReplicas }}
+  updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        partition: {{- .Values.greenPartition }}
   template:
     metadata:
       labels:
