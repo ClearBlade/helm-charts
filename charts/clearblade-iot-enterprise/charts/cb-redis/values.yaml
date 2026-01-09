@@ -7,3 +7,4 @@ requestCPU: 1
 requestMemory: 8G
 limitCPU: 1
 limitMemory: 8G
+maxClients: 65000

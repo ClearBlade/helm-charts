@@ -34,7 +34,6 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "cb-redis.labels" -}}
-helm.sh/chart: {{ include "cb-redis.chart" . }}
 {{ include "cb-redis.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}

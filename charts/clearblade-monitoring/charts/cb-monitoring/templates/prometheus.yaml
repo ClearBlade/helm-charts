@@ -21,10 +21,19 @@ spec:
         kubernetes.io/arch: amd64
       containers:
         - name: prometheus-frontend
-          image: prom/prometheus:v2.49.1
+          image: prom/prometheus:{{ .Values.version }}
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus/"
+          {{- if .Values.retentionLength}}
+            - "--storage.tsdb.retention.time={{ .Values.retentionLength }}" #example 30d
+          {{- else if .Values.retentionSize}}
+            - "--storage.tsdb.retention.size={{ .Values.retentionSize }}"  #example 70GB
+          {{- else }}
+            {{- $raw := trimSuffix "G" .Values.prometheusDiskSize | toInt }}
+            {{- $calc := mul $raw 0.7 | int }}
+            - "--storage.tsdb.retention.size={{ printf \"%dGB\" $calc }}"
+          {{- end }}
           resources:
             requests:
               cpu: {{ .Values.requestCPU }}
@@ -95,7 +104,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 200G
+      storage: {{ .Values.prometheusDiskSize}}
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -111,8 +120,9 @@ spec:
   claimRef:
     namespace: {{ default "monitoring" .Values.global.namespace }}
     name: prometheus-pvc
-  gcePersistentDisk:
-    pdName: {{ .Values.prometheusDisk}}
+  csi:
+    driver: pd.csi.storage.gke.io
+    volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ .Values.prometheusDisk}}
     fsType: ext4
 {{- end }}
 {{- end}}

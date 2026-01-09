@@ -12,6 +12,10 @@ spec:
       slot: blue
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .Values.blueReplicas }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: {{- .Values.bluePartition }}
   template:
     metadata:
       labels:
@@ -36,6 +40,7 @@ spec:
         effect: NoExecute
         tolerationSeconds: 0
       initContainers:
+      {{- if .Values.checkReadiness}}
         {{- if not .Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
           image: postgres:9.6.5
@@ -75,6 +80,28 @@ spec:
               sleep 5
             done
           {{- end }}
+      {{- end }}  
+        {{- if .Values.global.mtlsClearBlade }}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
@@ -82,22 +109,15 @@ spec:
           {{- if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
           {{- end }}
+          {{- if eq .Values.global.cloud "gdc"}}
+          image: "{{ .Values.initImage }}"
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -128,6 +148,13 @@ spec:
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
+              {{- if eq .Values.global.secretManager "gsm" }}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- else if eq .Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- else }}
+              echo $filehosting_hmac_secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- end }}
           {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
           env:
             - name: dbpassword
@@ -140,6 +167,11 @@ spec:
                 secretKeyRef:
                   name: clearblade-secrets
                   key: mekfile
+            - name: filehosting_hmac_secret
+              valueFrom:
+                secretKeyRef:
+                  name: clearblade-secrets
+                  key: filehosting_hmac_secret
           {{- end }}
           volumeMounts:
             - name: config-volume
@@ -148,10 +180,10 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
-            {{- end}}
+            {{- end}}   
       containers:
         {{- if .Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy
@@ -169,22 +201,89 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterpriseTagOverride }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseTagOverride }}"
+          {{- if .Values.imageURLBlue }}
+          image: "{{- .Values.imageURLBlue }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
           command: ["clearblade"]
-          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          args:
+            - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
+          #DB
+            {{- if .Values.global.dynamicVolumes }}
+            - "-db-host=cb-postgres-rw.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- else if and (not .Values.global.externalPostgresHost) (not .Values.global.gcpCloudSQLEnabled) }}
+            #Default Postgres in these charts
+            - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- end }}
+            #CloudSQL
+            {{- if .Values.global.gcpCloudSQLEnabled}}
+            - "-db-host=127.0.0.1"
+            - "-disable-timescale=true"
+            {{- else if .Values.global.externalPostgresHost}}
+            #External DB
+            - "-db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-port={{ .Values.global.externalPostgresPort}}"
+            {{- end }}
+            - "-db-type={{ .Values.database.dbType }}"
+            - "-db={{ .Values.database.dbStore }}"
+          #FH
+            - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
+            - "-file-hosting-hmac-secret-location=/etc/clearblade/conf/clearblade/filehosting_hmac_secret"
+          #CACHE
+            {{ if .Values.global.gcpMemoryStoreEnabled }}
+            - "-skip-setting-notify-keyspace-events=true"
+            - "-store-addr={{ .Values.global.gcpMemoryStoreAddress }}"
+            {{- else}}
+            - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
+            - "-store-port=6379"
+            - "-store=redis"
+          #PLATFORM
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+            - "-addr={{ .Values.http.httpPort }}"
+            - "-messaging-addr={{ .Values.mqtt.brokerTCPPort }}"
+            - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
+            - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
+            - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            {{- if .Values.global.enterpriseMQTTURL}}
+            - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- else }}
+            - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
+            {{- end }}
+            - "-mek-storage-location=/etc/clearblade/mek"
+            {{- if .Values.license.key }}
+            - "-pkey={{ .Values.license.key }}"
+            {{- end }}
+            - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
+            - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
+            - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
+            {{- if .Values.global.mtlsClearBlade }}
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
+            - "-enable-mutual-tls-auth=true"
+            - "-check-certificate-cn-for-mtls=true"
+            {{- end }}
+            - "-log-format=json"
+          {{- if .Values.goMadvDontNeed}}
+          env:
+            - name: GODEBUG
+              value: netdns=go,madvdontneed=1
+          {{- else}}
           env:
             - name: GODEBUG
               value: netdns=go
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -202,7 +301,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
@@ -214,7 +316,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
@@ -233,6 +335,10 @@ spec:
       slot: green
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .Values.greenReplicas }}
+  updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        partition: {{- .Values.greenPartition }}
   template:
     metadata:
       labels:
@@ -257,6 +363,7 @@ spec:
         effect: NoExecute
         tolerationSeconds: 0
       initContainers:
+      {{- if .Values.checkReadiness}}
         {{- if not .Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
           image: postgres:9.6.5
@@ -296,12 +403,38 @@ spec:
               sleep 5
             done
           {{- end }}
+        {{- end }}
+        {{- if .Values.global.mtlsClearBlade }}
+        - name: pull-mtls-certificate
+          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
+          env: 
+            - name: CERT_DIR
+              value: etc/clearblade/ssl
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+            - name: DOMAIN_TO_PULL
+              value: {{ .Values.global.enterpriseBaseURL }}
+            - name: OUTPUT_FILE
+              value: clearblade-0.pem
+
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: mtls-cert-volume
+              mountPath: /etc/clearblade/ssl/
+        {{- end }}
         - name: init
           {{- if eq .Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
-          {{- end }}
-          {{- if eq .Values.global.secretManager "asm"}}
+          {{- else if eq .Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
+          {{- end }}
+          {{- if eq .Values.global.cloud "gdc"}}
+          image: "{{ .Values.initImage }}"
           {{- end }}
           command: ["/bin/bash"]
           args:
@@ -309,16 +442,6 @@ spec:
             - |
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
-              {{- end}}
-              {{- if .Values.global.mtlsClearBlade}}
-              certificates=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_tls-certificates)
-              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
-              x=0
-              for i in "${certificate_array[@]}"
-              do
-                echo "$i" > /etc/clearblade/ssl/clearblade-$x.pem
-                ((x=x+1))
-              done
               {{- end}}
               set -ex
               # Generate clearblade host from pod ordinal index.
@@ -349,6 +472,13 @@ spec:
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
+              {{- if eq .Values.global.secretManager "gsm" }}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- else if eq .Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- else }}
+              echo $filehosting_hmac_secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- end }}
           {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
           env:
             - name: dbpassword
@@ -361,6 +491,11 @@ spec:
                 secretKeyRef:
                   name: clearblade-secrets
                   key: mekfile
+            - name: filehosting_hmac_secret
+              valueFrom:
+                secretKeyRef:
+                  name: clearblade-secrets
+                  key: filehosting_hmac_secret
           {{- end }}
           volumeMounts:
             - name: config-volume
@@ -369,7 +504,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -390,24 +525,91 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .Values.global.enterpriseGreenVersion }}
+          {{- if .Values.imageURLGreen }}
+          image: "{{- .Values.imageURLGreen }}"
+          {{- else if .Values.global.enterpriseGreenVersion }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseGreenVersion }}"
-          {{- else if .Values.global.enterpriseTagOverride }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseTagOverride }}"
           {{- else }}
           image: "gcr.io/api-project-320446546234/clearblade:{{ .Values.global.enterpriseBlueVersion }}"
           {{- end }}
           command: ["clearblade"]
-          args: ["-config=/etc/clearblade/conf/clearblade/clearblade.toml"]
+          args:
+            - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
+          #DB
+            {{- if .Values.global.dynamicVolumes }}
+            - "-db-host=cb-postgres-rw.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- else if and (not .Values.global.externalPostgresHost) (not .Values.global.gcpCloudSQLEnabled) }}
+            #Default Postgres in these charts
+            - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- end }}
+            #CloudSQL
+            {{- if .Values.global.gcpCloudSQLEnabled}}
+            - "-db-host=127.0.0.1"
+            - "-disable-timescale=true"
+            {{- else if .Values.global.externalPostgresHost}}
+            #External DB
+            - "-db-host={{ .Values.global.externalPostgresHost }}"
+            - "-db-port={{ .Values.global.externalPostgresPort}}"
+            {{- end }}
+            - "-db-type={{ .Values.database.dbType }}"
+            - "-db={{ .Values.database.dbStore }}"
+          #FH
+            - "-file-hosting-url=http://cb-file-hosting-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:8915"
+            - "-file-hosting-hmac-secret-location=/etc/clearblade/conf/clearblade/filehosting_hmac_secret"
+          #CACHE
+            {{ if .Values.global.gcpMemoryStoreEnabled }}
+            - "-skip-setting-notify-keyspace-events=true"
+            - "-store-addr={{ .Values.global.gcpMemoryStoreAddress }}"
+            {{- else}}
+            - "-store-addr=cb-redis-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
+            - "-store-port=6379"
+            - "-store=redis"
+          #PLATFORM
+            - "-registration-key={{ .Values.global.enterpriseRegistrationKey }}"
+            - "-url={{- include "clearblade-iot-enterprise.platformURL" . | trim }}"
+            - "-addr={{ .Values.http.httpPort }}"
+            - "-messaging-addr={{ .Values.mqtt.brokerTCPPort }}"
+            - "-websocket-messaging-addr={{ .Values.mqtt.brokerWSPort }}"
+            - "-message-auth-addr={{ .Values.mqtt.messagingAuthPort }}"
+            - "-message-auth-websocket={{ .Values.mqtt.messagingAuthWSPort }}"
+            {{- if .Values.global.enterpriseMQTTURL}}
+            - "-messaging-url={{ .Values.global.enterpriseMQTTURL }}"
+            {{- else }}
+            - "-messaging-url={{- .Values.global.enterpriseBaseURL }}"
+            {{- end }}
+            - "-mek-storage-location=/etc/clearblade/mek"
+            {{- if .Values.license.key }}
+            - "-pkey={{ .Values.license.key }}"
+            {{- end }}
+            - "-platform-id={{ .Values.global.enterpriseInstanceID }}"
+            - "-license-renewal-webhooks={{ join "," .Values.license.renewalWebhooks }}"
+            - "-metrics-reporting-webhooks={{ join "," .Values.license.metricsWebhooks }}"
+            - "-license-auto-renew-days={{ .Values.license.autoRenew.days }}"
+            - "-auto-renew-license={{ .Values.license.autoRenew.enabled }}"
+            {{- if .Values.global.mtlsClearBlade }}
+            - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
+            - "-enable-mutual-tls-auth=true"
+            - "-check-certificate-cn-for-mtls=true"
+            {{- end }}
+            - "-log-format=json"
+          {{- if or (.Values.goMadvDontNeed) (.Values.greenGoMadvDontNeed) }}
+          env:
+            - name: GODEBUG
+              value: netdns=go,madvdontneed=1
+          {{- else}}
           env:
             - name: GODEBUG
               value: netdns=go
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .Values.global.mtlsClearBlade}}
+            {{- if .Values.global.mtlsClearBlade }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -425,7 +627,13 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .Values.global.nodeSelector }}
+      {{- if .Values.greenNodeSelector}}
+      nodeSelector:
+        {{ .Values.greenNodeSelector }}
+      {{- else if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
@@ -437,7 +645,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .Values.global.mtlsClearBlade}}
+        {{- if .Values.global.mtlsClearBlade }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}

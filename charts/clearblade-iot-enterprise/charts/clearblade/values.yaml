@@ -2,10 +2,16 @@ monitoringEnabled: true
 namespace: clearblade
 blueReplicas: 3
 greenReplicas: 0
+checkReadiness: true
 logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
+goMadvDontNeed: true
+bluePartition: 0
+greenPartition: 0
 license:
+  renewalWebhooks: [\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/requestLicenseRenewal\"]
+  metricsWebhooks: [\"https://iot-enterprise.clearblade.com/api/v/4/webhook/execute/e4f0b4d50c82959adae6f1ba89da01/reportInstanceUsage\"]
   autoRenew:
     enabled: true
     days: 15
@@ -52,9 +58,6 @@ mqtt:
   qosMapSizeLimit: 200 # Max number of unacknowledged messages allowed for a client before we kill their connection. Set to 0 for no limit.
   logPingResps: false # Print a google cloud debug log for each time a PINGRESP is sent to a client
   logPubAcks: false # Print a google cloud debug log for each time a PUBACK is sent to a client
-database:
-  host: "" # optional, defaults to internal postgres service if left empty
-  port: "" # optional, defaults to 5432 if left empty
 iotCore:
   deviceTimestampCacheSeconds: 300
   cloudLoggingResourceType: global
@@ -97,6 +100,8 @@ buckets:
   maxParallelSyncEvents: 10
   rootDir: /tmp/clearblade_platform_buckets
 database:
+  host: "" # optional, defaults to internal postgres service if left empty
+  port: "" # optional, defaults to 5432 if left empty
   mongoOperationTimeoutSeconds: 60
   mongoMaxPoolSize: 100
   dbStore: postgres # Database store to use. postgres for platform and sqlite for edge
@@ -130,6 +135,7 @@ engine:
   messageQueueLength: 10000
   eventQueueLength: 10000
   terminationGracePeriodSeconds: 15 # Amount of seconds to wait for engine to gracefully shutdown before forcefully terminating it.
+  trackHeapUsage: false
 kvStore:
   localCacheReaperIntervalSeconds: 60 # How often to scan the local cache and delete expired keys
   deviceCacheExpirySeconds: 10 # How long to keep entries in the local device cache
@@ -182,6 +188,7 @@ security:
   accessControlAllowCredentials: true # Value to use for the Access-Control-Allow-Credentials header on all responses
   accessControlAllowOrigin: "*" # Value to use for the Access-Control-Allow-Origin header on all responses
   addDefaultTopicPermissions: false # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
+  disableJWTAuth: false
 sync:
   syncOptimize: true # Optimizes the syncing process if set to true
   syncOptimizeExceptions: "" # Exceptions for the sync optimization process
