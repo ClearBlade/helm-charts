@@ -7,6 +7,7 @@ logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
 goMadvDontNeed: true
+enableLoadBalancerService: false
 bluePartition: 0
 greenPartition: 0
 license:

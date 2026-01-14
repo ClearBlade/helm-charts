@@ -15,7 +15,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      partition: {{- .Values.bluePartition }}
+      partition: {{ .Values.bluePartition }}
   template:
     metadata:
       labels:
@@ -261,6 +261,14 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
+            {{- if .Values.global.ExternalHaproxy }}
+            - "-enable-reverse-proxy=true"
+            - "-use-tls-http=true"
+            - "-console-host=cb-console-service"
+            - "-ia-host=cb-ia-service"
+            - "-iotcore-host=cb-iotcore-service"
+            - "-ops-console-host=cb-ops-console-service"
+            {{- end }}
             - "-log-format=json"
           {{- if .Values.goMadvDontNeed}}
           env:
@@ -331,7 +339,7 @@ spec:
   updateStrategy:
       type: RollingUpdate
       rollingUpdate:
-        partition: {{- .Values.greenPartition }}
+        partition: {{ .Values.greenPartition }}
   template:
     metadata:
       labels:

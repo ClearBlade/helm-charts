@@ -37,6 +37,10 @@ spec:
       targetPort: 9000
       port: {{ .Values.global.externalHaproxy.clearbladeHTTP }}
       protocol: TCP
+    - name: api-https
+      targetPort: 9002
+      port: {{ .Values.global.externalHaproxy.clearbladeHTTPS }}
+      protocol: TCP
   {{- else }}
   ports:
     - name: mqtt
