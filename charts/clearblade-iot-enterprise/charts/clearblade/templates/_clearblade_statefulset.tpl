@@ -16,7 +16,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      partition: {{- .partition }}
+      partition: {{ .partition }}
   template:
     metadata:
       labels:
