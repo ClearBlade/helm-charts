@@ -264,6 +264,10 @@ spec:
             {{- if .Values.global.ExternalHaproxy }}
             - "-enable-reverse-proxy=true"
             - "-use-tls-http=true"
+            - "-message-use-tls=true"
+            - "-message-auth-use-tls=true"
+            - "-message-ws-use-tls=true"
+            - "-message-auth-ws-use-tls=true"
             - "-console-host=cb-console-service"
             - "-ia-host=cb-ia-service"
             - "-iotcore-host=cb-iotcore-service"

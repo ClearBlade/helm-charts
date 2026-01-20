@@ -13,6 +13,9 @@ spec:
   {{- if .Values.global.ExternalHaproxy }}
   type: LoadBalancer
   ports:
+      # TODO: We really don't need to expose NON-TLS ports... YES!
+      # TODO: Do we need RPC TLS?
+      # TODO: Can we DRY up the clearblade statefulset?
     - name: mqtt
       port: {{ .Values.global.externalHaproxy.clearbladeMQTT }}
       targetPort: 1883
@@ -30,7 +33,7 @@ spec:
       port: {{ .Values.global.externalHaproxy.clearbladeMQTTWSAuth }}
       protocol: TCP
     - name: edge-rpc
-      targetPort: 8950
+      targetPort: 8951
       port: {{ .Values.global.externalHaproxy.clearbladeEdgeRPC }}
       protocol: TCP
     - name: api
