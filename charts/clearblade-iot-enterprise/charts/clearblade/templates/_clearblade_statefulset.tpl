@@ -125,7 +125,7 @@ spec:
               # Add an offset to avoid reserved server-id=0 value.
               sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               # Add blue/green slot to host address
-              sed -i 's|{slot}|''|g'  /etc/clearblade/conf/clearblade/clearblade.toml
+              sed -i 's|{slot}|'{{ .node_suffix }}'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               {{- if eq .root.Values.global.secretManager "gsm"}}
               dbpassword=$(gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password)
               {{- end }}
@@ -198,11 +198,7 @@ spec:
               memory: "2Gi"
         {{- end }}
         - name: clearblade
-          {{- if .root.Values.imageURLBlue }}
-          image: "{{- .root.Values.imageURLBlue }}"
-          {{- else }}
-          image: "gcr.io/api-project-320446546234/clearblade:{{ .root.Values.global.enterpriseBlueVersion }}"
-          {{- end }}
+          image: {{ .clearblade_image }}
           command: ["clearblade"]
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
@@ -263,7 +259,7 @@ spec:
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             - "-log-format=json"
-          {{- if .root.Values.goMadvDontNeed}}
+          {{- if .madvdontneed}}
           env:
             - name: GODEBUG
               value: netdns=go,madvdontneed=1
@@ -295,13 +291,10 @@ spec:
       tolerations:
 {{ .root.Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
-      {{- if .root.Values.nodeSelector }}
+      {{- if .node_selector }}
       nodeSelector:
-        {{ .root.Values.nodeSelector }}
-      {{- else if .root.Values.global.nodeSelector }}
-      nodeSelector:
-        {{ .root.Values.global.nodeSelector }}
-      {{- end }}
+        {{ .node_selector }}
+      {{- end}}
       volumes:
         - name: config-volume
           emptyDir: {}

@@ -1,15 +1,54 @@
+# Calculate the clearblade docker image URL
+{{- $image := printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseBlueVersion -}}
+{{- if .Values.imageURLBlue -}}
+{{- $image = .Values.imageURLBlue -}}
+{{- end -}}
+
+# Calculate the node selector
+{{- $node_selector := .Values.global.nodeSelector -}}
+{{- if .Values.nodeSelector -}}
+{{- $node_selector = .Values.nodeSelector -}}
+{{- end -}}
+
 {{- include "clearblade.statefulset" (dict 
   "name" "clearblade"
   "slot" "blue"
   "replicas" .Values.blueReplicas
   "partition" .Values.bluePartition
+  "node_suffix" ""
+  "clearblade_image" $image
+  "madvdontneed" .Values.goMadvDontNeed
+  "node_selector" $node_selector
   "root" .
 ) }}
 ---
+# Calculate the clearblade docker image URL
+{{- $image := printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseBlueVersion -}}
+{{- if .Values.imageURLGreen -}}
+{{- $image = .Values.imageURLGreen -}}
+{{- else if .Values.global.enterpriseGreenVersion -}}
+{{- $image = printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseGreenVersion -}}
+{{- end -}}
+
+# Calculate whether to set madvdontneed
+{{- $madvdontneed := or (.Values.goMadvDontNeed) (.Values.greenGoMadvDontNeed) -}}
+
+# Calculate the node selector
+{{- $node_selector := .Values.global.nodeSelector -}}
+{{- if .Values.greenNodeSelector -}}
+{{- $node_selector = .Values.greenNodeSelector -}}
+{{- else if .Values.nodeSelector -}}
+{{- $node_selector = .Values.nodeSelector -}}
+{{- end -}}
+
 {{- include "clearblade.statefulset" (dict 
   "name" "clearblade-green"
   "slot" "green"
   "replicas" .Values.greenReplicas
   "partition" .Values.greenPartition
+  "node_suffix" "-green"
+  "clearblade_image" $image
+  "madvdontneed" $madvdontneed
+  "node_selector" $node_selector
   "root" .
 ) }}
