@@ -13,33 +13,53 @@ spec:
   {{- if .Values.global.ExternalHaproxy }}
   type: LoadBalancer
   ports:
-    - name: mqtt
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTT }}
-      targetPort: 1883
-      protocol: TCP
-    - name: mqtt-ws
-      targetPort: 8903
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTTWS }}
-      protocol: TCP
-    - name: mqtt-auth
-      targetPort: 8905
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTTAuth }}
-      protocol: TCP
-    - name: mqtt-ws-auth
-      targetPort: 8907
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTTWSAuth }}
-      protocol: TCP
-    - name: edge-rpc
-      targetPort: 8951
-      port: {{ .Values.global.externalHaproxy.clearbladeEdgeRPC }}
-      protocol: TCP
     - name: api
       targetPort: 9000
-      port: {{ .Values.global.externalHaproxy.clearbladeHTTP }}
+      port: 80
       protocol: TCP
     - name: api-https
       targetPort: 9002
-      port: {{ .Values.global.externalHaproxy.clearbladeHTTPS }}
+      port: 443
+      protocol: TCP
+    - name: mtls
+      targetPort: 9001
+      port: 444
+      protocol: TCP
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+      protocol: TCP
+    - name: mqtt-tls
+      port: 1884
+      targetPort: 1884
+      protocol: TCP
+    - name: mqtt-ws
+      targetPort: 8903
+      port: 8903
+      protocol: TCP
+    - name: mqtt-ws-tls
+      targetPort: 8904
+      port: 8904
+      protocol: TCP
+    - name: mqtt-auth
+      targetPort: 8905
+      port: 8905
+      protocol: TCP
+    - name: mqtt-auth-tls
+      targetPort: 8906
+      port: 8906
+      protocol: TCP
+    - name: mqtt-ws-auth
+      targetPort: 8907
+      port: 8907
+      protocol: TCP
+    - name: mqtt-ws-auth-tls
+      targetPort: 8908
+      port: 8908
+      protocol: TCP
+    - name: edge-rpc
+      targetPort: 8951
+      port: 8951
       protocol: TCP
   {{- else }}
   ports:
