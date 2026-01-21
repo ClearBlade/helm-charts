@@ -10,57 +10,81 @@ metadata:
     slot: blue
     {{- end }}
 spec:
-  {{- if .Values.global.ExternalHaproxy }}
+  {{- if .Values.clearbladeReverseProxy.enabled }}
   type: LoadBalancer
   ports:
+    {{- if .Values.clearbladeReverseProxy.enableHttp }}
     - name: api
+      port: {{ .Values.clearbladeReverseProxy.httpPort }}
       targetPort: 9000
-      port: 80
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableHttps }}
     - name: api-https
+      port: {{ .Values.clearbladeReverseProxy.httpsPort }}
       targetPort: 9002
-      port: 443
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMtls }}
     - name: mtls
+      port: {{ .Values.clearbladeReverseProxy.mtlsPort }}
       targetPort: 9001
-      port: 444
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttInsecure }}
     - name: mqtt
-      port: 1883
+      port: {{ .Values.clearbladeReverseProxy.mqttInsecurePort }}
       targetPort: 1883
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqtt }}
     - name: mqtt-tls
-      port: 1884
+      port: {{ .Vaalues.clearbladeReverseProxy.mqttPort }}
       targetPort: 1884
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttWsInsecure }}
     - name: mqtt-ws
+      port: {{ .Values.clearbladeReverseProxy.mqttWsInsecurePort }}
       targetPort: 8903
-      port: 8903
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttWs }}
     - name: mqtt-ws-tls
       targetPort: 8904
-      port: 8904
+      port: {{ .Values.clearbladeReverseProxy.mqttWsPort }}
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttAuthInsecure }}
     - name: mqtt-auth
       targetPort: 8905
-      port: 8905
+      port: {{ .Values.clearbladeReverseProxy.mqttAuthInsecurePort }}
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttAuth }}
     - name: mqtt-auth-tls
       targetPort: 8906
-      port: 8906
+      port: {{ .Values.clearbladeReverseProxy.mqttAuthPort }}
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttWsAuthInsecure }}
     - name: mqtt-ws-auth
       targetPort: 8907
-      port: 8907
+      port: {{ .Values.clearbladeReverseProxy.mqttWsAuthInsecurePort }}
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableMqttWsAuth }}
     - name: mqtt-ws-auth-tls
       targetPort: 8908
-      port: 8908
+      port: {{ .Values.clearbladeReverseProxy.mqttWsAuthPort }}
       protocol: TCP
+    {{- end }}
+    {{- if .Values.clearbladeReverseProxy.enableEdgeRpc }}
     - name: edge-rpc
       targetPort: 8951
-      port: 8951
+      port: {{ .Values.clearbladeReverseProxy.edgeRpcPort }}
       protocol: TCP
+    {{- end }}
   {{- else }}
   ports:
     - name: mqtt
