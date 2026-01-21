@@ -39,7 +39,7 @@ spec:
     {{- end }}
     {{- if .Values.reverseProxy.enableMqtt }}
     - name: mqtt-tls
-      port: {{ .Vaalues.reverseProxy.mqttPort }}
+      port: {{ .Values.reverseProxy.mqttPort }}
       targetPort: 1884
       protocol: TCP
     {{- end }}
