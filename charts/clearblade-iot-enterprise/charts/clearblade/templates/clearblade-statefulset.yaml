@@ -2,15 +2,15 @@
 {{- $image := printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseBlueVersion -}}
 {{- if .Values.imageURLBlue -}}
 {{- $image = .Values.imageURLBlue -}}
-{{- end -}}
+{{ end }}
 
 # Calculate the node selector
 {{- $node_selector := .Values.global.nodeSelector -}}
 {{- if .Values.nodeSelector -}}
 {{- $node_selector = .Values.nodeSelector -}}
-{{- end -}}
+{{ end }}
 
-{{- include "clearblade.statefulset" (dict 
+{{ include "clearblade.statefulset" (dict 
   "name" "clearblade"
   "slot" "blue"
   "replicas" .Values.blueReplicas
@@ -28,7 +28,7 @@
 {{- $image = .Values.imageURLGreen -}}
 {{- else if .Values.global.enterpriseGreenVersion -}}
 {{- $image = printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseGreenVersion -}}
-{{- end -}}
+{{ end }}
 
 # Calculate whether to set madvdontneed
 {{- $madvdontneed := or (.Values.goMadvDontNeed) (.Values.greenGoMadvDontNeed) -}}
@@ -39,9 +39,9 @@
 {{- $node_selector = .Values.greenNodeSelector -}}
 {{- else if .Values.nodeSelector -}}
 {{- $node_selector = .Values.nodeSelector -}}
-{{- end -}}
+{{ end }}
 
-{{- include "clearblade.statefulset" (dict 
+{{ include "clearblade.statefulset" (dict 
   "name" "clearblade-green"
   "slot" "green"
   "replicas" .Values.greenReplicas
