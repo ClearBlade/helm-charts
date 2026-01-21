@@ -258,6 +258,19 @@ spec:
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
+            {{- if .root.Values.reverseProxy.enabled }}
+            - "-enable-reverse-proxy=true"
+            - "-use-tls-http=true"
+            - "-message-use-tls=true"
+            - "-message-auth-use-tls=true"
+            - "-message-ws-use-tls=true"
+            - "-message-auth-ws-use-tls=true"
+            - "-rpc-use-tls=true"
+            - "-console-host=cb-console-service"
+            - "-ia-host=cb-ia-service"
+            - "-iotcore-host=cb-iotcore-service"
+            - "-ops-console-host=cb-ops-console-service"
+            {{- end }}
             - "-log-format=json"
           {{- if .madvdontneed}}
           env:

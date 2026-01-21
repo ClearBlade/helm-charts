@@ -60,7 +60,7 @@ spec:
                 done;
 
                 echo "Fetching secrets with retries...";
-                for i in $(seq 1 1000); do
+                for i in $(seq 1 25); do
                   if PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password) &&
                     REPLICA=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-replica-password) &&
                     POSTGRES=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password); then
