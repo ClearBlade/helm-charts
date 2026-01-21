@@ -200,3 +200,32 @@ sync:
   reaperThreshold: 1000 # How many entries an edge is allowed to have in the sync queue before the reaper deletes them all.
 triggers:
   maxExecutors: 1024
+
+reverseProxy:
+  # If disabled, all options in this section are ignored.
+  enabled: false
+
+  enableHttp: true
+  httpPort: 80
+  enableHttps: true
+  httpsPort: 443
+  enableMtls: true
+  mtlsPort: 444
+  enableMqttInsecure: true
+  mqttInsecurePort: 1883
+  enableMqtt: true
+  mqttPort: 1884
+  enableMqttWsInsecure: true
+  mqttWsInsecurePort: 8903
+  enableMqttWs: true
+  mqttWsPort: 8904
+  enableMqttAuthInsecure: true
+  mqttAuthInsecurePort: 8905
+  enableMqttAuth: true
+  mqttAuthPort: 8906
+  enableMqttWsAuthInsecure: true
+  mqttWsAuthInsecurePort: 8907
+  enableMqttWsAuth: true
+  mqttWsAuthPort: 8908
+  enableEdgeRpc: true
+  edgeRpcPort: 8951
