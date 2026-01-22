@@ -59,9 +59,7 @@ stringData:
         title: >-
           [{{ "{{" }} .Status | toUpper {{ "}}" }}]
           {{ "{{" }} .CommonLabels.alertname {{ "}}" }}
-          {{ "{{" }} if .CommonLabels.pod {{ "}}" }}
-          (pod: {{ "{{" }} .CommonLabels.pod {{ "}}" }})
-          {{ "{{" }} end {{ "}}" }}
+          {{ "{{-" }} if .CommonLabels.pod {{ "}}" }} (pod: {{ "{{" }} .CommonLabels.pod {{ "}}" }}){{ "{{-" }} end {{ "}}" }}
         text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
         send_resolved: true
       email_configs:
@@ -76,9 +74,7 @@ stringData:
         title: >-
           [{{ "{{" }} .Status | toUpper {{ "}}" }}]
           {{ "{{" }} .CommonLabels.alertname {{ "}}" }}
-          {{ "{{" }} if .CommonLabels.pod {{ "}}" }}
-          (pod: {{ "{{" }} .CommonLabels.pod {{ "}}" }})
-          {{ "{{" }} end {{ "}}" }}
+          {{ "{{-" }} if .CommonLabels.pod {{ "}}" }} (pod: {{ "{{" }} .CommonLabels.pod {{ "}}" }}){{ "{{-" }} end {{ "}}" }}
         text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
         send_resolved: true
       email_configs:
