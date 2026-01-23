@@ -56,6 +56,10 @@ stringData:
       slack_configs:
       - channel: {{ .Values.alerts.slack.channelHigh }}
         api_url: '{{ .Values.alerts.slack.webhookHigh }}'
+        title: >-
+          [{{ "{{" }} .Status | toUpper {{ "}}" }}]
+          {{ "{{" }} .CommonLabels.alertname {{ "}}" }}
+          {{ "{{-" }} if .CommonLabels.pod {{ "}}" }} (pod: {{ "{{" }} .CommonLabels.pod {{ "}}" }}){{ "{{-" }} end {{ "}}" }}
         text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
         send_resolved: true
       email_configs:
@@ -67,6 +71,10 @@ stringData:
       slack_configs:
       - channel: {{ .Values.alerts.slack.channel }}
         api_url: '{{ .Values.alerts.slack.webhook }}'
+        title: >-
+          [{{ "{{" }} .Status | toUpper {{ "}}" }}]
+          {{ "{{" }} .CommonLabels.alertname {{ "}}" }}
+          {{ "{{-" }} if .CommonLabels.pod {{ "}}" }} (pod: {{ "{{" }} .CommonLabels.pod {{ "}}" }}){{ "{{-" }} end {{ "}}" }}
         text: "{{ "{{" }} range .Alerts }}{{ "{{" }} .Annotations.summary }}\n{{ "{{" }} end }}"
         send_resolved: true
       email_configs:
