@@ -201,6 +201,9 @@ sync:
 triggers:
   maxExecutors: 1024
 
+
+# Set to true if the TLS certs from the database should be used instead of from an external secret manager
+useDbTlsCerts: false
 reverseProxy:
   # If disabled, all options in this section are ignored.
   enabled: false

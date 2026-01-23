@@ -78,7 +78,7 @@ spec:
             done
           {{- end }}
       {{- end }}  
-        {{- if .root.Values.global.mtlsClearBlade }}
+        {{- if and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) }}
         - name: pull-mtls-certificate
           image: gcr.io/api-project-320446546234/cb_controller:cli-latest
           env: 
@@ -177,7 +177,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .root.Values.global.mtlsClearBlade }}
+            {{- if .root.Values.global.mtlsClearBlade and (not .root.Values.useDbTlsCerts) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}   
@@ -254,7 +254,9 @@ spec:
             - "-license-auto-renew-days={{ .root.Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .root.Values.license.autoRenew.enabled }}"
             {{- if .root.Values.global.mtlsClearBlade }}
+            {{- if (not .root.Values.useDbTlsCerts) }}
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
+            {{- end }}
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
@@ -286,7 +288,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .root.Values.global.mtlsClearBlade }}
+            {{- if and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -316,7 +318,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .root.Values.global.mtlsClearBlade }}
+        {{- if and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}
