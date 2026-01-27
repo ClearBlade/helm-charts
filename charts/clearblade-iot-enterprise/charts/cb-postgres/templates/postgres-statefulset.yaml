@@ -20,6 +20,10 @@ spec:
         app: cb-postgres
         app.kubernetes.io/name: managed-prom
     spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
       {{- if eq .Values.global.cloud "aws"}}
       nodeSelector:
         topology.kubernetes.io/zone: {{ .Values.volumeAZ }}
