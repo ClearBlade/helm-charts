@@ -18,7 +18,7 @@ spec:
         app: cb-haproxy
         app.kubernetes.io/name: managed-prom
     spec:
-    ``{{- if .Values.global.imagePullerSecret }}
+      {{- if .Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
