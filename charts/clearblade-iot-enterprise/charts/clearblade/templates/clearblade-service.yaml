@@ -12,6 +12,7 @@ metadata:
 spec:
   {{- if .Values.reverseProxy.enabled }}
   type: LoadBalancer
+  loadBalancerIP: {{.Values.primaryIP}}
   ports:
     {{- if .Values.reverseProxy.enableHttp }}
     - name: api
