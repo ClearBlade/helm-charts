@@ -30,9 +30,9 @@ spec:
           {{- else if .Values.retentionSize}}
             - "--storage.tsdb.retention.size={{ .Values.retentionSize }}"  #example 70GB
           {{- else }}
-            {{- $raw := trimSuffix "G" .Values.prometheusDiskSize | toInt }}
-            {{- $calc := mul $raw 0.7 | int }}
-            - "--storage.tsdb.retention.size={{ printf \"%dGB\" $calc }}"
+            {{- $raw := atoi (regexReplaceAll "[^0-9]" .Values.prometheusDiskSize "") }}
+            {{- $calc := div (mul $raw 70) 100 }}
+            - "--storage.tsdb.retention.size={{ printf "%dGB" $calc }}"
           {{- end }}
           resources:
             requests:
