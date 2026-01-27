@@ -2,16 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: clearblade-service
+  name: {{ .name }}
   namespace: {{ default "clearblade" .root.Values.global.namespace }}
   labels:
-    {{- if .root.Values.global.enterpriseSlot }}
-    slot: {{ .root.Values.global.enterpriseSlot }}
-    {{- else }}
-    slot: blue
-    {{- end }}
+    slot: {{ .slot }}
+
 spec:
-  {{- if .root.Values.reverseProxy.enabled }}
+  {{- if .reverse_proxy_enabled }}
   type: LoadBalancer
   loadBalancerIP: {{.root.Values.primaryIP}}
   ports:
@@ -120,68 +117,5 @@ spec:
   {{- end }}
   selector:
     app: clearblade
-    {{- if .root.Values.global.enterpriseSlot }}
-    slot: {{ .root.Values.global.enterpriseSlot }}
-    {{- else }}
-    slot: blue
-    {{- end }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: clearblade-cluster-nodes-service
-  namespace: {{ default "clearblade" .root.Values.global.namespace }}
-  labels:
-    app: clearblade
-{{ include "clearblade.labels" .root | indent 4 }}
-spec:
-  clusterIP: None
-  ports:
-    - name: clearblade-node
-      targetPort: 8952
-      port: 8952
-      protocol: TCP
-  selector:
-    app: clearblade
-{{- if eq (default .root.Values.global.gmpEnabled false) false }}
----
-{{- if .root.Values.global.monitoringEnabled }}
-{{- range $i, $e := until (.root.Values.blueReplicas | int)}}
-apiVersion: v1
-kind: Service
-metadata:
-  name: clearblade-monitoring-service-{{$i}}
-  namespace: {{ default "clearblade" $.root.Values.global.namespace }}
-  labels:
-    run: clearblade
-    slot: blue
-spec:
-  ports:
-  - name: metrics
-    port: 2112
-    protocol: TCP
-  selector:
-    statefulset.kubernetes.io/pod-name: clearblade-{{$i}}
----
-{{- end }}
-{{- range $i, $e := until (.root.Values.greenReplicas | int)}}
-apiVersion: v1
-kind: Service
-metadata:
-  name: clearblade-monitoring-service-green-{{$i}}
-  namespace: {{ default "clearblade" $.root.Values.global.namespace }}
-  labels:
-    run: clearblade
-    slot: green
-spec:
-  ports:
-  - name: metrics
-    port: 2112
-    protocol: TCP
-  selector:
-    statefulset.kubernetes.io/pod-name: clearblade-green-{{$i}}
----
-{{- end}}
-{{- end}}
-{{- end}}
+    slot: {{ .slot }}
 {{- end}}

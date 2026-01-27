@@ -1,3 +1,94 @@
+# Set the slot
+{{- $slot := "blue" -}}
+{{- if .Values.global.enterpriseSlot -}}
+{{- $slot = .Values.global.enterpriseSlot -}}
+{{- end }}
+{{- if .Values.internalLoadBalancer.slot -}}
+{{- $slot = .Values.internalLoadBalancer.slot -}}
+{{- end }}
+
+{{- if .Values.internalLoadBalancer.enabled }}
 {{ include "clearblade.service" (dict 
+  "name" "clearblade-service"
+  "slot" $slot
+  "reverse_proxy_enabled" false
   "root" .
 ) }}
+{{- end }}
+---
+# Set the slot
+{{- $slot := "blue" -}}
+{{- if .Values.global.enterpriseSlot -}}
+{{- $slot = .Values.global.enterpriseSlot -}}
+{{- end }}
+{{- if .Values.externalLoadBalancer.slot -}}
+{{- $slot = .Values.externalLoadBalancer.slot -}}
+{{- end }}
+
+{{- if .Values.externalLoadBalancer.enabled }}
+{{ include "clearblade.service" (dict 
+  "name" "clearblade-external-service"
+  "slot" $slot
+  "reverse_proxy_enabled" true
+  "root" .
+) }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-cluster-nodes-service
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: clearblade
+{{ include "clearblade.labels" . | indent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: clearblade-node
+      targetPort: 8952
+      port: 8952
+      protocol: TCP
+  selector:
+    app: clearblade
+{{- if eq (default .Values.global.gmpEnabled false) false }}
+---
+{{- if .Values.global.monitoringEnabled }}
+{{- range $i, $e := until (.Values.blueReplicas | int)}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-monitoring-service-{{$i}}
+  namespace: {{ default "clearblade" $.Values.global.namespace }}
+  labels:
+    run: clearblade
+    slot: blue
+spec:
+  ports:
+  - name: metrics
+    port: 2112
+    protocol: TCP
+  selector:
+    statefulset.kubernetes.io/pod-name: clearblade-{{$i}}
+---
+{{- end }}
+{{- range $i, $e := until (.Values.greenReplicas | int)}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-monitoring-service-green-{{$i}}
+  namespace: {{ default "clearblade" $.Values.global.namespace }}
+  labels:
+    run: clearblade
+    slot: green
+spec:
+  ports:
+  - name: metrics
+    port: 2112
+    protocol: TCP
+  selector:
+    statefulset.kubernetes.io/pod-name: clearblade-green-{{$i}}
+---
+{{- end}}
+{{- end}}
+{{- end}}

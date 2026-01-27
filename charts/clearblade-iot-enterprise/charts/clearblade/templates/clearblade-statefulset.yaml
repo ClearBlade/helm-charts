@@ -19,6 +19,7 @@
   "clearblade_image" $image
   "madvdontneed" .Values.goMadvDontNeed
   "node_selector" $node_selector
+  "terminate_tls" .Values.blueTerminateTls
   "root" .
 ) }}
 ---
@@ -50,5 +51,6 @@
   "clearblade_image" $image
   "madvdontneed" $madvdontneed
   "node_selector" $node_selector
+  "terminate_tls" .Values.greenTerminateTls
   "root" .
 ) }}

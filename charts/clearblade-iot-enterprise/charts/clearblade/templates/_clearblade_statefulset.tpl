@@ -261,7 +261,7 @@ spec:
             # TODO: BRING THIS BACK
             # - "-check-certificate-cn-for-mtls=true"
             {{- end }}
-            {{- if .root.Values.reverseProxy.enabled }}
+            {{- if .terminate_tls }}
             - "-enable-reverse-proxy=true"
             - "-use-tls-http=true"
             - "-message-use-tls=true"

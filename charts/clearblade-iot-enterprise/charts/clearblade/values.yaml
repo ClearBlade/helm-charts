@@ -203,6 +203,14 @@ sync:
 triggers:
   maxExecutors: 1024
 
+internalLoadBalancer:
+  enabled: true
+
+externalLoadBalancer:
+  enabled: false
+
+greenTerminateTls: false
+blueTerminateTls: false
 
 # Set to true if the TLS certs from the database should be used instead of from an external secret manager
 useDbTlsCerts: false

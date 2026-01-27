@@ -58,6 +58,9 @@ global:
   # Required. Set to true if you are using GCP's Cloud SQL instead of postgres.
   gcpCloudSQLEnabled: false
 
+  # Required. 
+  haproxyEnabled: true
+
   # Required if using Cloud SQL. Leave blank or comment out if not using.
   # gcpCloudSQLConnectionName:
 
