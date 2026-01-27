@@ -177,7 +177,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .root.Values.global.mtlsClearBlade and (not .root.Values.useDbTlsCerts) }}
+            {{- if and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}   
@@ -258,7 +258,8 @@ spec:
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             {{- end }}
             - "-enable-mutual-tls-auth=true"
-            - "-check-certificate-cn-for-mtls=true"
+            # TODO: BRING THIS BACK
+            # - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             {{- if .root.Values.reverseProxy.enabled }}
             - "-enable-reverse-proxy=true"
@@ -272,6 +273,7 @@ spec:
             - "-ia-host=cb-ia-service"
             - "-iotcore-host=cb-iotcore-service"
             - "-ops-console-host=cb-ops-console-service"
+            - "-enable-automatic-certificate-renewal=true"
             {{- end }}
             - "-log-format=json"
           {{- if .madvdontneed}}
