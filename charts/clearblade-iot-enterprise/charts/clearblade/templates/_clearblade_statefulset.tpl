@@ -258,6 +258,7 @@ spec:
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             {{- end }}
             - "-enable-mutual-tls-auth=true"
+            - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             {{- if .terminate_tls }}
             - "-enable-reverse-proxy=true"
