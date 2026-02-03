@@ -1,4 +1,5 @@
 {{- define "clearblade.statefulset" -}}
+{{- $pullCertsFromSecretManager := and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -78,7 +79,7 @@ spec:
             done
           {{- end }}
       {{- end }}  
-        {{- if .root.Values.global.mtlsClearBlade }}
+        {{- if $pullCertsFromSecretManager }}
         - name: pull-mtls-certificate
           image: gcr.io/api-project-320446546234/cb_controller:cli-latest
           env: 
@@ -177,7 +178,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .root.Values.global.mtlsClearBlade }}
+            {{- if $pullCertsFromSecretManager }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}   
@@ -253,10 +254,26 @@ spec:
             - "-metrics-reporting-webhooks={{ join "," .root.Values.license.metricsWebhooks }}"
             - "-license-auto-renew-days={{ .root.Values.license.autoRenew.days }}"
             - "-auto-renew-license={{ .root.Values.license.autoRenew.enabled }}"
-            {{- if .root.Values.global.mtlsClearBlade }}
+            {{- if $pullCertsFromSecretManager }}
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
+            {{- end }}
+            {{- if .root.Values.global.mtlsClearBlade }}
             - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
+            {{- end }}
+            {{- if .terminate_tls }}
+            - "-enable-reverse-proxy=true"
+            - "-use-tls-http=true"
+            - "-message-use-tls=true"
+            - "-message-auth-use-tls=true"
+            - "-message-ws-use-tls=true"
+            - "-message-auth-ws-use-tls=true"
+            - "-rpc-use-tls=true"
+            - "-console-host=cb-console-service"
+            - "-ia-host=cb-ia-service"
+            - "-iotcore-host=cb-iotcore-service"
+            - "-ops-console-host=cb-ops-console-service"
+            - "-enable-automatic-certificate-renewal=true"
             {{- end }}
             - "-log-format=json"
           {{- if .madvdontneed}}
@@ -273,7 +290,7 @@ spec:
               mountPath: /etc/clearblade/conf/clearblade/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if .root.Values.global.mtlsClearBlade }}
+            {{- if $pullCertsFromSecretManager }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}
@@ -303,7 +320,7 @@ spec:
             secretName: clearblade-config
         - name: mek
           emptyDir: {}
-        {{- if .root.Values.global.mtlsClearBlade }}
+        {{- if $pullCertsFromSecretManager }}
         - name: mtls-cert-volume
           emptyDir: {}
         {{- end}}

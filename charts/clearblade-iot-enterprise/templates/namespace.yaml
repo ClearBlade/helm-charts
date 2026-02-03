@@ -89,6 +89,7 @@ spec:
     matchLabels:
       app: clearblade
 ---
+{{- if .Values.global.haproxyEnabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -100,6 +101,7 @@ spec:
     matchLabels:
       app: cb-haproxy
 ---
+{{- end }}
 {{- if .Values.global.iotcoreEnabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget

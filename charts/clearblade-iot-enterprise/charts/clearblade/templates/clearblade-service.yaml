@@ -1,80 +1,40 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: clearblade-service
-  namespace: {{ default "clearblade" .Values.global.namespace }}
-  labels:
-    {{- if .Values.global.enterpriseSlot }}
-    slot: {{ .Values.global.enterpriseSlot }}
-    {{- else }}
-    slot: blue
-    {{- end }}
-spec:
-  {{- if .Values.global.ExternalHaproxy }}
-  type: LoadBalancer
-  ports:
-    - name: mqtt
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTT }}
-      targetPort: 1883
-      protocol: TCP
-    - name: mqtt-ws
-      targetPort: 8903
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTTWS }}
-      protocol: TCP
-    - name: mqtt-auth
-      targetPort: 8905
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTTAuth }}
-      protocol: TCP
-    - name: mqtt-ws-auth
-      targetPort: 8907
-      port: {{ .Values.global.externalHaproxy.clearbladeMQTTWSAuth }}
-      protocol: TCP
-    - name: edge-rpc
-      targetPort: 8950
-      port: {{ .Values.global.externalHaproxy.clearbladeEdgeRPC }}
-      protocol: TCP
-    - name: api
-      targetPort: 9000
-      port: {{ .Values.global.externalHaproxy.clearbladeHTTP }}
-      protocol: TCP
-  {{- else }}
-  ports:
-    - name: mqtt
-      port: 1883
-      targetPort: 1883
-      protocol: TCP
-    - name: mqtt-ws
-      targetPort: 8903
-      port: 8903
-      protocol: TCP
-    - name: mqtt-auth
-      targetPort: 8905
-      port: 8905
-      protocol: TCP
-    - name: mqtt-ws-auth
-      targetPort: 8907
-      port: 8907
-      protocol: TCP
-    - name: edge-rpc
-      targetPort: 8950
-      port: 8950
-      protocol: TCP
-    - name: api
-      targetPort: 9000
-      port: 9000
-      protocol: TCP
-    - name: mtls
-      targetPort: 9001
-      port: 9001
-      protocol: TCP
-  {{- end }}
-  selector:
-    app: clearblade
-    {{- if .Values.global.enterpriseSlot }}
-    slot: {{ .Values.global.enterpriseSlot }}
-    {{- else }}
-    slot: blue
-    {{- end }}
+# Set the slot
+{{- $slot := "blue" -}}
+{{- if .Values.global.enterpriseSlot -}}
+{{- $slot = .Values.global.enterpriseSlot -}}
+{{- end }}
+{{- if .Values.internalLoadBalancer.slot -}}
+{{- $slot = .Values.internalLoadBalancer.slot -}}
+{{- end }}
+
+{{- if .Values.internalLoadBalancer.enabled }}
+{{ include "clearblade.service" (dict 
+  "name" "clearblade-service"
+  "slot" $slot
+  "reverse_proxy_enabled" false
+  "root" .
+) }}
+{{- end }}
+---
+# Set the slot
+{{- $slot := "blue" -}}
+{{- if .Values.global.enterpriseSlot -}}
+{{- $slot = .Values.global.enterpriseSlot -}}
+{{- end }}
+{{- if .Values.externalLoadBalancer.slot -}}
+{{- $slot = .Values.externalLoadBalancer.slot -}}
+{{- end }}
+
+{{- if .Values.externalLoadBalancer.enabled }}
+{{ include "clearblade.service" (dict 
+  "name" "clearblade-external-service"
+  "slot" $slot
+  "reverse_proxy_enabled" true
+  "reverseProxy" .Values.externalLoadBalancer.reverseProxy
+  "primaryIP" .Values.externalLoadBalancer.primaryIP
+  "root" .
+) }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -134,4 +94,3 @@ spec:
 {{- end}}
 {{- end}}
 {{- end}}
-

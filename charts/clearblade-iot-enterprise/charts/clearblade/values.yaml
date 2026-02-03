@@ -200,3 +200,41 @@ sync:
   reaperThreshold: 1000 # How many entries an edge is allowed to have in the sync queue before the reaper deletes them all.
 triggers:
   maxExecutors: 1024
+
+internalLoadBalancer:
+  enabled: true
+
+externalLoadBalancer:
+  enabled: false
+  primaryIP: ""
+  reverseProxy:
+    enableHttp: false
+    httpPort: 80
+    enableHttps: false
+    httpsPort: 443
+    enableMtls: false
+    mtlsPort: 444
+    enableMqttInsecure: false
+    mqttInsecurePort: 1883
+    enableMqtt: false
+    mqttPort: 1884
+    enableMqttWsInsecure: false
+    mqttWsInsecurePort: 8903
+    enableMqttWs: false
+    mqttWsPort: 8904
+    enableMqttAuthInsecure: false
+    mqttAuthInsecurePort: 8905
+    enableMqttAuth: false
+    mqttAuthPort: 8906
+    enableMqttWsAuthInsecure: false
+    mqttWsAuthInsecurePort: 8907
+    enableMqttWsAuth: false
+    mqttWsAuthPort: 8908
+    enableEdgeRpc: false
+    edgeRpcPort: 8951
+
+greenTerminateTls: false
+blueTerminateTls: false
+
+# Set to true if the TLS certs from the database should be used instead of from an external secret manager
+useDbTlsCerts: false
