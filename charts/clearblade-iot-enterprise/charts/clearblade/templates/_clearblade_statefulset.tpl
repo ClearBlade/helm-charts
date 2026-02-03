@@ -178,7 +178,7 @@ spec:
               mountPath: /config-map/
             - name: mek
               mountPath: /etc/clearblade/mek/
-            {{- if and $pullCertsFromSecretManager }}
+            {{- if $pullCertsFromSecretManager }}
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}   
