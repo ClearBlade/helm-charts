@@ -2,8 +2,6 @@ monitoringEnabled: true
 namespace: clearblade
 blueReplicas: 3
 greenReplicas: 0
-# Only required if reverseProxy is enabled
-primaryIP: ""
 checkReadiness: true
 logLevel: debug
 storeCodeLogs: true
@@ -208,6 +206,7 @@ internalLoadBalancer:
 
 externalLoadBalancer:
   enabled: false
+  primaryIP: ""
 
 greenTerminateTls: false
 blueTerminateTls: false

@@ -10,7 +10,7 @@ metadata:
 spec:
   {{- if .reverse_proxy_enabled }}
   type: LoadBalancer
-  loadBalancerIP: {{.root.Values.primaryIP}}
+  loadBalancerIP: {{ .primaryIP }}
   ports:
     {{- if .root.Values.reverseProxy.enableHttp }}
     - name: api
