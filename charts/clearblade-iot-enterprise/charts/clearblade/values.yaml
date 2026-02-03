@@ -217,27 +217,27 @@ reverseProxy:
   # If disabled, all options in this section are ignored.
   enabled: false
 
-  enableHttp: true
+  enableHttp: false
   httpPort: 80
-  enableHttps: true
+  enableHttps: false
   httpsPort: 443
-  enableMtls: true
+  enableMtls: false
   mtlsPort: 444
-  enableMqttInsecure: true
+  enableMqttInsecure: false
   mqttInsecurePort: 1883
-  enableMqtt: true
+  enableMqtt: false
   mqttPort: 1884
-  enableMqttWsInsecure: true
+  enableMqttWsInsecure: false
   mqttWsInsecurePort: 8903
-  enableMqttWs: true
+  enableMqttWs: false
   mqttWsPort: 8904
-  enableMqttAuthInsecure: true
+  enableMqttAuthInsecure: false
   mqttAuthInsecurePort: 8905
-  enableMqttAuth: true
+  enableMqttAuth: false
   mqttAuthPort: 8906
-  enableMqttWsAuthInsecure: true
+  enableMqttWsAuthInsecure: false
   mqttWsAuthInsecurePort: 8907
-  enableMqttWsAuth: true
+  enableMqttWsAuth: false
   mqttWsAuthPort: 8908
-  enableEdgeRpc: true
+  enableEdgeRpc: false
   edgeRpcPort: 8951
