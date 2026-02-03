@@ -2,39 +2,39 @@ apiVersion: v2
 name: clearblade-iot-enterprise
 description: ClearBlade IoT Enterprise
 type: application
-Version: 3.6.0
+version: 3.6.0
 
 dependencies:
   - name: cb-postgres
-    Version: 3.6.0
+    version: 3.6.0
     condition: cb-postgres.enabled
     repository: file://charts/cb-postgres
   - name: cb-haproxy
-    Version: 3.6.0
+    version: 3.6.0
     condition: cb-haproxy.enabled
     repository: file://charts/cb-haproxy
   - name: clearblade
-    Version: 3.6.0
+    version: 3.6.0
     repository: file://charts/clearblade
   - name: cb-console
-    Version: 3.6.0
+    version: 3.6.0
     repository: file://charts/cb-console
   - name: cb-file-hosting
-    Version: 3.6.0
+    version: 3.6.0
     repository: file://charts/cb-file-hosting
   - name: cb-redis
-    Version: 3.6.0
+    version: 3.6.0
     condition: cb-redis.enabled
     repository: file://charts/cb-redis
   - name: cb-iotcore
-    Version: 3.6.0
+    version: 3.6.0
     condition: global.iotCoreEnabled
     repository: file://charts/cb-iotcore
   - name: cb-ia
-    Version: 3.6.0
+    version: 3.6.0
     condition: global.iaEnabled
     repository: file://charts/cb-ia
   - name: cb-ops-console
-    Version: 3.6.0
+    version: 3.6.0
     condition: global.opsConsoleEnabled
     repository: file://charts/cb-ops-console
