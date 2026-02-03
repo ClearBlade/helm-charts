@@ -12,76 +12,76 @@ spec:
   type: LoadBalancer
   loadBalancerIP: {{ .primaryIP }}
   ports:
-    {{- if .root.Values.reverseProxy.enableHttp }}
+    {{- if .reverseProxy.enableHttp }}
     - name: api
-      port: {{ .root.Values.reverseProxy.httpPort }}
+      port: {{ .reverseProxy.httpPort }}
       targetPort: 9000
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableHttps }}
+    {{- if .reverseProxy.enableHttps }}
     - name: api-https
-      port: {{ .root.Values.reverseProxy.httpsPort }}
+      port: {{ .reverseProxy.httpsPort }}
       targetPort: 9002
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMtls }}
+    {{- if .reverseProxy.enableMtls }}
     - name: mtls
-      port: {{ .root.Values.reverseProxy.mtlsPort }}
+      port: {{ .reverseProxy.mtlsPort }}
       targetPort: 9001
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttInsecure }}
+    {{- if .reverseProxy.enableMqttInsecure }}
     - name: mqtt
-      port: {{ .root.Values.reverseProxy.mqttInsecurePort }}
+      port: {{ .reverseProxy.mqttInsecurePort }}
       targetPort: 1883
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqtt }}
+    {{- if .reverseProxy.enableMqtt }}
     - name: mqtt-tls
-      port: {{ .root.Values.reverseProxy.mqttPort }}
+      port: {{ .reverseProxy.mqttPort }}
       targetPort: 1884
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttWsInsecure }}
+    {{- if .reverseProxy.enableMqttWsInsecure }}
     - name: mqtt-ws
-      port: {{ .root.Values.reverseProxy.mqttWsInsecurePort }}
+      port: {{ .reverseProxy.mqttWsInsecurePort }}
       targetPort: 8903
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttWs }}
+    {{- if .reverseProxy.enableMqttWs }}
     - name: mqtt-ws-tls
       targetPort: 8904
-      port: {{ .root.Values.reverseProxy.mqttWsPort }}
+      port: {{ .reverseProxy.mqttWsPort }}
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttAuthInsecure }}
+    {{- if .reverseProxy.enableMqttAuthInsecure }}
     - name: mqtt-auth
       targetPort: 8905
-      port: {{ .root.Values.reverseProxy.mqttAuthInsecurePort }}
+      port: {{ .reverseProxy.mqttAuthInsecurePort }}
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttAuth }}
+    {{- if .reverseProxy.enableMqttAuth }}
     - name: mqtt-auth-tls
       targetPort: 8906
-      port: {{ .root.Values.reverseProxy.mqttAuthPort }}
+      port: {{ .reverseProxy.mqttAuthPort }}
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttWsAuthInsecure }}
+    {{- if .reverseProxy.enableMqttWsAuthInsecure }}
     - name: mqtt-ws-auth
       targetPort: 8907
-      port: {{ .root.Values.reverseProxy.mqttWsAuthInsecurePort }}
+      port: {{ .reverseProxy.mqttWsAuthInsecurePort }}
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableMqttWsAuth }}
+    {{- if .reverseProxy.enableMqttWsAuth }}
     - name: mqtt-ws-auth-tls
       targetPort: 8908
-      port: {{ .root.Values.reverseProxy.mqttWsAuthPort }}
+      port: {{ .reverseProxy.mqttWsAuthPort }}
       protocol: TCP
     {{- end }}
-    {{- if .root.Values.reverseProxy.enableEdgeRpc }}
+    {{- if .reverseProxy.enableEdgeRpc }}
     - name: edge-rpc
       targetPort: 8951
-      port: {{ .root.Values.reverseProxy.edgeRpcPort }}
+      port: {{ .reverseProxy.edgeRpcPort }}
       protocol: TCP
     {{- end }}
   {{- else }}

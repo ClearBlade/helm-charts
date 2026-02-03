@@ -30,6 +30,7 @@
   "name" "clearblade-external-service"
   "slot" $slot
   "reverse_proxy_enabled" true
+  "reverseProxy" .Values.externalLoadBalancer.reverseProxy
   "primaryIP" .Values.externalLoadBalancer.primaryIP
   "root" .
 ) }}
