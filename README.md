@@ -303,7 +303,17 @@ kubectl rollout status deployment -n cert-manager cert-manager
 
     If you are migrating from a single-pod PostgreSQL deployment to CNPG, you can import your data using `pg_restore` after the cluster is running.
 
-    <!-- TODO: Detail pg_restore import process -->
+    1. Ensure you have room on disk and take backup from running postgres with
+        `pg_dump -b -C -d admin -U postgres --format=c > admin.dump`
+    2. Copy to local then to your PRIMARY new postgres pod in new CNPG cluster
+    3. Run
+        `psql -U postgres -d admin -c "SELECT timescaledb_pre_restore();"`
+    4. Then restore with
+        `pg_restore -U postgres -d admin -v {DUMP_LOCATION}`
+    5. Run
+        `psql -U postgres -d admin -c "SELECT timescaledb_post_restore();"`
+        Note: If this command errors, you may need to reinstall timescale with `CREATE EXTENSION IF NOT EXISTS timescaledb;`. You then may run the post_restore step.
+    6. Optionally you may trigger a manualy backup to get a copy into your bucket. See below
 
 
 ## CNPG Values Reference

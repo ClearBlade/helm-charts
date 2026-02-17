@@ -1,5 +1,15 @@
 {{- if .Values.global.dynamicVolumes }}
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-postgres-credentials
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+type: kubernetes.io/basic-auth
+data:
+  username: {{ "cbuser" | b64enc }}
+  password: {{ .Values.global.pass | b64enc }}
+---
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore
 metadata:
@@ -66,9 +76,10 @@ spec:
     initdb:
       database: admin
       owner: cbuser
+      secret:
+        name: cb-postgres-credentials
       postInitApplicationSQL:
         - ALTER USER cbuser WITH SUPERUSER;
-        - ALTER USER cbuser WITH PASSWORD '{{ .Values.global.pass }}';
         - CREATE EXTENSION pg_stat_statements;
         - CREATE EXTENSION pg_trgm;
         {{- if not .Values.global.disableTimescale }}
