@@ -220,7 +220,7 @@ You should now be able to access the dev console from within your air-gapped net
 
 # CNPG
 
-## Install Plugins
+## Install Plugins (Once per cluster)
 
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
 
@@ -236,3 +236,173 @@ kubectl rollout status deployment -n cnpg-system cnpg-controller-manager
 kubectl rollout status deployment -n cnpg-system barman-cloud
 kubectl rollout status deployment -n cert-manager cert-manager
 
+## Steps
+
+1. Create GCP Bucket
+    Name must be globally unique. Add the name to global.bucket in this form: gs://my-bucket-name
+2. Add Workload Identity IAM binding
+
+    The CNPG Cluster creates a Kubernetes Service Account named `cb-postgres` in your namespace. This KSA is automatically annotated with your GCP service account via `serviceAccountTemplate` in the Helm chart. You need to create the corresponding IAM binding so the KSA can authenticate to GCS:
+
+    ```
+    gcloud iam service-accounts add-iam-policy-binding \
+      <gcpGSMServiceAccount>@<gcpProject>.iam.gserviceaccount.com \
+      --role roles/iam.workloadIdentityUser \
+      --member "serviceAccount:<gcpProject>.svc.id.goog[<namespace>/cb-postgres]"
+    ```
+
+    The GCP service account also requires the following role on the GCS bucket (or at the project level):
+
+    - `roles/storage.admin`
+
+    Note: `roles/storage.objectAdmin` alone is not sufficient - it lacks `storage.buckets.get` which is required by the barman cloud plugin.
+
+3. Configure values
+
+    Using the `gke-default-values.yaml` as a reference, set the CNPG-related global values in your values file. See the [CNPG Values Reference](#cnpg-values-reference) section below for details on each value.
+
+    At minimum you must set:
+    ```yaml
+    global:
+      dynamicVolumes: true
+      pgReplicas: 3
+      bucket: gs://your-bucket-name
+      schedule: '0 0 */6 * * *'
+      pass: <your-cbuser-password>
+    ```
+
+4. Install
+
+    ```
+    helm install clearblade-iot-enterprise <path-to-chart> -f ./my-values.yaml
+    ```
+
+    On a fresh install, the CNPG operator will:
+    - Create a `Cluster` resource with the specified number of replicas
+    - Dynamically provision PVCs and PVs for each replica (no pre-created disks needed)
+    - Initialize the `admin` database with `cbuser` as owner
+    - Install extensions (pg_stat_statements, pg_trgm, and optionally timescaledb)
+    - Start WAL archiving to your GCS bucket
+    - Take an initial base backup
+    - Begin scheduled backups on your cron schedule
+
+    The backup destination folder inside the bucket is determined by `global.folder` (defaults to `clearblade`). This folder structure is created automatically by the barman cloud plugin on the first backup - you do not need to create it manually. The folder contains both base backups and WAL archives.
+
+5. Set `restored: true` for subsequent deploys
+
+    After your initial deployment is running and has taken at least one successful backup, update your values file to set `global.restored: true`. This ensures that if the cluster is ever torn down and re-created (e.g. during a nodepool migration or disaster recovery), the CNPG operator will bootstrap from the most recent backup in your GCS bucket rather than initializing a fresh empty database.
+
+    ```yaml
+    global:
+      restored: true
+    ```
+
+    If you ever need to start completely fresh (new empty database), set `restored: false` and point to a new bucket or folder.
+
+6. Import an existing database (optional)
+
+    If you are migrating from a single-pod PostgreSQL deployment to CNPG, you can import your data using `pg_restore` after the cluster is running.
+
+    <!-- TODO: Detail pg_restore import process -->
+
+
+## CNPG Values Reference
+
+All CNPG-related values are documented in `gke-default-values.yaml`. Here is a summary:
+
+### Global Values
+
+| Value | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `global.dynamicVolumes` | Yes | `false` | Set to `true` to enable CNPG HA Postgres. When `false`, the legacy single-pod StatefulSet is used. |
+| `global.pgReplicas` | Yes | - | Number of PostgreSQL replicas (e.g. `3`). Replicas are spread across nodes via pod anti-affinity. |
+| `global.bucket` | Yes | - | GCS bucket path for backups. Format: `gs://bucket-name` |
+| `global.folder` | No | `clearblade` | Server name / folder within the bucket. The backup directory structure is created automatically. Use a unique value per deployment if sharing a bucket. |
+| `global.schedule` | Yes | - | Cron schedule for automated backups. 6-field format: `'0 0 */6 * * *'` (every 6 hours). |
+| `global.pass` | Yes (fresh) | - | Password for the `cbuser` database user. Only used during `initdb` (fresh install). |
+| `global.restored` | No | `false` | Set to `true` to bootstrap from a GCS backup instead of initializing fresh. |
+| `global.nodepoolSlot` | No | - | Node selector slot label for CNPG pod placement. |
+| `global.disableTimescale` | No | `false` | Set to `true` to skip installing the TimescaleDB extension. |
+
+### cb-postgres Values
+
+| Value | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `cb-postgres.storageSize` | No | `100Gi` | PVC size for each PostgreSQL replica. |
+| `cb-postgres.maxConnections` | No | `500` | PostgreSQL `max_connections` parameter. |
+| `cb-postgres.sharedBuffers` | No | `2GB` | PostgreSQL `shared_buffers` parameter. |
+| `cb-postgres.workMem` | No | `64MB` | PostgreSQL `work_mem` parameter. |
+| `cb-postgres.walMaxParallel` | No | `8` | Number of parallel WAL upload workers. |
+| `cb-postgres.retentionPolicy` | No | - | Backup retention policy (e.g. `30d` for 30 days). If not set, backups are retained indefinitely. |
+| `cb-postgres.requestCPU` | No | `1` | CPU request per replica. |
+| `cb-postgres.requestMemory` | No | `4G` | Memory request per replica. |
+| `cb-postgres.limitCPU` | No | `1` | CPU limit per replica. |
+| `cb-postgres.limitMemory` | No | `4G` | Memory limit per replica. |
+
+## How It Works
+
+When `global.dynamicVolumes` is set to `true`, the Helm chart deploys a CNPG `Cluster` resource instead of the legacy single-pod StatefulSet. The CNPG operator manages the full lifecycle of the PostgreSQL cluster:
+
+- **High Availability**: Multiple replicas with streaming replication. The operator automatically handles primary election and replica promotion. If the primary fails, a replica is promoted with no manual intervention.
+- **Dynamic Volumes**: PVCs are provisioned automatically by the operator using the specified storage class. No pre-created GCE disks or PersistentVolume resources are needed.
+- **Continuous Backup**: WAL files are continuously archived to GCS via the barman cloud plugin (running as a sidecar container). Scheduled base backups are taken on your configured cron schedule.
+- **Restore**: When `restored: true`, the operator bootstraps a new cluster by fetching the latest base backup and replaying WAL files from GCS, recovering to the most recent consistent state.
+- **Service Discovery**: CNPG creates services automatically: `cb-postgres-rw` (read-write, always points to primary), `cb-postgres-ro` (read-only replicas), and `cb-postgres-r` (all replicas). The ClearBlade platform connects to `cb-postgres-rw`.
+
+## Manual Backups
+
+To take an on-demand backup, apply a `Backup` resource with a unique name:
+
+```
+kubectl apply -n <namespace> -f - <<EOF
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: backup-$(date +%s)
+  namespace: <namespace>
+spec:
+  cluster:
+    name: cb-postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+EOF
+```
+
+Each backup gets a unique name via the timestamp suffix. You can take as many manual backups as needed - they accumulate in the GCS bucket independently. To check backup status:
+
+```
+kubectl get backups -n <namespace>
+```
+
+## kubectl cnpg Plugin
+
+The `cnpg` kubectl plugin provides convenience commands for managing CNPG clusters. Install it with:
+
+```
+curl -sSfL https://github.com/cloudnative-pg/cloudnative-pg/raw/main/hack/install-cnpg-plugin.sh | sh
+```
+
+**Important**: All `kubectl cnpg` commands require the `-n <namespace>` flag to work.
+
+### Common Commands
+
+```bash
+# Cluster status overview
+kubectl cnpg status cb-postgres -n <namespace>
+
+# Detailed status with replication info
+kubectl cnpg status cb-postgres -n <namespace> --verbose
+
+# Promote a replica to primary (for planned switchover)
+kubectl cnpg promote cb-postgres <replica-number> -n <namespace>
+
+# List backups
+kubectl get backups -n <namespace>
+
+# Check cluster conditions and events
+kubectl describe cluster cb-postgres -n <namespace>
+
+# View CNPG operator logs
+kubectl logs -n cnpg-system deployment/cnpg-controller-manager -f
+```
