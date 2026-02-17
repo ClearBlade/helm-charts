@@ -216,3 +216,23 @@ Run
 Create DNS record of your base URL at the external IP of the cb-haproxy-service
 
 You should now be able to access the dev console from within your air-gapped network at your baseURL/console . You can register using your set registration key and grant yourself admin priveledge by running `clearblade setadmin user@example.com` on any running ClearBlade container.
+
+
+# CNPG
+
+## Install Plugins
+
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+
+kubectl apply --server-side -f \
+    https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.27/releases/cnpg-1.27.1.yaml
+
+kubectl apply -f \
+    https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/v0.11.0/manifest.yaml
+
+## Verify plugins
+
+kubectl rollout status deployment -n cnpg-system cnpg-controller-manager
+kubectl rollout status deployment -n cnpg-system barman-cloud
+kubectl rollout status deployment -n cert-manager cert-manager
+

@@ -35,3 +35,14 @@ postgresDiskName: postgres
 volumeAZ:
 volumeHandle:
 maxConnections: 500
+
+# CNPG-specific settings (used when global.dynamicVolumes is true)
+# PostgreSQL tuning
+sharedBuffers: 2GB
+workMem: 64MB
+
+# WAL archiving parallelism
+walMaxParallel: 8
+
+# Backup retention policy (e.g. "30d" for 30 days)
+# retentionPolicy: "30d"

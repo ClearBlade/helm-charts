@@ -106,6 +106,31 @@ global:
   # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
   # mtlsHAProxy:
 
+  # Optional. Set to true to use CloudNativePG HA Postgres instead of a single StatefulSet pod.
+  # Requires CNPG operator (v1.27+), cert-manager, and barman-cloud plugin installed on the cluster.
+  # dynamicVolumes: false
+
+  # Required if dynamicVolumes is true. Number of PostgreSQL replicas.
+  # pgReplicas: 3
+
+  # Optional. Node selector slot label for CNPG pod anti-affinity.
+  # nodepoolSlot:
+
+  # Required if dynamicVolumes is true. GCS bucket path for backups. Format: "gs://bucket-name/path"
+  # bucket:
+
+  # Optional. Barman server name / folder in the bucket. Defaults to "clearblade".
+  # folder:
+
+  # Required if dynamicVolumes is true. Cron schedule for automated backups. Format: "0 0 0 * * *"
+  # schedule:
+
+  # Required if dynamicVolumes is true and not restoring. Password for the cbuser database user.
+  # pass:
+
+  # Optional. Set to true to bootstrap from a GCS backup instead of initializing fresh.
+  # restored: false
+
   # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
   # monitoringEnabled:
 
@@ -177,6 +202,14 @@ cb-postgres:
   limitCPU: 1
   limitMemory: 2G
   postgres0DiskName: postgres-0
+
+  # CNPG HA Postgres settings (requires global.dynamicVolumes: true)
+  # storageSize: 100Gi
+  # maxConnections: 500
+  # sharedBuffers: 2GB
+  # workMem: 64MB
+  # walMaxParallel: 8
+  # retentionPolicy: "30d"
 cb-redis:
   # Required. Set to false if using an external redis deployment.
   enabled: true
