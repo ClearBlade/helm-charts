@@ -2,6 +2,9 @@ global:
   # Required. Supported clouds are "aws" and "gcp". As this values file is for GKE, the value should be "gcp".
   cloud: gcp
 
+  # Required. 
+  haproxyEnabled: true
+
   # Optional. Namespace to deploy to. Default is "clearblade"
   namespace: 
 

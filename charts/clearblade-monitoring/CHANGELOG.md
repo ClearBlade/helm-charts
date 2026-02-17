@@ -31,3 +31,9 @@ Added image puller secret to haproxy for init container
 ## [2.15.6] - 2025-12-09
 
 Added alert for Redis connection pool nearing max out
+
+## [2.15.7] - 2025-01-22
+
+Only include pod name label in alert title instead of dumping all labels
+
+Prom retention config bug fix

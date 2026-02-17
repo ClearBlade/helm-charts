@@ -77,3 +77,7 @@ ClearBlade: Added optional env variable for GODEBUG: madvdontneed=1
 IA, IoTCore and File Hosting: Changed deployment strategy from rolling update to recreate
 
 ClearBlade: Changed statefulsets to allow for rollout partitions on changes
+
+## [3.6.0] - 2026-01-30
+
+Support Haproxyless architecture

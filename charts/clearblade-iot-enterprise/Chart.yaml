@@ -11,7 +11,7 @@ dependencies:
     repository: file://charts/cb-postgres
   - name: cb-haproxy
     version: 3.6.0
-    condition: cb-haproxy.enabled
+    condition: global.haproxyEnabled
     repository: file://charts/cb-haproxy
   - name: clearblade
     version: 3.6.0
