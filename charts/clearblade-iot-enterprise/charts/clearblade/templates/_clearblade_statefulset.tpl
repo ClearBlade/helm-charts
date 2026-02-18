@@ -275,6 +275,11 @@ spec:
             - "-ops-console-host=cb-ops-console-service"
             - "-enable-automatic-certificate-renewal=true"
             {{- end }}
+            {{- if .root.Values.enableWeakCiphers }}
+            - "-weak-ciphers=true"
+            {{- end }}
+            - "-min-tls-version={{ .root.Values.minTlsVersion }}"
+            - "-root-redirect-url={{ .root.Values.rootRedirectUrl }}"
             - "-log-format=json"
           {{- if .madvdontneed}}
           env:
