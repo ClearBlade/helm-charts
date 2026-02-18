@@ -81,3 +81,7 @@ ClearBlade: Changed statefulsets to allow for rollout partitions on changes
 ## [3.6.0] - 2026-01-30
 
 Support Haproxyless architecture
+
+## [3.6.1] - 2026-02-18
+
+ClearBlade: Add values for setting min TLS version, root redirect URL, and enabling weak ciphers
