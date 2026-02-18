@@ -287,7 +287,9 @@ spec:
             - "-weak-ciphers=true"
             {{- end }}
             - "-min-tls-version={{ .root.Values.minTlsVersion }}"
+            {{- if ne $rootRedirectUrl "" }}
             - "-root-redirect-url={{ $rootRedirectUrl }}"
+            {{- end }}
             - "-log-format=json"
           {{- if .madvdontneed}}
           env:
