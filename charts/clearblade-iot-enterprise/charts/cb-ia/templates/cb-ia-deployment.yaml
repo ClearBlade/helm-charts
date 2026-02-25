@@ -64,6 +64,11 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
+          {{- if .Values.skipBucketSets }}
+          env:
+            - name: SKIP_BUCKET_SETS
+              value: true
+          {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}

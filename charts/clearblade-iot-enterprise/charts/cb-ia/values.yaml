@@ -6,3 +6,4 @@ storageSize: 10Gi
 checkClearbladeReadiness: true
 version:
 volumeHandle:
+skipBucketSets: false
