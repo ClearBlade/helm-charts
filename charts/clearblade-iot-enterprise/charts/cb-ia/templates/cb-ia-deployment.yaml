@@ -50,7 +50,7 @@ spec:
           image: gcr.io/api-project-320446546234/ia:{{ .Values.version }}
           {{- end }}
           command:  ["ia-sidecar"]
-          args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-instance-id={{ .Values.global.enterpriseInstanceID }}", "-tilesService=cb-tiles-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:7777"]
+          args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-instance-id={{ .Values.global.enterpriseInstanceID }}", "-tilesService=cb-tiles-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:7777", "-skip-bucket-sets={{ .Values.skipBucketSets}}"]
           volumeMounts:
           - name: ia
             mountPath: /etc/clearblade/conf/ia
@@ -64,11 +64,6 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
-          {{- if .Values.skipBucketSets }}
-          env:
-            - name: SKIP_BUCKET_SETS
-              value: true
-          {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
