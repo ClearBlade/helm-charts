@@ -98,6 +98,8 @@ spec:
       log_min_duration_statement: "50"
       log_statement: "ddl"
       track_activity_query_size: "2048"
+  monitoring:
+    enablePodMonitor: false
   resources:
     requests:
       cpu: {{ .Values.requestCPU }}
