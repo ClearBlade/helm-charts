@@ -2,6 +2,7 @@ replicas: 3
 monitoringEnabled: false
 image: timescale/timescaledb
 imageTag: "latest-pg15"
+cnpgImageTag: cb_cnpg:15
 requestCPU: 1
 requestMemory: 4G
 limitCPU: 1

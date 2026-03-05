@@ -38,7 +38,7 @@ metadata:
     cnpg.io/skipEmptyWalArchiveCheck: enabled
 spec:
   instances: {{ .Values.global.pgReplicas }}
-  imageName: gcr.io/api-project-320446546234/cb_cnpg:15
+  imageName: gcr.io/api-project-320446546234/{{ .Values.cnpgImageTag }}
   {{- if .Values.global.imagePullerSecret }}
   imagePullSecrets:
     - name: gcr-json-key
@@ -87,8 +87,10 @@ spec:
         {{- end }}
   {{- end }}
   postgresql:
+    {{- if not .Values.global.disableTimescale }}
     shared_preload_libraries:
       - timescaledb
+    {{- end }}
     parameters:
       max_connections: "{{ .Values.maxConnections }}"
       shared_buffers: "{{ .Values.sharedBuffers | default "2GB" }}"
