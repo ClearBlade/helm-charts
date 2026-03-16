@@ -39,8 +39,8 @@ maxConnections: 500
 
 # CNPG-specific settings (used when global.dynamicVolumes is true)
 # PostgreSQL tuning
-sharedBuffers: 2GB
-workMem: 64MB
+sharedBuffers: 1GB
+workMem: 256MB
 
 # WAL archiving parallelism
 walMaxParallel: 8

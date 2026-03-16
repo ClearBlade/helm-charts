@@ -93,8 +93,8 @@ spec:
     {{- end }}
     parameters:
       max_connections: "{{ .Values.maxConnections }}"
-      shared_buffers: "{{ .Values.sharedBuffers | default "2GB" }}"
-      work_mem: "{{ .Values.workMem | default "64MB" }}"
+      shared_buffers: "{{ .Values.sharedBuffers | default "1GB" }}"
+      work_mem: "{{ .Values.workMem | default "256MB" }}"
       random_page_cost: "1.1"
       max_locks_per_transaction: "256"
       log_min_duration_statement: "50"
