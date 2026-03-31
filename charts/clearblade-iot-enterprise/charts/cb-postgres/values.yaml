@@ -36,6 +36,9 @@ postgresDiskName: postgres
 volumeAZ:
 volumeHandle:
 maxConnections: 500
+maintenanceWorkMem: 256MB
+sharedBuffers: 1GB #Recommended 1/4 of memory
+effectiveCacheSize: 3GB #Recommended 3/4 of memory
 
 # CNPG-specific settings (used when global.dynamicVolumes is true)
 # PostgreSQL tuning

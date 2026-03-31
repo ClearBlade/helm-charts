@@ -1,5 +1,13 @@
 {{- define "clearblade.statefulset" -}}
 {{- $pullCertsFromSecretManager := and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) -}}
+{{- $rootRedirectUrl := "" -}}
+{{- if ne .root.Values.rootRedirectUrl "" -}}
+{{- $rootRedirectUrl = .root.Values.rootRedirectUrl -}}
+{{- else if .root.Values.global.iotCoreEnabled -}}
+{{- $rootRedirectUrl = "/iot-core" -}}
+{{- else if .root.Values.global.opsConsoleEnabled -}}
+{{- $rootRedirectUrl = "/ops-console" -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -281,6 +289,13 @@ spec:
             - "-iotcore-host=cb-iotcore-service"
             - "-ops-console-host=cb-ops-console-service"
             - "-enable-automatic-certificate-renewal=true"
+            {{- end }}
+            {{- if .root.Values.enableWeakCiphers }}
+            - "-weak-ciphers=true"
+            {{- end }}
+            - "-min-tls-version={{ .root.Values.minTlsVersion }}"
+            {{- if ne $rootRedirectUrl "" }}
+            - "-root-redirect-url={{ $rootRedirectUrl }}"
             {{- end }}
             - "-log-format=json"
           {{- if .madvdontneed}}

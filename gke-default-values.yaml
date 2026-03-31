@@ -52,6 +52,9 @@ global:
   # Required. Set to "true" if this deployment uses the IOTCore Sidecar.
   iotCoreEnabled: false
 
+  # Optional. The default IA landing page to redirect root (/) to. Only used when iotCoreEnabled is false; if iot core is enabled, root redirects to /iot-core instead. Leave blank or comment out if not using.
+  # defaultIa: 
+
   # Required. Set to "true" if this deployment uses the Intelligent Assets Sidecar.
   iaEnabled: false
 
