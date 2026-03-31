@@ -40,11 +40,6 @@ maintenanceWorkMem: 256MB
 sharedBuffers: 1GB #Recommended 1/4 of memory
 effectiveCacheSize: 3GB #Recommended 3/4 of memory
 
-# CNPG-specific settings (used when global.dynamicVolumes is true)
-# PostgreSQL tuning
-sharedBuffers: 1GB
-workMem: 256MB
-
 # WAL archiving parallelism
 walMaxParallel: 8
 
