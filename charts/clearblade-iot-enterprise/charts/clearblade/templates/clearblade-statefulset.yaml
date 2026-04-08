@@ -230,7 +230,9 @@ spec:
             {{- if .Values.global.mtlsClearBlade }}
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             - "-enable-mutual-tls-auth=true"
+            {{- if not .Values.skipCheckCNforMTLS}}
             - "-check-certificate-cn-for-mtls=true"
+            {{- end }}
             {{- end }}
             - "-log-format=json"
           {{- if .Values.goMadvDontNeed}}
@@ -519,7 +521,9 @@ spec:
             {{- if .Values.global.mtlsClearBlade }}
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             - "-enable-mutual-tls-auth=true"
+            {{- if not .Values.skipCheckCNforMTLS}}
             - "-check-certificate-cn-for-mtls=true"
+            {{- end }}
             {{- end }}
             - "-log-format=json"
           {{- if or (.Values.goMadvDontNeed) (.Values.greenGoMadvDontNeed) }}
