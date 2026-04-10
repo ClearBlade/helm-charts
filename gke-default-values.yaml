@@ -209,7 +209,7 @@ cb-postgres:
   # CNPG HA Postgres settings (requires global.dynamicVolumes: true)
   # storageSize: 100Gi
   # maxConnections: 500
-  # sharedBuffers: 2GB
+  # sharedBuffers: 1GB
   # workMem: 64MB
   # walMaxParallel: 8
   # retentionPolicy: "30d"

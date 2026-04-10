@@ -313,7 +313,7 @@ kubectl rollout status deployment -n cert-manager cert-manager
     5. Run
         `psql -U postgres -d admin -c "SELECT timescaledb_post_restore();"`
         Note: If this command errors, you may need to reinstall timescale with `CREATE EXTENSION IF NOT EXISTS timescaledb;`. You then may run the post_restore step.
-    6. Optionally you may trigger a manualy backup to get a copy into your bucket. See below
+    6. Optionally you may trigger a manual backup to get a copy into your bucket. See below
 
 
 ## CNPG Values Reference
@@ -340,7 +340,7 @@ All CNPG-related values are documented in `gke-default-values.yaml`. Here is a s
 |-------|----------|---------|-------------|
 | `cb-postgres.storageSize` | No | `100Gi` | PVC size for each PostgreSQL replica. |
 | `cb-postgres.maxConnections` | No | `500` | PostgreSQL `max_connections` parameter. |
-| `cb-postgres.sharedBuffers` | No | `2GB` | PostgreSQL `shared_buffers` parameter. |
+| `cb-postgres.sharedBuffers` | No | `1GB` | PostgreSQL `shared_buffers` parameter. |
 | `cb-postgres.workMem` | No | `64MB` | PostgreSQL `work_mem` parameter. |
 | `cb-postgres.walMaxParallel` | No | `8` | Number of parallel WAL upload workers. |
 | `cb-postgres.retentionPolicy` | No | - | Backup retention policy (e.g. `30d` for 30 days). If not set, backups are retained indefinitely. |

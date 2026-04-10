@@ -2,6 +2,7 @@ replicas: 3
 monitoringEnabled: false
 image: timescale/timescaledb
 imageTag: "latest-pg15"
+cnpgImageRegistry: gcr.io/api-project-320446546234
 cnpgImageTag: cb_cnpg:15
 requestCPU: 1
 requestMemory: 4G
@@ -39,6 +40,7 @@ maxConnections: 500
 maintenanceWorkMem: 256MB
 sharedBuffers: 1GB #Recommended 1/4 of memory
 effectiveCacheSize: 3GB #Recommended 3/4 of memory
+workMem: 64MB
 
 # WAL archiving parallelism
 walMaxParallel: 8
