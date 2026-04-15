@@ -62,7 +62,7 @@ metadata:
   name: postgres-pdb
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  minAvailable: 2
+  minAvailable: 0
   selector:
     matchLabels:
       app: cb-postgres
@@ -73,7 +73,7 @@ metadata:
   name: redis-pdb
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  minAvailable: 1
+  minAvailable: 0
   selector:
     matchLabels:
       app: cb-redis
@@ -84,7 +84,7 @@ metadata:
   name: cb-pdb
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  minAvailable: {{ add .Values.clearblade.blueReplicas .Values.clearblade.greenReplicas}}
+  minAvailable: 0
   selector:
     matchLabels:
       app: clearblade
@@ -96,7 +96,7 @@ metadata:
   name: hap-pdb
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  minAvailable: {{ index .Values "cb-haproxy" "replicas" }}
+  minAvailable: 0
   selector:
     matchLabels:
       app: cb-haproxy
@@ -109,7 +109,7 @@ metadata:
   name: iotcore-pdb
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  minAvailable: 1
+  minAvailable: 0
   selector:
     matchLabels:
       app: cb-iotcore
@@ -122,7 +122,7 @@ metadata:
   name: ia-pdb
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
-  minAvailable: 1
+  minAvailable: 0
   selector:
     matchLabels:
       app: cb-ia

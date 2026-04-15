@@ -267,7 +267,7 @@ spec:
             {{- end }}
             {{- if .root.Values.global.mtlsClearBlade }}
             - "-enable-mutual-tls-auth=true"
-            - "-check-certificate-cn-for-mtls=true"
+            - "-check-certificate-cn-for-mtls=false"
             {{- end }}
             {{- if .terminate_tls }}
             - "-enable-reverse-proxy=true"
