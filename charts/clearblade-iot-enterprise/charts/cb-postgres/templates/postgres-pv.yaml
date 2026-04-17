@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ default "clearblade" $.Values.global.namespace}}-postgres-{{$i}}
+  name: {{ default "clearblade" $.Values.global.namespace}}-{{ $.Values.diskName | default "postgres" }}-{{$i}}
   namespace: {{ default "clearblade" $.Values.global.namespace }}
 spec:
   storageClassName: {{ $.Values.global.storageClassName }}
@@ -20,7 +20,11 @@ spec:
     {{- if $.Values.volumeHandle}}
     volumeHandle: "{{ $.Values.volumeHandle }}"
     {{- else }}
-    volumeHandle: "projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.postgresDiskName }}-{{$i}}"
+    {{- if $.Values.diskHandle }}
+    volumeHandle: "{{ $.Values.diskHandle }}"
+    {{- else }}
+    volumeHandle: "projects/{{ $.Values.global.gcpProject }}/regions/{{ $.Values.global.gcpRegion }}/disks/{{ default "clearblade" $.Values.global.namespace }}-{{ $.Values.diskName | default $.Values.postgresDiskName }}-{{$i}}"
+    {{- end }}
     {{- end }}
     fsType: ext4
   {{- else if eq $.Values.global.cloud "gdc"}}
@@ -28,8 +32,8 @@ spec:
     volumeHandle: "{{ $.Values.global.postgresVolumeHandle }}"
     fsType: "{{ $.Values.global.fsType }}"
   {{- else if eq $.Values.global.cloud "aws" }}
-  driver: ebs.csi.aws.com
-  volumeHandle: {{ $.Values.volumeHandle }}
+    driver: ebs.csi.aws.com
+    volumeHandle: {{ $.Values.volumeHandle }}
   {{- end }}
 ---
 {{- end }}

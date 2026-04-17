@@ -41,7 +41,11 @@ spec:
         tolerationSeconds: 0
       initContainers:
         - name: init
+          {{- if .Values.global.arm }}
+          image: gcr.io/google.com/cloudsdktool/google-cloud-cli:alpine
+          {{- else }}
           image: google/cloud-sdk:slim
+          {{- end }}
           command: ["/bin/sh"]
           args:
             - -c
@@ -153,7 +157,7 @@ spec:
               name: postgres-env-vars-volume
             {{- end}}
             - mountPath: /var/lib/postgresql/data/
-              name: pvc-postgres-data
+              name: pvc-{{ .Values.diskName | default "postgres" }}-data
 
             - mountPath: /etc/postgresql/
               name: postgres-config-volume
@@ -220,6 +224,10 @@ spec:
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
       {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ .Values.tolerations | toYaml | indent 6 }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
         {{ .Values.nodeSelector }}
@@ -247,7 +255,7 @@ spec:
     - apiVersion: v1
       kind: PersistentVolumeClaim
       metadata:
-        name: pvc-postgres-data
+        name: pvc-{{ .Values.diskName | default "postgres" }}-data
       spec:
         accessModes:
           - ReadWriteOnce

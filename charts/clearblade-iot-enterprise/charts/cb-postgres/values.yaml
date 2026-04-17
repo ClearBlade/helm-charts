@@ -32,6 +32,8 @@ storageSize: 100Gi
  # Example: clearblade-postgres-0
  # In the above example, the value below would just be "postgres"
 postgresDiskName: postgres
+ # Override the disk name used for PV, PVC, and volumeHandle. Defaults to postgresDiskName when not set.
+diskName:
 volumeAZ:
 volumeHandle:
 maxConnections: 500

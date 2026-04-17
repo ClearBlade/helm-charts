@@ -110,7 +110,11 @@ spec:
         {{- end }}
         - name: init
           {{- if eq .root.Values.global.secretManager "gsm"}}
+          {{- if .Values.global.arm }}
+          image: gcr.io/google.com/cloudsdktool/google-cloud-cli:alpine
+          {{- else }}
           image: google/cloud-sdk:slim
+          {{- end }}
           {{- end }}
           {{- if eq .root.Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
@@ -322,6 +326,10 @@ spec:
       {{- if .root.Values.global.tolerations }}
       tolerations:
 {{ .root.Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .root.Values.tolerations }}
+      tolerations:
+{{ .root.Values.tolerations | toYaml | indent 6 }}
       {{- end }}
       {{- if .node_selector }}
       nodeSelector:
