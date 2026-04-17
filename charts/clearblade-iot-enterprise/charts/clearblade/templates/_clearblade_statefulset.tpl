@@ -136,7 +136,7 @@ spec:
               # Add blue/green slot to host address
               sed -i 's|{slot}|'{{ .node_suffix }}'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               {{- if eq .root.Values.global.secretManager "gsm"}}
-              dbpassword=$(gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password)
+              dbpassword=$(gcloud secrets versions access latest --project={{ .root.Values.global.gcpProject }} --secret={{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password)
               {{- end }}
               {{- if eq .root.Values.global.secretManager "asm"}}
               dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
@@ -148,14 +148,14 @@ spec:
               sed -i 's|{db_password}|'$escaped_dbpassword'|g' /etc/clearblade/conf/clearblade/clearblade.toml
               {{- end }}
               {{- if eq .root.Values.global.secretManager "gsm"}}
-              gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
+              gcloud secrets versions access latest --project={{ .root.Values.global.gcpProject }} --secret={{ default "clearblade" .root.Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
               {{- else if eq .root.Values.global.secretManager "asm"}}
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
               {{- if eq .root.Values.global.secretManager "gsm" }}
-              gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              gcloud secrets versions access latest --project={{ .root.Values.global.gcpProject }} --secret={{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
               {{- else if eq .root.Values.global.secretManager "asm"}}
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
               {{- else }}
