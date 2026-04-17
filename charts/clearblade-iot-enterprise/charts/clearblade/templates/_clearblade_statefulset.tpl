@@ -110,7 +110,7 @@ spec:
         {{- end }}
         - name: init
           {{- if eq .root.Values.global.secretManager "gsm"}}
-          {{- if .Values.global.arm }}
+          {{- if .root.Values.global.arm }}
           image: gcr.io/google.com/cloudsdktool/google-cloud-cli:alpine
           {{- else }}
           image: google/cloud-sdk:slim
