@@ -43,7 +43,7 @@ metadata:
     cnpg.io/skipEmptyWalArchiveCheck: enabled
 spec:
   instances: {{ $pgReplicas }}
-  imageName: {{ .Values.cnpgImageRegistry }}/{{ .Values.cnpgImageTag }}
+  imageName: {{ .Values.cnpgImageRegistry }}/{{ .Values.cnpgImage }}:{{ .Values.cnpgImageTag }}
   {{- if .Values.global.imagePullerSecret }}
   imagePullSecrets:
     - name: gcr-json-key
