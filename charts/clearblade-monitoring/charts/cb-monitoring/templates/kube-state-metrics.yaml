@@ -76,13 +76,13 @@ spec:
               path: /healthz
               port: 8080
             initialDelaySeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /
               port: 8081
             initialDelaySeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 10
       serviceAccountName: kube-state-metrics
       {{- if .Values.global.tolerations }}
       tolerations:
@@ -345,13 +345,13 @@ spec:
               path: /healthz
               port: 8080
             initialDelaySeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /
               port: 8081
             initialDelaySeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 10
       serviceAccountName: kube-state-metrics
       {{- if .Values.global.tolerations }}
       tolerations:
