@@ -2,8 +2,7 @@ replicas: 3
 monitoringEnabled: false
 image: timescale/timescaledb
 imageTag: "latest-pg15"
-cnpgImageRegistry: gcr.io/api-project-320446546234
-cnpgImage: cb_cnpg
+cnpgImage: gcr.io/api-project-320446546234/cb_cnpg
 cnpgImageTag: 15
 requestCPU: 1
 requestMemory: 4G
