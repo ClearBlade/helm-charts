@@ -36,7 +36,7 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: 
+metadata:
   name: cb-haproxy-monitoring-service
   namespace: {{ default "clearblade" .Values.global.namespace }}
   labels:
@@ -48,3 +48,21 @@ spec:
     protocol: TCP
   selector:
     app: cb-haproxy
+{{- if .Values.certRenewal }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-haproxy-controller-service
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+  labels:
+    app: cb-haproxy
+spec:
+  ports:
+  - name: controller
+    targetPort: 5001
+    port: 5001
+    protocol: TCP
+  selector:
+    app: cb-haproxy
+{{- end }}

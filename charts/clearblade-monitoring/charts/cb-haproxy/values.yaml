@@ -16,3 +16,8 @@ stats_auth: "clearblade"
 prometheus:
   user: ""
   sha256password: ""
+certRenewal: true
+renewalDays: 30
+controllerVersion: latest
+acmeConfig: []
+platformCertName: ""

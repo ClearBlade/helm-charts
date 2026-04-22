@@ -35,14 +35,21 @@ spec:
       volumes:
         - name: haproxy-config-volume
           secret:
-            secretName: cb-haproxy-config 
+            secretName: cb-haproxy-config
+        {{- if .Values.certRenewal }}
+        - name: haproxy-acme-volume
+          configMap:
+            name: cb-haproxy-acme
+        - name: haproxy-controller-volume
+          emptyDir: {}
+        {{- end }}
         - name: haproxy-cert-volume
           emptyDir: {}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       initContainers:
       - name: pull-certificates
         image: gcr.io/api-project-320446546234/cb_controller:cli-latest
-        env: 
+        env:
           - name: CERT_DIR
             value: etc/haproxy-ssl
           - name: PROJECT
@@ -83,6 +90,52 @@ spec:
               mountPath: /usr/local/etc/haproxy/
             - name: haproxy-cert-volume
               mountPath: /etc/ssl/
+            {{- if .Values.certRenewal }}
+            - name: haproxy-controller-volume
+              mountPath: /var/run
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
+            {{- end }}
+        {{- if .Values.certRenewal }}
+        - name: haproxy-controller
+          image: "gcr.io/api-project-320446546234/cb_controller:{{ .Values.controllerVersion }}"
+          env:
+            - name: CERT_DIR
+              value: etc/haproxy-ssl
+            - name: CONFIG_PATH
+              value: usr/local/etc/haproxy/haproxy.cfg
+            - name: ADDRESS
+              value: "/var/run/cb-haproxy.sock"
+            - name: PROJECT
+              value: {{ .Values.global.gcpProject }}
+            - name: NAMESPACE
+              value: {{ .Values.global.namespace }}
+            - name: RENEWAL_DAYS
+              value: "{{ .Values.renewalDays }}"
+            - name: ACME_CONFIG_PATH
+              value: "usr/local/etc/acme/acme.json"
+          ports:
+            - containerPort: 5001
+              name: controller
+          resources:
+            limits:
+              cpu: 250m
+              memory: 180Mi
+            requests:
+              cpu: 102m
+              memory: 180Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: haproxy-config-volume
+              mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-acme-volume
+              mountPath: /usr/local/etc/acme/
+            - name: haproxy-cert-volume
+              mountPath: /etc/haproxy-ssl/
+            - name: haproxy-controller-volume
+              mountPath: /var/run
+        {{- end }}
         - name: haproxy-exporter
           image: prom/haproxy-exporter:latest
           command: ["haproxy_exporter"]
