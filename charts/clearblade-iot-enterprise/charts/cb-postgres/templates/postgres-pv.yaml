@@ -1,3 +1,4 @@
+{{- if not .Values.global.dynamicVolumes }}
 {{- if or (ne $.Values.global.cloud "gdc") ($.Values.global.enablePersistentVolumes) }}
 {{- range $i, $e := until (.Values.replicas | int)}}
 apiVersion: v1
@@ -32,5 +33,6 @@ spec:
   volumeHandle: {{ $.Values.volumeHandle }}
   {{- end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}

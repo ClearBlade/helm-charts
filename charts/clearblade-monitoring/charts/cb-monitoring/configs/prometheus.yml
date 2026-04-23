@@ -199,6 +199,29 @@ scrape_configs:
     - targets:
       - cb-redis-service.{{ $n.name }}.svc.cluster.local:9121
 
+  {{- if $.Values.global.dynamicVolumes }}
+  - job_name: 'cnpg-postgres-{{ $n.name }}'
+    scrape_interval: 15s
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - {{ $n.name }}
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_pod_label_cnpg_io_cluster]
+      action: keep
+      regex: cb-postgres
+    - source_labels: [__meta_kubernetes_pod_ip]
+      action: replace
+      target_label: __address__
+      regex: (.+)
+      replacement: ${1}:9187
+    metric_relabel_configs:
+    - source_labels: [instance]
+      regex: '(.*):.*'
+      replacement: '$1'
+      target_label: instance
+  {{- else }}
   - job_name: 'postgres-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
@@ -211,6 +234,7 @@ scrape_configs:
       {{- range $i, $e := until ($.Values.postgresreplicas | int)}}
       - cb-postgres-exporter-service-{{$i}}.{{ $n.name }}.svc.cluster.local:9187
       {{- end}}
+  {{- end }}
   {{- end }}
 
   - job_name: 'haproxy-monitoring-{{ default "monitoring" .Values.global.namespace }}'
