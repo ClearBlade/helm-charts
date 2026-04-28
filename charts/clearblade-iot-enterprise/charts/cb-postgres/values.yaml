@@ -38,3 +38,28 @@ maxConnections: 500
 maintenanceWorkMem: 256MB
 sharedBuffers: 1GB #Recommended 1/4 of memory
 effectiveCacheSize: 3GB #Recommended 3/4 of memory
+
+# PgBouncer connection pooler (enable via global.pgBouncerEnabled)
+pgBouncer:
+  replicas: 1
+  image: bitnami/pgbouncer
+  imageTag: latest
+  requestCPU: 250m
+  requestMemory: 256Mi
+  limitCPU: 500m
+  limitMemory: 512Mi
+  poolMode: transaction
+  defaultPoolSize: 40
+  maxClientConn: 500
+  maxDbConnections: 100
+
+# pg_upgrade Job - enable temporarily to run an in-place PG15 -> PG18 upgrade
+# 1. Scale StatefulSet to 0 replicas first
+# 2. Set pgUpgrade.enabled to true and helm upgrade
+# 3. Watch job logs: kubectl logs -f job/pg-upgrade-15-to-18 -n <namespace>
+# 4. After success, set pgUpgrade.enabled to false, update imageTag to "latest-pg18", helm upgrade
+# 5. Clean up old data: kubectl exec cb-postgres-0 -- rm -rf /var/lib/postgresql/data/pg15_old
+# pgUpgrade:
+#   enabled: false
+#   image: <your-custom-pg-upgrade-image>
+#   imageTag: latest
