@@ -271,6 +271,7 @@ spec:
             {{- end }}
             {{- if .terminate_tls }}
             - "-enable-reverse-proxy=true"
+            - "-max-concurrent-connects-per-node=0"
             - "-use-tls-http=true"
             - "-message-use-tls=true"
             - "-message-auth-use-tls=true"
