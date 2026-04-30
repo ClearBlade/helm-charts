@@ -11,6 +11,7 @@ spec:
   {{- if .reverse_proxy_enabled }}
   type: LoadBalancer
   loadBalancerIP: {{ .primaryIP }}
+  externalTrafficPolicy: Local
   ports:
     {{- if .reverseProxy.enableHttp }}
     - name: api
