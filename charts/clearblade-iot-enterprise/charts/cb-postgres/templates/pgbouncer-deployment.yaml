@@ -1,0 +1,144 @@
+{{- if .Values.global.pgBouncerEnabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-pgbouncer
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: cb-pgbouncer
+spec:
+  replicas: {{ .Values.pgBouncer.replicas }}
+  selector:
+    matchLabels:
+      app: cb-pgbouncer
+  template:
+    metadata:
+      labels:
+        app: cb-pgbouncer
+    spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      containers:
+        - name: pgbouncer
+          image: "{{ .Values.pgBouncer.image }}:{{ .Values.pgBouncer.imageTag }}"
+          imagePullPolicy: IfNotPresent
+          {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                source /env/db/vars &&
+                exec /opt/bitnami/scripts/pgbouncer/entrypoint.sh /opt/bitnami/scripts/pgbouncer/run.sh
+          {{- end }}
+          ports:
+            - containerPort: 5432
+              name: pgbouncer
+          env:
+            - name: PGBOUNCER_DATABASE
+              value: "*"
+            - name: POSTGRESQL_HOST
+              value: "cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+            - name: POSTGRESQL_PORT
+              value: "{{ .Values.port }}"
+            - name: POSTGRESQL_USERNAME
+              value: "{{ .Values.user.primary }}"
+            - name: PGBOUNCER_PORT
+              value: "5432"
+            - name: PGBOUNCER_POOL_MODE
+              value: "{{ .Values.pgBouncer.poolMode }}"
+            - name: PGBOUNCER_DEFAULT_POOL_SIZE
+              value: "{{ .Values.pgBouncer.defaultPoolSize }}"
+            - name: PGBOUNCER_MAX_CLIENT_CONN
+              value: "{{ .Values.pgBouncer.maxClientConn }}"
+            - name: PGBOUNCER_MAX_DB_CONNECTIONS
+              value: "{{ .Values.pgBouncer.maxDbConnections }}"
+            {{- if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm") }}
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cb-postgres-secrets
+                  key: primary-password
+            {{- end }}
+          {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+          volumeMounts:
+            - mountPath: /env/db/
+              name: pgbouncer-env-vars-volume
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.pgBouncer.requestCPU }}
+              memory: {{ .Values.pgBouncer.requestMemory }}
+            limits:
+              cpu: {{ .Values.pgBouncer.limitCPU }}
+              memory: {{ .Values.pgBouncer.limitMemory }}
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      {{- if eq .Values.global.secretManager "gsm" }}
+      serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
+      initContainers:
+        - name: init
+          image: google/cloud-sdk:slim
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                set -e;
+                echo "Waiting for Workload Identity to be ready...";
+                for i in $(seq 1 10); do
+                  if curl -s -H "Metadata-Flavor: Google"
+                    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email" > /dev/null; then
+                    echo "Workload Identity is ready!";
+                    break;
+                  fi;
+                  echo "Metadata not ready (attempt $i), retrying in 2s...";
+                  sleep 2;
+                done;
+                PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password);
+                echo "export POSTGRESQL_PASSWORD=$PRIMARY" > /env/db/vars;
+          volumeMounts:
+            - name: pgbouncer-env-vars-volume
+              mountPath: /env/db
+      {{- else if eq .Values.global.secretManager "asm" }}
+      initContainers:
+        - name: init
+          image: amazon/aws-cli:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                echo "export POSTGRESQL_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
+          volumeMounts:
+            - name: pgbouncer-env-vars-volume
+              mountPath: /env/db
+      {{- end }}
+      volumes:
+        {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+        - name: pgbouncer-env-vars-volume
+          emptyDir: {}
+        {{- end }}
+{{- end }}

@@ -109,6 +109,9 @@ global:
   # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
   # mtlsHAProxy:
 
+  # Optional. PgBouncer connection pooler in front of Postgres. Defaults to true.
+  pgBouncerEnabled: true
+
   # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
   # monitoringEnabled:
 
@@ -180,6 +183,19 @@ cb-postgres:
   limitCPU: 1
   limitMemory: 2G
   postgres0DiskName: postgres-0
+  # PgBouncer settings (requires global.pgBouncerEnabled: true)
+  # pgBouncer:
+  #   replicas: 1
+  #   image: bitnami/pgbouncer
+  #   imageTag: latest
+  #   requestCPU: 250m
+  #   requestMemory: 256Mi
+  #   limitCPU: 500m
+  #   limitMemory: 512Mi
+  #   poolMode: transaction
+  #   defaultPoolSize: 40
+  #   maxClientConn: 500
+  #   maxDbConnections: 100
 cb-redis:
   # Required. Set to false if using an external redis deployment.
   enabled: true

@@ -1,0 +1,16 @@
+{{- if .Values.global.pgBouncerEnabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-pgbouncer
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: cb-pgbouncer
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: pgbouncer
+  selector:
+    app: cb-pgbouncer
+{{- end }}
