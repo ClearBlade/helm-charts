@@ -16,6 +16,16 @@ spec:
     spec:
       securityContext: 
         runAsUser: 0
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-nodepool
+                    operator: In
+                    values:
+                      - n2-16
       nodeSelector:
         kubernetes.io/os: linux
         kubernetes.io/arch: amd64

@@ -33,6 +33,16 @@ spec:
         slot: {{ .slot }}
         app.kubernetes.io/name: managed-prom
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-nodepool
+                    operator: In
+                    values:
+                      - c4d-pool
       {{- if eq .root.Values.global.secretManager "gsm" }}
       serviceAccountName: clearblade-gsm-read
       {{- end }}
@@ -50,6 +60,15 @@ spec:
         effect: NoExecute
         tolerationSeconds: 0
       initContainers:
+        - name: sysctl-tune
+          image: busybox
+          securityContext:
+            privileged: true
+          command:
+          - sh
+          - -c
+          - sysctl -w net.ipv4.tcp_max_syn_backlog=65535 
+          - sysctl -w net.netfilter.nf_conntrack_buckets=1048576
       {{- if .root.Values.checkReadiness}}
         {{- if not .root.Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
@@ -348,3 +367,34 @@ spec:
           emptyDir: {}
         {{- end}}
 {{- end }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sysctl-tuner
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: sysctl-tuner
+  template:
+    metadata:
+      labels:
+        app: sysctl-tuner
+    spec:
+      hostPID: true
+      hostNetwork: true
+      initContainers:
+      - name: sysctl-tune
+        image: busybox
+        securityContext:
+          privileged: true
+        command:
+        - sh
+        - -c
+        - |
+          sysctl -w net.netfilter.nf_conntrack_buckets=1048576
+          sysctl -w net.netfilter.nf_conntrack_max=4194304
+      containers:
+      - name: pause
+        image: gcr.io/google-containers/pause:3.2

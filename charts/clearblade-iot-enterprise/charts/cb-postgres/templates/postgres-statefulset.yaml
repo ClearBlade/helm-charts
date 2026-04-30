@@ -230,7 +230,7 @@ spec:
       {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
-        {{ .Values.nodeSelector }}
+        {{ toYaml .Values.nodeSelector | nindent 8}}
       {{- else if .Values.global.nodeSelector }}
       nodeSelector:
         {{ .Values.global.nodeSelector }}
