@@ -58,11 +58,7 @@ spec:
           - sh 
           - "-c"
           - |
-            {{- if .root.Values.global.pgBouncerEnabled }}
-            until pg_isready -h cb-pgbouncer.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local -p 5432;
-            {{- else }}
             until pg_isready -h cb-postgres-headless.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local -p 5432;
-            {{- end }}
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
