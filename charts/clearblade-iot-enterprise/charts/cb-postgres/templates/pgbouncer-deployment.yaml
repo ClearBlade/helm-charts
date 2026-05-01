@@ -31,6 +31,44 @@ spec:
       nodeSelector:
         {{ .Values.global.nodeSelector }}
       {{- end }}
+      {{- if eq .Values.global.secretManager "gsm" }}
+      serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
+      {{- end }}
+      {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+      initContainers:
+        - name: init
+          {{- if eq .Values.global.secretManager "gsm" }}
+          image: google/cloud-sdk:slim
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                set -e;
+                echo "Waiting for Workload Identity to be ready...";
+                for i in $(seq 1 10); do
+                  if curl -s -H "Metadata-Flavor: Google"
+                    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email" > /dev/null; then
+                    echo "Workload Identity is ready!";
+                    break;
+                  fi;
+                  echo "Metadata not ready (attempt $i), retrying in 2s...";
+                  sleep 2;
+                done;
+                PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password);
+                echo "export POSTGRESQL_PASSWORD='$PRIMARY'" > /env/db/vars;
+          {{- else if eq .Values.global.secretManager "asm" }}
+          image: amazon/aws-cli:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                PRIMARY=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text);
+                echo "export POSTGRESQL_PASSWORD='$PRIMARY'" > /env/db/vars;
+          {{- end }}
+          volumeMounts:
+            - name: pgbouncer-env-vars-volume
+              mountPath: /env/db
+      {{- end }}
       containers:
         - name: pgbouncer
           image: "{{ .Values.pgBouncer.image }}:{{ .Values.pgBouncer.imageTag }}"
@@ -48,7 +86,7 @@ spec:
               name: pgbouncer
           env:
             - name: PGBOUNCER_DATABASE
-              value: "*"
+              value: "{{ .Values.pgBouncer.database }}"
             - name: POSTGRESQL_HOST
               value: "cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
             - name: POSTGRESQL_PORT
@@ -64,7 +102,7 @@ spec:
             - name: PGBOUNCER_MAX_CLIENT_CONN
               value: "{{ .Values.pgBouncer.maxClientConn }}"
             - name: PGBOUNCER_MAX_DB_CONNECTIONS
-              value: "{{ .Values.pgBouncer.maxDbConnections }}"
+              value: "{{ .Values.maxConnections }}"
             {{- if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm") }}
             - name: POSTGRESQL_PASSWORD
               valueFrom:
@@ -98,44 +136,6 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
-      {{- if eq .Values.global.secretManager "gsm" }}
-      serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
-      initContainers:
-        - name: init
-          image: google/cloud-sdk:slim
-          command: ["/bin/sh"]
-          args:
-            - -c
-            - >-
-                set -e;
-                echo "Waiting for Workload Identity to be ready...";
-                for i in $(seq 1 10); do
-                  if curl -s -H "Metadata-Flavor: Google"
-                    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email" > /dev/null; then
-                    echo "Workload Identity is ready!";
-                    break;
-                  fi;
-                  echo "Metadata not ready (attempt $i), retrying in 2s...";
-                  sleep 2;
-                done;
-                PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password);
-                echo "export POSTGRESQL_PASSWORD=$PRIMARY" > /env/db/vars;
-          volumeMounts:
-            - name: pgbouncer-env-vars-volume
-              mountPath: /env/db
-      {{- else if eq .Values.global.secretManager "asm" }}
-      initContainers:
-        - name: init
-          image: amazon/aws-cli:latest
-          command: ["/bin/sh"]
-          args:
-            - -c
-            - >-
-                echo "export POSTGRESQL_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
-          volumeMounts:
-            - name: pgbouncer-env-vars-volume
-              mountPath: /env/db
-      {{- end }}
       volumes:
         {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
         - name: pgbouncer-env-vars-volume
