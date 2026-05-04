@@ -7,7 +7,7 @@ metadata:
   labels:
     app: clearblade
     slot: {{ .slot }}
-{{ include "clearblade.labels" .root | indent 4 }}
+{{- include "clearblade.labels" .root | nindent 4 }}
   {{- if .root.Values.mqttLoadBalancer.annotations }}
   annotations:
     {{- toYaml .root.Values.mqttLoadBalancer.annotations | nindent 4 }}
