@@ -36,6 +36,52 @@
 ) }}
 {{- end }}
 ---
+# Set the slot
+{{- $slot := "blue" -}}
+{{- if .Values.global.enterpriseSlot -}}
+{{- $slot = .Values.global.enterpriseSlot -}}
+{{- end }}
+{{- if .Values.mqttLoadBalancer.slot -}}
+{{- $slot = .Values.mqttLoadBalancer.slot -}}
+{{- end }}
+
+{{- if .Values.mqttLoadBalancer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: clearblade-mqtt-service
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: clearblade
+    slot: {{ $slot }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.mqttLoadBalancer.mqttIP }}
+  externalTrafficPolicy: Local
+  ports:
+    {{- if .Values.mqttLoadBalancer.enableMqtt }}
+    - name: mqtt
+      targetPort: 1884
+      port: {{ .Values.mqttLoadBalancer.mqttPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.mqttLoadBalancer.enableSecondaryMqtt }}
+    - name: mqtt-secondary
+      targetPort: 1884
+      port: {{ .Values.mqttLoadBalancer.secondaryMqttPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.mqttLoadBalancer.enableHttp }}
+    - name: http
+      targetPort: 9000
+      port: 80
+      protocol: TCP
+    {{- end }}
+  selector:
+    app: clearblade
+    slot: {{ $slot }}
+{{- end }}
+---
 apiVersion: v1
 kind: Service
 metadata:
