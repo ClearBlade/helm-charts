@@ -44,9 +44,10 @@ spec:
             - -c
             - >-
                 set -e;
+
                 echo "Waiting for Workload Identity to be ready...";
                 for i in $(seq 1 10); do
-                  if curl -s -H "Metadata-Flavor: Google"
+                  if curl -s -H "Metadata-Flavor: Google" \
                     "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email" > /dev/null; then
                     echo "Workload Identity is ready!";
                     break;
@@ -54,8 +55,18 @@ spec:
                   echo "Metadata not ready (attempt $i), retrying in 2s...";
                   sleep 2;
                 done;
-                PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password);
-                echo "export POSTGRESQL_PASSWORD='$PRIMARY'" > /env/db/vars;
+
+                echo "Fetching secrets with retries...";
+                for i in $(seq 1 25); do
+                  if PRIMARY=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-primary-password); then
+                    echo "Secrets fetched successfully.";
+                    echo "export POSTGRESQL_PASSWORD='$PRIMARY'" > /env/db/vars;
+                    break;
+                  else
+                    echo "Secret fetch failed (attempt $i), retrying in 3s...";
+                    sleep 3;
+                  fi;
+                done;
           {{- else if eq .Values.global.secretManager "asm" }}
           image: amazon/aws-cli:latest
           command: ["/bin/sh"]
@@ -79,7 +90,7 @@ spec:
             - -c
             - >-
                 source /env/db/vars &&
-                exec /opt/bitnami/scripts/pgbouncer/entrypoint.sh /opt/bitnami/scripts/pgbouncer/run.sh
+                exec /entrypoint.sh
           {{- end }}
           ports:
             - containerPort: 5432
@@ -142,3 +153,4 @@ spec:
           emptyDir: {}
         {{- end }}
 {{- end }}
+

@@ -42,8 +42,8 @@ effectiveCacheSize: 3GB #Recommended 3/4 of memory
 # PgBouncer connection pooler (enable via global.pgBouncerEnabled)
 pgBouncer:
   replicas: 1
-  image: bitnami/pgbouncer
-  imageTag: "1.24.1-debian-12-r10"
+  image: gcr.io/api-project-320446546234/cb-pgbouncer
+  imageTag: "1.25.1"
   requestCPU: 250m
   requestMemory: 256Mi
   limitCPU: 500m
