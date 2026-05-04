@@ -239,11 +239,11 @@ externalLoadBalancer:
 mqttLoadBalancer:
   enabled: false
   mqttIP: ""
+  annotations: {}
   enableMqtt: true
   mqttPort: 443
   enableSecondaryMqtt: true
   secondaryMqttPort: 8883
-  enableHttp: true
 
 greenTerminateTls: false
 blueTerminateTls: false
