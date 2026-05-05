@@ -147,6 +147,34 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+        {{- if .Values.global.monitoringEnabled }}
+        - name: pgbouncer-exporter
+          image: docker.io/prometheuscommunity/pgbouncer-exporter:latest
+          env:
+            - name: PGBOUNCER_EXPORTER_CONNECTION_STRING
+              value: "postgres://{{ .Values.user.primary }}@localhost:5432/pgbouncer?sslmode=disable"
+          ports:
+            - containerPort: 9127
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9127
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9127
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        {{- end }}
       volumes:
         {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
         - name: pgbouncer-env-vars-volume
