@@ -1,3 +1,4 @@
+{{- if not .Values.global.dynamicVolumes }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,3 +9,4 @@ metadata:
 data:
 {{ (tpl (.Files.Glob "configs/pg_hba.conf").AsConfig .) | indent 2 }}
 {{ (tpl (.Files.Glob "configs/postgresql.conf").AsConfig .) | indent 2 }}
+{{- end }}
