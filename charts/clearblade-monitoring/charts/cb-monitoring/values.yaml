@@ -47,6 +47,10 @@ alerts:
   LRSDropsEnabled: true
   LRSDropsThreshold: 0
   LRSDropsPriority: low
+  #Shared topic queue dropped messages threshold (5m)
+  SharedDropsEnabled: true
+  SharedDropsThreshold: 0
+  SharedDropsPriority: low
   #Total file descriptors in use threshold
   fileDescriptorsEnabled: true
   fileDescriptorsThreshold: 900000
