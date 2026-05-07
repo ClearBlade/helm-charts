@@ -141,7 +141,7 @@ cb-postgres:
   #   requestMemory: 256Mi
   #   limitCPU: 500m
   #   limitMemory: 512Mi
-  #   poolMode: transaction
+  #   poolMode: session
   #   defaultPoolSize: 30
   #   maxClientConn: 500
   #   maxPreparedStatements: 200
