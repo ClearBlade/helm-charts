@@ -195,6 +195,7 @@ cb-postgres:
   #   poolMode: transaction
   #   defaultPoolSize: 30
   #   maxClientConn: 500
+  #   maxPreparedStatements: 200
   #   database: admin
 cb-redis:
   # Required. Set to false if using an external redis deployment.
