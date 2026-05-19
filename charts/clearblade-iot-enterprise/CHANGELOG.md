@@ -85,3 +85,7 @@ Support Haproxyless architecture
 ## [3.6.1] - 2026-02-18
 
 ClearBlade: Add values for setting min TLS version, root redirect URL, and enabling weak ciphers
+
+## [3.7.1] - 2026-05-19
+
+Postgres: Add pgstattuple extension
