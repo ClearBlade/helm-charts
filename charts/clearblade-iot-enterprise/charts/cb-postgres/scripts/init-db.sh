@@ -14,7 +14,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE EXTENSION IF NOT EXISTS timescaledb;
     CREATE EXTENSION pg_trgm;
     CREATE EXTENSION IF NOT EXISTS pgstattuple;
-    GRANT EXECUTE ON FUNCTION pgstattuple(regclass) TO $PRIMARY_USER;
+    GRANT EXECUTE ON FUNCTION pgstattuple_approx(regclass) TO $PRIMARY_USER;
     GRANT EXECUTE ON FUNCTION pgstatindex(regclass) TO $PRIMARY_USER;
     GRANT EXECUTE ON FUNCTION pgstatginindex(regclass) TO $PRIMARY_USER;
     CREATE DATABASE secondary;
