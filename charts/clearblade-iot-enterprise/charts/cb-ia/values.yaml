@@ -6,3 +6,49 @@ storageSize: 10Gi
 checkClearbladeReadiness: true
 version:
 volumeHandle:
+credentialsSource: "values"
+gsmSecretName: ia-credentials
+
+credentials:
+  bandwidth:
+    APITOKEN: ""
+    APISECRET: ""
+    ORIGIN_NUMBER: ""
+    ACCOUNT_ID: ""
+    APPLICATION_ID: ""
+  mailgun:
+    API_KEY: ""
+    DOMAIN: ""
+    SENDER: ""
+  twilio:
+    USER: ""
+    PASS: ""
+    SOURCE_NUMBER: ""
+  googleVertexAi:
+    SUBSCRIPTION_SERVICE_ACCOUNT_PRIVATE_KEY: ""
+    SERVICE_EMAIL: ""
+    API_ENDPOINT: ""
+    ALGORITHM: ""
+    AUTH_SCOPE: ""
+  iaFilesBucketSet:
+    type: ""
+    project_id: ""
+    private_key_id: ""
+    private_key: ""
+    client_email: ""
+    client_id: ""
+    auth_uri: ""
+    token_uri: ""
+    auth_provider_x509_cert_url: ""
+    client_x509_cert_url: ""
+  iaImagesBucketSet:
+    type: ""
+    project_id: ""
+    private_key_id: ""
+    private_key: ""
+    client_email: ""
+    client_id: ""
+    auth_uri: ""
+    token_uri: ""
+    auth_provider_x509_cert_url: ""
+    client_x509_cert_url: ""
