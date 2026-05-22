@@ -45,7 +45,7 @@ entries:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.7.4/clearblade-iot-enterprise-3.7.4.tgz
     version: 3.7.4
   - apiVersion: v2
-    created: "2026-03-27T14:23:38.093403039Z"
+    created: "2026-03-26T14:23:38.093403039Z"
     dependencies:
     - condition: cb-postgres.enabled
       name: cb-postgres
@@ -81,11 +81,11 @@ entries:
       repository: file://charts/cb-ops-console
       version: 3.7.0
     description: ClearBlade IoT Enterprise
-    digest: 7b2ba1b3716a26be2f648b4e946072237108729083614fd1dd3de240c9ab1063
+    digest: bee22d5c43a5f2db2ebf16f5510f0243c975976a5966968c9b6bceef549ced87
     name: clearblade-iot-enterprise
     type: application
     urls:
-    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.6.2/clearblade-iot-enterprise-3.6.2.tgz
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.7.0/clearblade-iot-enterprise-3.7.0.tgz
     version: 3.7.0
   - apiVersion: v2
     created: "2026-03-27T14:23:38.093403039Z"
