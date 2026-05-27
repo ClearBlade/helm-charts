@@ -13,4 +13,22 @@ spec:
       name: pgbouncer
   selector:
     app: cb-pgbouncer
+---
+{{- if .Values.global.monitoringEnabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-pgbouncer-exporter-service
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: cb-pgbouncer
+spec:
+  ports:
+    - port: 9127
+      targetPort: 9127
+      protocol: TCP
+      name: metrics
+  selector:
+    app: cb-pgbouncer
+{{- end }}
 {{- end }}

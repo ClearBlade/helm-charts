@@ -79,6 +79,9 @@ global:
   # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
   # mtlsHAProxy:
 
+  # Optional. PgBouncer connection pooler in front of Postgres.
+  # pgBouncerEnabled: false
+
   # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
   # monitoringEnabled:
 
@@ -129,6 +132,20 @@ cb-postgres:
   requestMemory: 2G
   limitCPU: 1
   limitMemory: 2G
+  # PgBouncer settings (requires global.pgBouncerEnabled: true)
+  # pgBouncer:
+  #   replicas: 1
+  #   image: gcr.io/api-project-320446546234/cb-pgbouncer
+  #   imageTag: "1.25.1"
+  #   requestCPU: 250m
+  #   requestMemory: 256Mi
+  #   limitCPU: 500m
+  #   limitMemory: 512Mi
+  #   poolMode: session
+  #   defaultPoolSize: 30
+  #   maxClientConn: 500
+  #   maxPreparedStatements: 200
+  #   database: admin
 cb-redis:
   image: repo
   imageTag: tag

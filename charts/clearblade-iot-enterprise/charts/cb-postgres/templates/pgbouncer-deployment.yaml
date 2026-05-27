@@ -114,6 +114,8 @@ spec:
               value: "{{ .Values.pgBouncer.maxClientConn }}"
             - name: PGBOUNCER_MAX_DB_CONNECTIONS
               value: "{{ .Values.maxConnections }}"
+            - name: PGBOUNCER_MAX_PREPARED_STATEMENTS
+              value: "{{ .Values.pgBouncer.maxPreparedStatements }}"
             {{- if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm") }}
             - name: POSTGRESQL_PASSWORD
               valueFrom:
@@ -147,6 +149,54 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+        {{- if .Values.global.monitoringEnabled }}
+        - name: pgbouncer-exporter
+          image: docker.io/prometheuscommunity/pgbouncer-exporter:v0.12.0
+          {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+                source /env/db/vars &&
+                export PGBOUNCER_EXPORTER_CONNECTION_STRING="host=localhost port=5432 user={{ .Values.user.primary }} password='${POSTGRESQL_PASSWORD}' dbname=pgbouncer sslmode=disable" &&
+                exec /bin/pgbouncer_exporter
+          {{- else }}
+          env:
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cb-postgres-secrets
+                  key: primary-password
+            - name: PGBOUNCER_EXPORTER_CONNECTION_STRING
+              value: "host=localhost port=5432 user={{ .Values.user.primary }} password='$(PG_PASSWORD)' dbname=pgbouncer sslmode=disable"
+          {{- end }}
+          ports:
+            - containerPort: 9127
+          {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
+          volumeMounts:
+            - mountPath: /env/db/
+              name: pgbouncer-env-vars-volume
+          {{- end }}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9127
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9127
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        {{- end }}
       volumes:
         {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
         - name: pgbouncer-env-vars-volume
