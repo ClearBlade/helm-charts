@@ -109,6 +109,15 @@ data:
        annotations:
          summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
       {{- end}}
+      {{- if $.Values.alerts.SharedDropsEnabled }}
+     - alert: {{ $.Values.global.customerName }} {{$n.name}} DroppingMessagesInSharedTopicQueue
+       expr: rate(clearblade_mqtt_shared_dropped_messages{service_name!="all_services",namespace="{{ $n.name }}"}[5m]) > {{ $.Values.alerts.SharedDropsThreshold }}
+       labels:
+         priority: {{ $.Values.alerts.SharedDropsPriority }}
+         severity: warning
+       annotations:
+         summary: "Pod {{ "{{" }} $labels.pod }} is dropping messages"
+      {{- end}}
       {{- if $.Values.alerts.adminConnectionsEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} HighDatabaseConnections
        expr: pg_stat_database_numbackends{datname="admin",job=~".*{{ $n.name }}"} > {{ $.Values.alerts.adminConnectionsThreshold }}

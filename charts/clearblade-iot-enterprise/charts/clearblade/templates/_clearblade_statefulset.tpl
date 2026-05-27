@@ -58,7 +58,11 @@ spec:
           - sh 
           - "-c"
           - |
+            {{- if .root.Values.global.dynamicVolumes }}
+            until pg_isready -h cb-postgres-rw.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- else }}
             until pg_isready -h cb-postgres-headless.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- end }}
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness
@@ -212,7 +216,10 @@ spec:
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
           #DB
-            {{- if and (not .root.Values.global.externalPostgresHost) (not .root.Values.global.gcpCloudSQLEnabled) }}
+            {{- if .root.Values.global.dynamicVolumes }}
+            - "-db-host=cb-postgres-rw.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
+            - "-db-port=5432"
+            {{- else if and (not .root.Values.global.externalPostgresHost) (not .root.Values.global.gcpCloudSQLEnabled) }}
             #Default Postgres in these charts
             - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
             - "-db-port=5432"

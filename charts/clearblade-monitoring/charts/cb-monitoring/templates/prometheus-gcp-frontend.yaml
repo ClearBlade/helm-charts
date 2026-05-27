@@ -64,7 +64,7 @@ metadata:
   name: prometheus-managed
   namespace: {{ default "monitoring" .Values.global.namespace }}
 spec:
-  clusterIP: None
+  type: ClusterIP
   selector:
     app: prometheus-managed
   ports:

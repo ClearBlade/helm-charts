@@ -1,0 +1,150 @@
+{{- if .Values.global.dynamicVolumes }}
+{{- $bucket := required "global.bucket is required when global.dynamicVolumes is true" .Values.global.bucket }}
+{{- $schedule := required "global.schedule is required when global.dynamicVolumes is true" .Values.global.schedule }}
+{{- $pgReplicas := required "global.pgReplicas is required when global.dynamicVolumes is true" .Values.global.pgReplicas }}
+{{- if not .Values.global.restored }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-postgres-credentials
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+type: kubernetes.io/basic-auth
+data:
+  username: {{ "cbuser" | b64enc }}
+  password: {{ required "global.pass is required for fresh installs (global.restored is false)" .Values.global.pass | b64enc }}
+{{- end }}
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: backup-store
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  configuration:
+    destinationPath: "{{ $bucket }}"
+    googleCredentials:
+      gkeEnvironment: true
+    wal:
+      compression: gzip
+      maxParallel: {{ .Values.walMaxParallel | default 8 }}
+    {{- if .Values.retentionPolicy }}
+    retentionPolicy: "{{ .Values.retentionPolicy }}"
+    {{- end }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cb-postgres
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: cb-postgres
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: enabled
+spec:
+  instances: {{ $pgReplicas }}
+  imageName: {{ .Values.cnpgImage }}:{{ .Values.cnpgImageTag }}
+  {{- if .Values.global.imagePullerSecret }}
+  imagePullSecrets:
+    - name: gcr-json-key
+  {{- end }}
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+    {{- if .Values.global.nodepoolSlot }}
+    nodeSelector:
+      slot: "{{ .Values.global.nodepoolSlot }}"
+    {{- end }}
+    {{- if .Values.global.tolerations }}
+    tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+    {{- end }}
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: backup-store
+        serverName: {{ default "clearblade" .Values.global.folder }}
+  {{- if .Values.global.restored }}
+  bootstrap:
+    recovery:
+      source: {{ default "clearblade" .Values.global.folder }}
+  externalClusters:
+    - name: {{ default "clearblade" .Values.global.folder }}
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: backup-store
+          serverName: {{ default "clearblade" .Values.global.folder }}
+  {{- else }}
+  bootstrap:
+    initdb:
+      database: admin
+      owner: cbuser
+      secret:
+        name: cb-postgres-credentials
+      postInitApplicationSQL:
+        - ALTER USER cbuser WITH SUPERUSER;
+        - CREATE EXTENSION pg_stat_statements;
+        - CREATE EXTENSION pg_trgm;
+        {{- if not .Values.global.disableTimescale }}
+        - CREATE EXTENSION timescaledb;
+        {{- end }}
+  {{- end }}
+  postgresql:
+    {{- if not .Values.global.disableTimescale }}
+    shared_preload_libraries:
+      - timescaledb
+      - pg_stat_statements
+    {{- else }}
+    shared_preload_libraries:
+      - pg_stat_statements
+    {{- end }}
+    parameters:
+      max_connections: "{{ .Values.maxConnections }}"
+      shared_buffers: "{{ .Values.sharedBuffers | default "1GB" }}"
+      work_mem: "{{ .Values.workMem | default "64MB" }}"
+      maintenance_work_mem: "{{ .Values.maintenanceWorkMem | default "256MB" }}"
+      effective_cache_size: "{{ .Values.effectiveCacheSize | default "3GB" }}"
+      random_page_cost: "1.1"
+      max_locks_per_transaction: "256"
+      log_min_duration_statement: "50"
+      log_statement: "ddl"
+      track_activity_query_size: "2048"
+      pg_stat_statements.track: "all"
+  monitoring:
+    enablePodMonitor: true
+  resources:
+    requests:
+      cpu: {{ .Values.requestCPU }}
+      memory: {{ .Values.requestMemory }}
+    limits:
+      cpu: {{ .Values.limitCPU }}
+      memory: {{ .Values.limitMemory }}
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        iam.gke.io/gcp-service-account: {{ .Values.global.gcpGSMServiceAccount }}@{{ .Values.global.gcpProject }}.iam.gserviceaccount.com
+  storage:
+    size: {{ .Values.storageSize }}
+    storageClass: {{ .Values.global.storageClassName }}
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      volumeMode: Filesystem
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: cb-backup
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  cluster:
+    name: cb-postgres
+  schedule: '{{ $schedule }}'
+  backupOwnerReference: none
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+{{- end }}
