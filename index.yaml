@@ -617,7 +617,7 @@ entries:
     - condition: cb-haproxy.enabled
       name: cb-haproxy
       repository: file://charts/cb-haproxy
-      version: 3.3.16
+      version: 3.3.17
     - name: clearblade
       repository: file://charts/clearblade
       version: 3.3.17
@@ -648,7 +648,7 @@ entries:
       repository: file://charts/cb-tiles
       version: 3.3.17
     description: ClearBlade IoT Enterprise
-    digest: 1fa30419b07a2eeaa246b3248c92eba9f3aff482e5574c5b0046af40db7dce0a
+    digest: 1fa30419b07a2eeaa246b3248c92eba9f3aff482e5574c5b0046af40db7dce00
     name: clearblade-iot-enterprise
     type: application
     urls:
