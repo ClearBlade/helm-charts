@@ -3,3 +3,5 @@
 *.lock
 disk-create.sh
 disk-delete.sh
+charts/temp
+comapre
