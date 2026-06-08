@@ -88,6 +88,49 @@ entries:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.7.2/clearblade-iot-enterprise-3.7.2.tgz
     version: 3.7.2
   - apiVersion: v2
+    created: "2026-06-08T14:02:00.090989781Z"
+    dependencies:
+    - condition: cb-postgres.enabled
+      name: cb-postgres
+      repository: file://charts/cb-postgres
+      version: 3.7.01
+    - condition: global.haproxyEnabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 3.7.01
+    - name: clearblade
+      repository: file://charts/clearblade
+      version: 3.7.01
+    - name: cb-console
+      repository: file://charts/cb-console
+      version: 3.7.01
+    - name: cb-file-hosting
+      repository: file://charts/cb-file-hosting
+      version: 3.7.01
+    - condition: cb-redis.enabled
+      name: cb-redis
+      repository: file://charts/cb-redis
+      version: 3.7.01
+    - condition: global.iotCoreEnabled
+      name: cb-iotcore
+      repository: file://charts/cb-iotcore
+      version: 3.7.01
+    - condition: global.iaEnabled
+      name: cb-ia
+      repository: file://charts/cb-ia
+      version: 3.7.01
+    - condition: global.opsConsoleEnabled
+      name: cb-ops-console
+      repository: file://charts/cb-ops-console
+      version: 3.7.01
+    description: ClearBlade IoT Enterprise
+    digest: d8beb2fbd7a000bb9f8801deba96de0ab0333018618340450f44d1d23c853f21
+    name: clearblade-iot-enterprise
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-3.7.01/clearblade-iot-enterprise-3.7.01.tgz
+    version: 3.7.01
+  - apiVersion: v2
     created: "2026-03-26T14:23:38.093403039Z"
     dependencies:
     - condition: cb-postgres.enabled
@@ -2927,4 +2970,4 @@ entries:
     urls:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.0/clearblade-monitoring-2.13.0.tgz
     version: 2.13.0
-generated: "2026-05-27T14:47:04.937157013Z"
+generated: "2026-06-08T14:02:00.091221424Z"
