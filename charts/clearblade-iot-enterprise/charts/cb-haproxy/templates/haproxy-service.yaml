@@ -47,6 +47,12 @@ spec:
       port: {{ .Values.ports.secondaryMqtt }}
       protocol: TCP
       {{- end }}
+      {{- if .Values.ports.tertiaryMqttEnabled }}
+    - name: tertiary-mqtt
+      targetPort: 1884
+      port: {{ .Values.ports.tertiaryMqtt }}
+      protocol: TCP
+      {{- end }}
       {{- if .Values.ports.mqttWSEnabled }}
     - name: mqtt-ws
       targetPort: 8904
@@ -89,6 +95,12 @@ spec:
       port: {{ .Values.ports.mqttUnsecureSecondary }}
       protocol: TCP
       {{- end }}
+      {{- if .Values.ports.mqttUnsecureTertiaryEnabled}}
+    - name: mqtt-unsecure-tertiary
+      targetPort: 1883
+      port: {{ .Values.ports.mqttUnsecureTertiary }}
+      protocol: TCP
+      {{- end }}
   selector:
     app: cb-haproxy
 ---
@@ -121,20 +133,32 @@ spec:
   ports:
       {{- if .Values.ports.mqttURLMQTTEnabled }}
     - name: mqtt
-      targetPort: 1884
+      targetPort: {{ if .Values.mqttSplitCerts }}1894{{ else }}1884{{ end }}
       port: {{ .Values.ports.mqttURLMQTT }}
       protocol: TCP
       {{- end }}
       {{- if .Values.ports.mqttURLSecondaryMQTTEnabled }}
     - name: mqtt-secondary
-      targetPort: 1884
+      targetPort: {{ if .Values.mqttSplitCerts }}1894{{ else }}1884{{ end }}
       port: {{ .Values.ports.mqttURLSecondaryMQTT }}
+      protocol: TCP
+      {{- end }}
+      {{- if .Values.ports.mqttURLMTLSEnabled }}
+    - name: mtls
+      targetPort: 444
+      port: {{ .Values.ports.mqttURLMTLS }}
       protocol: TCP
       {{- end }}
     - name: http
       targetPort: 8080
       port: 80
       protocol: TCP
+      {{- if .Values.ports.mqttURLhttpsEnabled }}
+    - name: https
+      targetPort: {{ if .Values.mqttSplitCerts }}8453{{ else }}8443{{ end }}
+      port: {{ .Values.ports.mqttURLhttps }}
+      protocol: TCP
+      {{- end }}
   selector:
     app: cb-haproxy
 {{- end }}
