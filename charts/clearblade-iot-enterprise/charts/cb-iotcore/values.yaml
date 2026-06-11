@@ -7,3 +7,10 @@ checkClearbladeReadiness: true
 regions:
 version:
 volumeHandle:
+credentialsSource: "values"
+gsmSecretName: iotcore-credentials
+credentials:
+  mailgun:
+    API_KEY: ""
+    DOMAIN: ""
+    SENDER: ""

@@ -1,3 +1,11 @@
+{{- $useGSM := false -}}
+{{- if eq .Values.credentialsSource "gsm" -}}
+{{- $useGSM = true -}}
+{{- else if eq .Values.credentialsSource "values" -}}
+{{- $useGSM = false -}}
+{{- else -}}
+{{- $useGSM = eq .Values.global.secretManager "gsm" -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,6 +24,9 @@ spec:
         app: cb-iotcore
         app.kubernetes.io/name: managed-prom
     spec:
+      {{- if $useGSM }}
+      serviceAccountName: clearblade-gsm-read
+      {{- end }}
       {{- if .Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
@@ -29,8 +40,10 @@ spec:
         operator: Exists
         effect: NoExecute
         tolerationSeconds: 0
-      {{- if .Values.checkClearbladeReadiness }}
+      {{- if or .Values.checkClearbladeReadiness $useGSM }}
       initContainers:
+      {{- end }}
+      {{- if .Values.checkClearbladeReadiness }}
       - name: check-clearblade-readiness
         image: ellerbrock/alpine-bash-curl-ssl
         command:
@@ -44,6 +57,45 @@ spec:
           # Give clearblade just a little more time to really start for real
           sleep 10;
       {{- end }}
+      {{- if $useGSM }}
+      - name: pull-iotcore-credentials
+        image: google/cloud-sdk:slim
+        command: ["/bin/bash"]
+        args:
+          - -c
+          - |
+            SECRET_NAME="{{ default "clearblade" .Values.global.namespace }}_{{ default "iotcore-credentials" .Values.gsmSecretName }}"
+            echo "Fetching secret: $SECRET_NAME"
+            if ! gcloud secrets versions access latest --secret="$SECRET_NAME" > /tmp/iotcore-credentials.json 2>/dev/null; then
+              echo "Secret $SECRET_NAME not found or not accessible, continuing without credentials"
+              exit 0
+            fi
+            python3 -c "
+            import json, sys
+            try:
+                with open('/tmp/iotcore-credentials.json') as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError, ValueError):
+                print('No valid credentials JSON found, continuing without credentials')
+                sys.exit(0)
+            mapping = {
+                'mailgun': 'mailgun.json',
+            }
+            found = 0
+            for key, filename in mapping.items():
+                if key in data:
+                    with open(f'/etc/iotcore/{filename}', 'w') as out:
+                        json.dump(data[key], out)
+                    print(f'Wrote credential: {key} -> {filename}')
+                    found += 1
+                else:
+                    print(f'Credential not found in secret: {key} (skipping)')
+            print(f'Loaded {found}/{len(mapping)} credentials')
+            "
+        volumeMounts:
+          - name: cb-iotcore-config-volume
+            mountPath: /etc/iotcore/
+      {{- end }}
       containers:
         - name: cb-iotcore
           {{- if .Values.imageURL }}
@@ -51,11 +103,22 @@ spec:
           {{- else }}
           image: gcr.io/api-project-320446546234/iotcore:{{ .Values.version }}
           {{- end }}
-          command:  ["iotcore"]
-          args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-regions={{ .Values.regions }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}"]
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              CRED_FLAGS=""
+              [ -f /etc/iotcore/mailgun.json ] && CRED_FLAGS="$CRED_FLAGS -key-mailgun-file=/etc/iotcore/mailgun.json"
+              exec iotcore \
+                -reg-key="{{ .Values.global.enterpriseRegistrationKey }}" \
+                -regions="{{ .Values.regions }}" \
+                -url="https://{{ .Values.global.enterpriseBaseURL }}" \
+                $CRED_FLAGS
           volumeMounts:
           - name: iotcore
             mountPath: /etc/clearblade/conf/iotcore
+          - name: cb-iotcore-config-volume
+            mountPath: /etc/iotcore/
           ports:
             - containerPort: 8080
           imagePullPolicy: Always
@@ -81,3 +144,11 @@ spec:
         - name: iotcore
           persistentVolumeClaim:
             claimName: cb-iotcore-pvc
+        {{- if $useGSM }}
+        - name: cb-iotcore-config-volume
+          emptyDir: {}
+        {{- else }}
+        - name: cb-iotcore-config-volume
+          secret:
+            secretName: cb-iotcore-config
+        {{- end }}

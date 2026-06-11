@@ -1,0 +1,17 @@
+{{- $useGSM := false -}}
+{{- if eq .Values.credentialsSource "gsm" -}}
+{{- $useGSM = true -}}
+{{- else if eq .Values.credentialsSource "values" -}}
+{{- $useGSM = false -}}
+{{- else -}}
+{{- $useGSM = eq .Values.global.secretManager "gsm" -}}
+{{- end -}}
+{{- if not $useGSM }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-iotcore-config
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+stringData:
+  mailgun.json: {{ .Values.credentials.mailgun | toJson | quote }}
+{{- end }}

@@ -1,0 +1,22 @@
+{{- $useGSM := false -}}
+{{- if eq .Values.credentialsSource "gsm" -}}
+{{- $useGSM = true -}}
+{{- else if eq .Values.credentialsSource "values" -}}
+{{- $useGSM = false -}}
+{{- else -}}
+{{- $useGSM = eq .Values.global.secretManager "gsm" -}}
+{{- end -}}
+{{- if not $useGSM }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-ia-config
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+stringData:
+  bandwidth.json: {{ .Values.credentials.bandwidth | toJson | quote }}
+  google-vertex-ai.json: {{ .Values.credentials.googleVertexAi | toJson | quote }}
+  ia-files-bucket-set.json: {{ .Values.credentials.iaFilesBucketSet | toJson | quote }}
+  ia-images-bucket-set.json: {{ .Values.credentials.iaImagesBucketSet | toJson | quote }}
+  mailgun.json: {{ .Values.credentials.mailgun | toJson | quote }}
+  twilio.json: {{ .Values.credentials.twilio | toJson | quote }}
+{{- end }}
