@@ -67,11 +67,17 @@ spec:
                     POSTGRES=$(gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password); then
 
                     echo "Secrets fetched successfully.";
+                    {{- if .Values.oldInit}}
+                    echo "export PRIMARY_PASSWORD=$PRIMARY" > /env/db/vars;
+                    echo "export REPLICA_PASSWORD=$REPLICA" >> /env/db/vars;
+                    echo "export POSTGRES_PASSWORD=$POSTGRES" >> /env/db/vars;
+                    {{- else }}
                     {
                         echo "export PRIMARY_PASSWORD=$PRIMARY"
                         echo "export REPLICA_PASSWORD=$REPLICA"
                         echo "export POSTGRES_PASSWORD=$POSTGRES"
                     } > /env/db/vars;
+                    {{- end }}
                     break;
                   else
                     echo "Secret fetch failed (attempt $i), retrying in 3s...";
