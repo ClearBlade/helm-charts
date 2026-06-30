@@ -119,7 +119,11 @@ spec:
               [ -f /etc/ia/google-vertex-ai.json ] && CRED_FLAGS="$CRED_FLAGS -key-google-vertex-ai-file=/etc/ia/google-vertex-ai.json"
               [ -f /etc/ia/ia-files-bucket-set.json ] && CRED_FLAGS="$CRED_FLAGS -key-ia-files-bucket-set-file=/etc/ia/ia-files-bucket-set.json"
               [ -f /etc/ia/ia-images-bucket-set.json ] && CRED_FLAGS="$CRED_FLAGS -key-ia-images-bucket-set-file=/etc/ia/ia-images-bucket-set.json"
-              exec ia-sidecar \
+              # Run via the image entrypoint, not ia-sidecar directly. /docker-entrypoint.sh
+              # starts the ia-agent (MCP server on localhost:8001) and then execs ia-sidecar
+              # with these flags appended. Calling ia-sidecar here would skip the entrypoint, so
+              # the agent never starts and the sidecar's MCP calls fail with connection refused.
+              exec /docker-entrypoint.sh \
                 -reg-key="{{ .Values.global.enterpriseRegistrationKey }}" \
                 -url="https://{{ .Values.global.enterpriseBaseURL }}" \
                 -message-url="{{ .Values.global.enterpriseBaseURL }}" \
