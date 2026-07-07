@@ -80,6 +80,7 @@ spec:
                 sys.exit(0)
             mapping = {
                 'mailgun': 'mailgun.json',
+                'masterCreds': 'master-system-creds.json',
             }
             found = 0
             for key, filename in mapping.items():
@@ -109,6 +110,7 @@ spec:
             - |
               CRED_FLAGS=""
               [ -f /etc/iotcore/mailgun.json ] && CRED_FLAGS="$CRED_FLAGS -key-mailgun-file=/etc/iotcore/mailgun.json"
+              [ -f /etc/iotcore/master-system-creds.json ] && CRED_FLAGS="$CRED_FLAGS -master-system-creds=/etc/iotcore/master-system-creds.json"
               exec iotcore \
                 -reg-key="{{ .Values.global.enterpriseRegistrationKey }}" \
                 -regions="{{ .Values.regions }}" \
