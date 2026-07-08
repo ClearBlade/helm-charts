@@ -2,7 +2,7 @@ apiVersion: v2
 name: clearblade-iot-enterprise
 description: ClearBlade IoT Enterprise
 type: application
-version: 3.7.5-ia-mcp-1
+version: 3.7.5-iotcore-sidecar-creds-test-2
 
 dependencies:
   - name: cb-postgres
