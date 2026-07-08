@@ -14,3 +14,7 @@ credentials:
     API_KEY: ""
     DOMAIN: ""
     SENDER: ""
+  masterCreds:
+    email: ""
+    password: ""
+    systemKey: ""
