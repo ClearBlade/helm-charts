@@ -111,7 +111,7 @@ spec:
               CRED_FLAGS=""
               [ -f /etc/iotcore/mailgun.json ] && CRED_FLAGS="$CRED_FLAGS -key-mailgun-file=/etc/iotcore/mailgun.json"
               [ -f /etc/iotcore/master-system-creds.json ] && CRED_FLAGS="$CRED_FLAGS -master-system-creds=/etc/iotcore/master-system-creds.json"
-              exec iotcore \
+              exec iotcore-sidecar \
                 -reg-key="{{ .Values.global.enterpriseRegistrationKey }}" \
                 -regions="{{ .Values.regions }}" \
                 -url="https://{{ .Values.global.enterpriseBaseURL }}" \
