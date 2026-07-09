@@ -144,11 +144,11 @@ spec:
             - containerPort: {{ .Values.port }}
           resources:
             requests:
-              memory: {{ .Values.requestMemory }}
+              memory: {{ include "cb-postgres.memoryRequest" . }}
               cpu: {{ .Values.requestCPU }}
             limits:
               cpu: {{ .Values.limitCPU }}
-              memory: {{ .Values.limitMemory }}
+              memory: {{ include "cb-postgres.memoryLimit" . }}
 
           volumeMounts:
             {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}

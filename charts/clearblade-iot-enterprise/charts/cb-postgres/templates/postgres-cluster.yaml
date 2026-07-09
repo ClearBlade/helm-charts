@@ -103,10 +103,10 @@ spec:
     {{- end }}
     parameters:
       max_connections: "{{ .Values.maxConnections }}"
-      shared_buffers: "{{ .Values.sharedBuffers | default "1GB" }}"
+      shared_buffers: "{{ include "cb-postgres.sharedBuffers" . }}"
       work_mem: "{{ .Values.workMem | default "64MB" }}"
       maintenance_work_mem: "{{ .Values.maintenanceWorkMem | default "256MB" }}"
-      effective_cache_size: "{{ .Values.effectiveCacheSize | default "3GB" }}"
+      effective_cache_size: "{{ include "cb-postgres.effectiveCacheSize" . }}"
       random_page_cost: "1.1"
       max_locks_per_transaction: "256"
       log_min_duration_statement: "50"
@@ -118,10 +118,10 @@ spec:
   resources:
     requests:
       cpu: {{ .Values.requestCPU }}
-      memory: {{ .Values.requestMemory }}
+      memory: {{ include "cb-postgres.memoryRequest" . }}
     limits:
       cpu: {{ .Values.limitCPU }}
-      memory: {{ .Values.limitMemory }}
+      memory: {{ include "cb-postgres.memoryLimit" . }}
   serviceAccountTemplate:
     metadata:
       annotations:
