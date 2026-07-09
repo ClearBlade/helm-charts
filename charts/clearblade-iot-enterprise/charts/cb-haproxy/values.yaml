@@ -15,6 +15,7 @@ controllerVersion: latest
 acmeConfig: []
 platformCertName: ""
 mqttCertName: ""
+partition: 0
 ip:
   primary: 0.0.0.0
   mqtt: 0.0.0.0

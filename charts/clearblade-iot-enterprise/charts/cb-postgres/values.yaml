@@ -3,7 +3,7 @@ monitoringEnabled: false
 image: timescale/timescaledb
 imageTag: "latest-pg15"
 cnpgImage: gcr.io/api-project-320446546234/cb_cnpg
-cnpgImageTag: 18
+cnpgImageTag: 15-18
 requestCPU: 1
 requestMemory: 4G
 limitCPU: 1
@@ -47,3 +47,6 @@ walMaxParallel: 8
 
 # Backup retention policy (e.g. "30d" for 30 days)
 # retentionPolicy: "30d"
+
+# VolumeSnapshot recovery bootstrap
+# Set global.snapshotRecovery=true and global.snapshotName=<name> to bootstrap from a VolumeSnapshot
