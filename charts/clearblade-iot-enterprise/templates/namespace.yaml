@@ -33,6 +33,14 @@ spec:
           - 10.0.0.0/8
           - 172.16.0.0/12
           - 192.168.0.0/16
+    {{- if .Values.global.customAllowedCIDRs }}
+    # Custom allowed CIDR blocks (e.g. VPN bridges, other deployments)
+    {{- range .Values.global.customAllowedCIDRs }}
+    - from:
+      - ipBlock:
+          cidr: {{ . }}
+    {{- end }}
+    {{- end }}
     {{- if .Values.global.dynamicVolumes }}
     # CNPG operator needs direct access to manage PostgreSQL pods
     - from:
