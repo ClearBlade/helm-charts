@@ -144,8 +144,10 @@ spec:
       protocol: TCP
       {{- end }}
       {{- if .Values.ports.mqttURLMTLSEnabled }}
+    - name: mtls
       targetPort: 444
       port: {{ .Values.ports.mqttURLMTLS }}
+      protocol: TCP
       {{- end }}
     - name: http
       targetPort: 8080
