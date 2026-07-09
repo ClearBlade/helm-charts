@@ -49,7 +49,6 @@ pgBouncer:
   limitCPU: 500m
   limitMemory: 512Mi
   poolMode: session
-  defaultPoolSize: 30
-  maxClientConn: 500
+  maxClientConn: 10000
   maxPreparedStatements: 200
   database: admin

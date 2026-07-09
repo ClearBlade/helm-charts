@@ -109,11 +109,9 @@ spec:
             - name: PGBOUNCER_POOL_MODE
               value: "{{ .Values.pgBouncer.poolMode }}"
             - name: PGBOUNCER_DEFAULT_POOL_SIZE
-              value: "{{ .Values.pgBouncer.defaultPoolSize }}"
+              value: "defaultPoolSize: {{ default (sub .Values.maxConnections 50) .Values.defaultPoolSize }}"
             - name: PGBOUNCER_MAX_CLIENT_CONN
               value: "{{ .Values.pgBouncer.maxClientConn }}"
-            - name: PGBOUNCER_MAX_DB_CONNECTIONS
-              value: "{{ .Values.maxConnections }}"
             - name: PGBOUNCER_MAX_PREPARED_STATEMENTS
               value: "{{ .Values.pgBouncer.maxPreparedStatements }}"
             {{- if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm") }}
