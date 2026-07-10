@@ -49,7 +49,7 @@ data:
       {{- end}}
       {{- if $.Values.alerts.podOOMEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} PodOOMKilled
-       expr: increase(kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled",namespace="{{ $n.name }}"}[5m]) > 0
+       expr: kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled",namespace="{{ $n.name }}"} == 1 and on(namespace, pod, container) increase(kube_pod_container_status_restarts_total{namespace="{{ $n.name }}"}[10m]) > 0
        for: 1m
        labels:
          priority: {{ $.Values.alerts.podOOMPriority }}
@@ -144,7 +144,7 @@ data:
       {{- end}}
       {{- if $.Values.alerts.HTTPFailureIncreaseEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} IncreasingHttpFailures
-       expr: ( (increase(clearblade_http_failed{namespace="{{ $n.name }}"}[10m]) - clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) / (clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) ) > ({{ $.Values.alerts.HTTPFailureIncreaseThreshold }} / 100)
+       expr: ( (clearblade_http_failed{namespace="{{ $n.name }}"} - clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) / (clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m) ) > ({{ $.Values.alerts.HTTPFailureIncreaseThreshold }} / 100) and clearblade_http_failed{namespace="{{ $n.name }}"} offset 10m > 10
        labels:
          priority: {{ $.Values.alerts.HTTPFailureIncreasePriority }}
          severity: warning
@@ -175,7 +175,7 @@ data:
       {{- end }}
       {{- if $.Values.alerts.licenseExpiryEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} LicenseExpiring
-       expr: clearblade_expiration{instance="clearblade-monitoring-service-0.{{ $n.name }}.svc.cluster.local"} < {{ $.Values.alerts.licenseExpiryThreshold }}
+       expr: min(clearblade_expiration{job=~".*{{ $n.name }}"}) < {{ $.Values.alerts.licenseExpiryThreshold }}
        for: 1m
        labels:
          priority: {{ $.Values.alerts.licenseExpiryPriority }}
@@ -186,7 +186,7 @@ data:
       {{- end }}
       {{- if $.Values.alerts.possibleDBConnectionMaxEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} PossibleDBConnectionMaxOut
-       expr: sum(clearblade_up{job=~".*{{ $n.name }}"}) * 30 > pg_settings_max_connections{job=~".*{{ $n.name }}"}
+       expr: sum(clearblade_up{job=~".*{{ $n.name }}"}) * 30 > scalar(pg_settings_max_connections{job=~".*{{ $n.name }}"})
        labels:
          priority: {{ $.Values.alerts.possibleDBConnectionMaxPriority }}
          severity: warning
