@@ -64,6 +64,7 @@ data:
      - alert: {{ $.Values.global.customerName }} {{$n.name}} HighCPU
        expr: round(100.0 * sum(rate(container_cpu_usage_seconds_total{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}[5m])) by (pod, container) / sum(container_spec_cpu_quota{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}/container_spec_cpu_period{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highCPUThreshold }}
        for: 10m
+       keep_firing_for: 15m
        labels:
          priority: {{ $.Values.alerts.highCPUPriority }}
          severity: warning
@@ -92,8 +93,9 @@ data:
       {{- end}}
       {{- if $.Values.alerts.highMemEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} HighMemoryUsage
-       expr: round(100.0 * sum(container_memory_usage_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", container!="cb-postgres", namespace="{{ $n.name }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highMemThreshold }}
+       expr: round(100.0 * sum(container_memory_working_set_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", container!="cb-postgres", namespace="{{ $n.name }}"}) by (pod, container) / sum(container_spec_memory_limit_bytes{container=~"(clearblade|cb-.*)",container!~".*exporter", namespace="{{ $n.name }}"}) by (pod, container)) > {{ $.Values.alerts.highMemThreshold }}
        for: 2m
+       keep_firing_for: 15m
        labels:
          priority: {{ $.Values.alerts.highMemPriority }}
          severity: warning
@@ -195,6 +197,8 @@ data:
       {{- if $.Values.alerts.redisConnectionMaxEnabled }}
      - alert: {{ $.Values.global.customerName }} {{$n.name}} RedisConnectionsMaxOutWarning
        expr: (redis_connected_clients{job=~".*{{ $n.name }}"}/redis_max_clients{job=~".*{{ $n.name }}"})*100 > 80
+       for: 5m
+       keep_firing_for: 15m
        labels:
          priority: {{ $.Values.alerts.redisConnectionMaxPriority }}
          severity: warning
