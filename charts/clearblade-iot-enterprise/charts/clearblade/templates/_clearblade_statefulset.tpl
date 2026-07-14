@@ -22,6 +22,7 @@ spec:
       slot: {{ .slot }}
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .replicas }}
+  podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -53,7 +54,7 @@ spec:
       {{- if .root.Values.checkReadiness}}
         {{- if not .root.Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
-          image: postgres:9.6.5
+          image: postgres:15
           command: 
           - sh 
           - "-c"
