@@ -126,4 +126,19 @@ spec:
   selector:
     matchLabels:
       app: cb-ia
+---
+{{- end }}
+{{- if .Values.global.pgBouncerEnabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cb-pgbouncer
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: cb-pgbouncer
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cb-pgbouncer
 {{- end }}

@@ -234,6 +234,19 @@ scrape_configs:
       {{- range $i, $e := until ($.Values.postgresreplicas | int)}}
       - cb-postgres-exporter-service-{{$i}}.{{ $n.name }}.svc.cluster.local:9187
       {{- end}}
+
+  {{- if $.Values.global.pgBouncerEnabled }}
+  - job_name: 'pgbouncer-{{ $n.name }}'
+    scrape_interval: 15s
+    metric_relabel_configs:
+    - source_labels: [instance]
+      regex: '(.*):.*'
+      replacement: '$1'
+      target_label: instance
+    static_configs:
+    - targets:
+      - cb-pgbouncer-exporter-service.{{ $n.name }}.svc.cluster.local:9127
+  {{- end }}
   {{- end }}
   {{- end }}
 

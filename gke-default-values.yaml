@@ -109,6 +109,8 @@ global:
   # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
   # mtlsHAProxy:
 
+  # Optional. PgBouncer connection pooler in front of Postgres.
+  # pgBouncerEnabled: false
   # Optional. Set to true to use CloudNativePG HA Postgres instead of a single StatefulSet pod.
   # Requires CNPG operator (v1.27+), cert-manager, and barman-cloud plugin installed on the cluster.
   # dynamicVolumes: false
@@ -205,6 +207,20 @@ cb-postgres:
   limitCPU: 1
   limitMemory: 2G
   postgres0DiskName: postgres-0
+  # PgBouncer settings (requires global.pgBouncerEnabled: true)
+  # pgBouncer:
+  #   replicas: 1
+  #   image: gcr.io/api-project-320446546234/cb-pgbouncer
+  #   imageTag: "1.25.1"
+  #   requestCPU: 250m
+  #   requestMemory: 256Mi
+  #   limitCPU: 500m
+  #   limitMemory: 512Mi
+  #   poolMode: session
+  #   defaultPoolSize: 30
+  #   maxClientConn: 500
+  #   maxPreparedStatements: 200
+  #   database: admin
 
   # CNPG HA Postgres settings (requires global.dynamicVolumes: true)
   # storageSize: 100Gi
