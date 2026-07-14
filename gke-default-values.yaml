@@ -2,11 +2,11 @@ global:
   # Required. Supported clouds are "aws" and "gcp". As this values file is for GKE, the value should be "gcp".
   cloud: gcp
 
-  # Sets the memory limit for Postgres.
-  postgresMemoryLimitMB: 8192
-
   # Required. 
   haproxyEnabled: true
+
+  # Optional. Set this to the memory limit for Postgres. This will also set sensible defaults for other Postgres/Platform settings.
+  # postgresMemoryLimitMB: 8192
 
   # Optional. Namespace to deploy to. Default is "clearblade"
   namespace: 
