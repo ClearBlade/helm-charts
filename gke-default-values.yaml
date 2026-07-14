@@ -139,6 +139,15 @@ global:
   # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
   # monitoringEnabled:
 
+  # Optional. List of custom CIDR blocks to allow through the namespace NetworkPolicy ingress rules.
+  # Useful for VPN bridges, other private-network deployments, or cross-cluster traffic that uses RFC1918 ranges.
+  # customAllowedCIDRs:
+  # - 10.100.0.0/16
+  # - 172.20.0.0/16
+
+  # Optional. The namespace where the monitoring stack is deployed. Used by the NetworkPolicy to allow Prometheus scraping. Default is "monitoring".
+  monitoringNamespace: monitoring
+
   # Optional. Set to true if you are using Google Managed Prometheus. Leave blank or comment out if not using.
   # gmpEnabled:
 

@@ -8,7 +8,7 @@ metadata:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deny-cross-namespace
+  name: namespace-isolation
   namespace: {{ default "clearblade" .Values.global.namespace }}
 spec:
   podSelector: {}
@@ -16,17 +16,61 @@ spec:
     - Ingress
     - Egress
   ingress:
+    # Same namespace: all pod-to-pod
     - from:
       - podSelector: {}
+    # Monitoring namespace: Prometheus scraping metric endpoints
+    - from:
       - namespaceSelector:
           matchLabels:
-            name: monitoring
+            kubernetes.io/metadata.name: {{ default "monitoring" .Values.global.monitoringNamespace }}
+    # External traffic: LoadBalancer clients, GKE health checks
+    # Excludes RFC1918 to block cross-namespace pod traffic
+    - from:
+      - ipBlock:
+          cidr: 0.0.0.0/0
+          except:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+    {{- if .Values.global.customAllowedCIDRs }}
+    # Custom allowed CIDR blocks (e.g. VPN bridges, other deployments)
+    {{- range .Values.global.customAllowedCIDRs }}
+    - from:
+      - ipBlock:
+          cidr: {{ . }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.global.dynamicVolumes }}
+    # CNPG operator needs direct access to manage PostgreSQL pods
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: cnpg-system
+    {{- end }}
   egress:
+    # Same namespace: all pod-to-pod
     - to:
       - podSelector: {}
+    # Monitoring namespace
+    - to:
       - namespaceSelector:
           matchLabels:
-            name: monitoring
+            kubernetes.io/metadata.name: {{ default "monitoring" .Values.global.monitoringNamespace }}
+    # DNS resolution via kube-system
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      ports:
+      - protocol: UDP
+        port: 53
+      - protocol: TCP
+        port: 53
+    # All external: cloud APIs, managed DBs, license servers, image registries, API server
+    - to:
+      - ipBlock:
+          cidr: 0.0.0.0/0
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
