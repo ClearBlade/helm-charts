@@ -89,3 +89,7 @@ ClearBlade: Add values for setting min TLS version, root redirect URL, and enabl
 ## [3.7.1] - 2026-05-19
 
 Postgres: Add pgstattuple extension
+
+## [3.8.1] - 2026-07-14
+
+Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.

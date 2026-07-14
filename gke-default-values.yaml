@@ -5,6 +5,9 @@ global:
   # Required. 
   haproxyEnabled: true
 
+  # Optional. Set this to the memory limit for Postgres. This will also set sensible defaults for other Postgres/Platform settings.
+  # postgresMemoryLimitMB: 8192
+
   # Optional. Namespace to deploy to. Default is "clearblade"
   namespace: 
 
