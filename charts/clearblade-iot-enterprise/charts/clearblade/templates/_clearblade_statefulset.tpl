@@ -22,6 +22,7 @@ spec:
       slot: {{ .slot }}
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .replicas }}
+  podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -53,12 +54,16 @@ spec:
       {{- if .root.Values.checkReadiness}}
         {{- if not .root.Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
-          image: postgres:9.6.5
+          image: postgres:15
           command: 
           - sh 
           - "-c"
           - |
+            {{- if .root.Values.global.dynamicVolumes }}
+            until pg_isready -h cb-postgres-rw.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- else }}
             until pg_isready -h cb-postgres-headless.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local -p 5432;
+            {{- end }}
             do echo waiting for database; sleep 2; done;
         {{- end }}
         - name: check-redis-readiness

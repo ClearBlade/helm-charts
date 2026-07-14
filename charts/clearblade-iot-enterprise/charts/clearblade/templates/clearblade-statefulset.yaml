@@ -10,7 +10,7 @@
 {{- $node_selector = .Values.nodeSelector -}}
 {{ end }}
 
-{{ include "clearblade.statefulset" (dict 
+{{ include "clearblade.statefulset" (dict
   "name" "clearblade"
   "slot" "blue"
   "replicas" .Values.blueReplicas
@@ -42,7 +42,7 @@
 {{- $node_selector = .Values.nodeSelector -}}
 {{ end }}
 
-{{ include "clearblade.statefulset" (dict 
+{{ include "clearblade.statefulset" (dict
   "name" "clearblade-green"
   "slot" "green"
   "replicas" .Values.greenReplicas

@@ -36,6 +36,22 @@
 ) }}
 {{- end }}
 ---
+# Set the slot
+{{- $slot := "blue" -}}
+{{- if .Values.global.enterpriseSlot -}}
+{{- $slot = .Values.global.enterpriseSlot -}}
+{{- end }}
+{{- if .Values.mqttLoadBalancer.slot -}}
+{{- $slot = .Values.mqttLoadBalancer.slot -}}
+{{- end }}
+
+{{- if .Values.mqttLoadBalancer.enabled }}
+{{ include "clearblade.mqttService" (dict
+  "slot" $slot
+  "root" .
+) }}
+{{- end }}
+---
 apiVersion: v1
 kind: Service
 metadata:
