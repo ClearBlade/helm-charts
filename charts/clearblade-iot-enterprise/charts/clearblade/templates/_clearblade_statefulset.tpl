@@ -217,12 +217,12 @@ spec:
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
           #DB
-            {{- if .root.Values.global.dynamicVolumes }}
-            - "-db-host=cb-postgres-rw.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
-            - "-db-port=5432"
-            {{- else if and (not .root.Values.global.externalPostgresHost) (not .root.Values.global.gcpCloudSQLEnabled) }}
-            #Default Postgres in these charts
+            {{- if and (not .root.Values.global.externalPostgresHost) (not .root.Values.global.gcpCloudSQLEnabled) }}
+            {{- if .root.Values.global.pgBouncerEnabled }}
+            - "-db-host=cb-pgbouncer.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
+            {{- else }}
             - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
             - "-db-port=5432"
             {{- end }}
             #CloudSQL
