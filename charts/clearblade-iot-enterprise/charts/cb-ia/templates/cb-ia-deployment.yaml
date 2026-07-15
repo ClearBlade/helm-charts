@@ -1,3 +1,11 @@
+{{- $useGSM := false -}}
+{{- if eq .Values.credentialsSource "gsm" -}}
+{{- $useGSM = true -}}
+{{- else if eq .Values.credentialsSource "values" -}}
+{{- $useGSM = false -}}
+{{- else -}}
+{{- $useGSM = eq .Values.global.secretManager "gsm" -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,6 +24,9 @@ spec:
         app: cb-ia
         app.kubernetes.io/name: managed-prom
     spec:
+      {{- if $useGSM }}
+      serviceAccountName: clearblade-gsm-read
+      {{- end }}
       {{- if .Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
@@ -29,8 +40,10 @@ spec:
         operator: Exists
         effect: NoExecute
         tolerationSeconds: 0
-      {{- if .Values.checkClearbladeReadiness }}
+      {{- if or .Values.checkClearbladeReadiness $useGSM }}
       initContainers:
+      {{- end }}
+      {{- if .Values.checkClearbladeReadiness }}
       - name: check-clearblade-readiness
         image: ellerbrock/alpine-bash-curl-ssl
         command:
@@ -44,6 +57,50 @@ spec:
           # Give clearblade just a little more time to really start for real
           sleep 10;
       {{- end }}
+      {{- if $useGSM }}
+      - name: pull-ia-credentials
+        image: google/cloud-sdk:slim
+        command: ["/bin/bash"]
+        args:
+          - -c
+          - |
+            SECRET_NAME="{{ default "clearblade" .Values.global.namespace }}_{{ default "ia-credentials" .Values.gsmSecretName }}"
+            echo "Fetching secret: $SECRET_NAME"
+            if ! gcloud secrets versions access latest --secret="$SECRET_NAME" > /tmp/ia-credentials.json 2>/dev/null; then
+              echo "Secret $SECRET_NAME not found or not accessible, continuing without credentials"
+              exit 0
+            fi
+            python3 -c "
+            import json, sys
+            try:
+                with open('/tmp/ia-credentials.json') as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError, ValueError):
+                print('No valid credentials JSON found, continuing without credentials')
+                sys.exit(0)
+            mapping = {
+                'bandwidth': 'bandwidth.json',
+                'mailgun': 'mailgun.json',
+                'twilio': 'twilio.json',
+                'googleVertexAi': 'google-vertex-ai.json',
+                'iaFilesBucketSet': 'ia-files-bucket-set.json',
+                'iaImagesBucketSet': 'ia-images-bucket-set.json',
+            }
+            found = 0
+            for key, filename in mapping.items():
+                if key in data:
+                    with open(f'/etc/ia/{filename}', 'w') as out:
+                        json.dump(data[key], out)
+                    print(f'Wrote credential: {key} -> {filename}')
+                    found += 1
+                else:
+                    print(f'Credential not found in secret: {key} (skipping)')
+            print(f'Loaded {found}/{len(mapping)} credentials')
+            "
+        volumeMounts:
+          - name: cb-ia-config-volume
+            mountPath: /etc/ia/
+      {{- end }}
       containers:
         - name: cb-ia
           {{- if .Values.imageURL }}
@@ -51,11 +108,29 @@ spec:
           {{- else }}
           image: gcr.io/api-project-320446546234/ia:{{ .Values.version }}
           {{- end }}
-          command:  ["ia-sidecar"]
-          args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-instance-id={{ .Values.global.enterpriseInstanceID }}", "-skip-bucket-sets={{ .Values.skipBucketSets}}"]
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              CRED_FLAGS=""
+              [ -f /etc/ia/bandwidth.json ] && CRED_FLAGS="$CRED_FLAGS -key-bandwidth-file=/etc/ia/bandwidth.json"
+              [ -f /etc/ia/mailgun.json ] && CRED_FLAGS="$CRED_FLAGS -key-mailgun-file=/etc/ia/mailgun.json"
+              [ -f /etc/ia/twilio.json ] && CRED_FLAGS="$CRED_FLAGS -key-twilio-file=/etc/ia/twilio.json"
+              [ -f /etc/ia/google-vertex-ai.json ] && CRED_FLAGS="$CRED_FLAGS -key-google-vertex-ai-file=/etc/ia/google-vertex-ai.json"
+              [ -f /etc/ia/ia-files-bucket-set.json ] && CRED_FLAGS="$CRED_FLAGS -key-ia-files-bucket-set-file=/etc/ia/ia-files-bucket-set.json"
+              [ -f /etc/ia/ia-images-bucket-set.json ] && CRED_FLAGS="$CRED_FLAGS -key-ia-images-bucket-set-file=/etc/ia/ia-images-bucket-set.json"
+              exec ia-sidecar \
+                -reg-key="{{ .Values.global.enterpriseRegistrationKey }}" \
+                -url="https://{{ .Values.global.enterpriseBaseURL }}" \
+                -message-url="{{ .Values.global.enterpriseBaseURL }}" \
+                -instance-id="{{ .Values.global.enterpriseInstanceID }}" \
+                -skip-bucket-sets="{{ .Values.skipBucketSets }}" \
+                $CRED_FLAGS
           volumeMounts:
           - name: ia
             mountPath: /etc/clearblade/conf/ia
+          - name: cb-ia-config-volume
+            mountPath: /etc/ia/
           ports:
             - containerPort: 8080
           imagePullPolicy: Always
@@ -81,3 +156,11 @@ spec:
         - name: ia
           persistentVolumeClaim:
             claimName: cb-ia-pvc
+        {{- if $useGSM }}
+        - name: cb-ia-config-volume
+          emptyDir: {}
+        {{- else }}
+        - name: cb-ia-config-volume
+          secret:
+            secretName: cb-ia-config
+        {{- end }}
