@@ -8,6 +8,9 @@ DBPassword = "{db_password}"
 
 [Cluster]
 HostAddress = "clearblade{slot}-{clearblade_node_number}.clearblade-cluster-nodes-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local"
+{{- if .Values.clusterConfig }}
+{{ .Values.clusterConfig }}
+{{- end }}
 
 {{- if .Values.clearbladeConfig }}
 {{ .Values.clearbladeConfig }}
