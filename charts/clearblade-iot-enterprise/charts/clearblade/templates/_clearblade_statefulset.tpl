@@ -22,6 +22,7 @@ spec:
       slot: {{ .slot }}
   serviceName: clearblade-cluster-nodes-service
   replicas: {{ .replicas }}
+  podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -53,7 +54,7 @@ spec:
       {{- if .root.Values.checkReadiness}}
         {{- if not .root.Values.global.gcpCloudSQLEnabled }}
         - name: check-postgres-readiness
-          image: postgres:9.6.5
+          image: postgres:15
           command: 
           - sh 
           - "-c"
@@ -216,12 +217,12 @@ spec:
           args:
             - "-config=/etc/clearblade/conf/clearblade/clearblade.toml"
           #DB
-            {{- if .root.Values.global.dynamicVolumes }}
-            - "-db-host=cb-postgres-rw.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
-            - "-db-port=5432"
-            {{- else if and (not .root.Values.global.externalPostgresHost) (not .root.Values.global.gcpCloudSQLEnabled) }}
-            #Default Postgres in these charts
+            {{- if and (not .root.Values.global.externalPostgresHost) (not .root.Values.global.gcpCloudSQLEnabled) }}
+            {{- if .root.Values.global.pgBouncerEnabled }}
+            - "-db-host=cb-pgbouncer.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
+            {{- else }}
             - "-db-host=cb-postgres-0.cb-postgres-headless.{{ default "clearblade" .root.Values.global.namespace }}.svc.cluster.local"
+            {{- end }}
             - "-db-port=5432"
             {{- end }}
             #CloudSQL
