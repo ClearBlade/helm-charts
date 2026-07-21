@@ -90,6 +90,9 @@ spec:
 
       {{- end }}
       {{- if eq .Values.global.secretManager "asm"}}
+      {{- if .Values.global.awsSecretsRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
       initContainers:
         - name: init
           image: amazon/aws-cli:latest
@@ -97,9 +100,9 @@ spec:
           args:
             - -c
             - >-
-                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
-                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-replica-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
-                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
+                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text)" >> /env/db/vars &&
+                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-replica-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text)" >> /env/db/vars &&
+                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text)" >> /env/db/vars
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db

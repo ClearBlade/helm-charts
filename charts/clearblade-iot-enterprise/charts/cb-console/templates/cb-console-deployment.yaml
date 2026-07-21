@@ -34,7 +34,7 @@ spec:
           {{- if .Values.imageURL }}
           image: "{{- .Values.imageURL }}"
           {{- else }}
-          image: "gcr.io/api-project-320446546234/cb_console:{{ .Values.global.enterpriseConsoleVersion }}"
+          image: "{{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_console:{{ .Values.global.enterpriseConsoleVersion }}"
           {{- end }}
           command:  ["cb_console"]
           args: [

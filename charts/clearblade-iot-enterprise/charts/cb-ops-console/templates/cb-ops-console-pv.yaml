@@ -21,6 +21,6 @@ spec:
     volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ default "clearblade" .Values.global.namespace }}-ops-console
     fsType: ext4
   {{- else if eq .Values.global.cloud "aws" }}
-  driver: ebs.csi.aws.com
-  volumeHandle: {{ .Values.volumeHandle }}
+    driver: ebs.csi.aws.com
+    volumeHandle: {{ .Values.volumeHandle }}
   {{- end }}

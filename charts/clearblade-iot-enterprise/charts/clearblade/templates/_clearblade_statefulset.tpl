@@ -37,6 +37,9 @@ spec:
       {{- if eq .root.Values.global.secretManager "gsm" }}
       serviceAccountName: clearblade-gsm-read
       {{- end }}
+      {{- if and (eq .root.Values.global.secretManager "asm") .root.Values.global.awsSecretsRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
       {{- if .root.Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
@@ -94,14 +97,23 @@ spec:
       {{- end }}  
         {{- if $pullCertsFromSecretManager }}
         - name: pull-mtls-certificate
-          image: gcr.io/api-project-320446546234/cb_controller:cli-latest
-          env: 
+          image: {{ default "gcr.io/api-project-320446546234" .root.Values.global.registry }}/cb_controller:cli-latest
+          env:
             - name: CERT_DIR
               value: etc/clearblade/ssl
+            {{- if eq .root.Values.global.secretManager "asm" }}
+            - name: SECRET_MANAGER
+              value: asm
+            - name: AWS_REGION
+              value: {{ default "us-east-1" .root.Values.global.awsRegion }}
+            - name: NAMESPACE
+              value: {{ default "clearblade" .root.Values.global.namespace }}
+            {{- else }}
             - name: PROJECT
               value: {{ .root.Values.global.gcpProject }}
             - name: NAMESPACE
               value: {{ .root.Values.global.namespace }}
+            {{- end }}
             - name: PULL_ONLY
               value: "true"
             - name: DOMAIN_TO_PULL
@@ -144,7 +156,7 @@ spec:
               dbpassword=$(gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password)
               {{- end }}
               {{- if eq .root.Values.global.secretManager "asm"}}
-              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)
+              dbpassword=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_postgres-primary-password --region {{ default "us-east-1" .root.Values.global.awsRegion }} --query SecretString --output text)
               {{- end }}
               {{ if .root.Values.global.gcpCloudSQLConnectionName }}
               sed -i 's|{db_password}|'${dbpassword}'|g' /etc/clearblade/conf/clearblade/clearblade.toml
@@ -155,14 +167,14 @@ spec:
               {{- if eq .root.Values.global.secretManager "gsm"}}
               gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_clearblade-mek >> /etc/clearblade/mek/cb_platform_mek
               {{- else if eq .root.Values.global.secretManager "asm"}}
-              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_clearblade-mek --region us-east-1 --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_clearblade-mek --region {{ default "us-east-1" .root.Values.global.awsRegion }} --query SecretString --output text >> /etc/clearblade/mek/cb_platform_mek
               {{- else }}
               echo $mekfile >> /etc/clearblade/mek/cb_platform_mek
               {{- end }}
               {{- if eq .root.Values.global.secretManager "gsm" }}
               gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
               {{- else if eq .root.Values.global.secretManager "asm"}}
-              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret --region {{ default "us-east-1" .root.Values.global.awsRegion }} --query SecretString --output text >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
               {{- else }}
               echo $filehosting_hmac_secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
               {{- end }}

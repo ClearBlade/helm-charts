@@ -101,7 +101,7 @@ spec:
           {{- if .Values.imageURL }}
           image: {{- .Values.imageURL }}
           {{- else }}
-          image: gcr.io/api-project-320446546234/iotcore:{{ .Values.version }}
+          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/iotcore:{{ .Values.version }}
           {{- end }}
           command: ["/bin/sh"]
           args:

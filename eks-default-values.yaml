@@ -2,8 +2,20 @@ global:
   # Required. Supported clouds are "aws" and "gcp". As this values file is for EKS, the value should be "aws".
   cloud: aws
 
+  # Required.
+  haproxyEnabled: true
+
+  # Required. The AWS region the cluster and the Secrets Manager secrets are in.
+  awsRegion: us-east-1
+
+  # Optional. Override the container registry for ClearBlade first-party images, e.g. an ECR mirror: "123456789012.dkr.ecr.us-east-1.amazonaws.com". Leave blank or comment out to pull from ClearBlade's GCR.
+  # registry:
+
+  # Optional. IAM role ARN for Secrets Manager access via IRSA. Creates a "clearblade-asm-read" service account annotated with this role. Leave blank or comment out to use the node instance role instead.
+  # awsSecretsRoleArn:
+
   # Optional. Namespace to deploy to. Default is "clearblade"
-  namespace: 
+  namespace:
 
   # Optional. Leave blank or comment out if not using.
   # nodeSelector: 
@@ -41,6 +53,9 @@ global:
 
   # Optional. Manually override the version tag for the ClearBlade container. Leave blank or comment out if not using.
   # enterpriseTagOverride: false
+
+  # Required. Controls image tag for both console and file hosting containers
+  enterpriseConsoleVersion:
 
   # Required. Set to "true" if this deployment uses the IOTCore Sidecar.
   iotCoreEnabled: false
@@ -98,6 +113,8 @@ cb-file-hosting:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
+  # Required. AWS EBS file hosting volume handle.
+  volumeHandle:
 cb-haproxy:
   replicas: 1
   requestCPU: 1
@@ -106,12 +123,16 @@ cb-haproxy:
   limitMemory: 1G
   # Required. Set to false if using an external HAProxy deployment.
   enabled: true
-  # Required if using this HAProxy. The primary external IP address for the deployment.
-  primaryIP: 
-  # Required if utilizing external MQTT connections. Leave blank or comment out if not using.
+  # Required if using this HAProxy. The EIP allocation ID (eipalloc-...) for the primary NLB. Comma-separated list with one allocation per public subnet.
+  primaryIP:
+  # Required if utilizing external MQTT connections. The EIP allocation ID (eipalloc-...) for the MQTT NLB. Leave blank or comment out if not using.
   mqttIP:
   # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
   mqttOver443: false
+  # Automatic cert renewal with letsencrypt. Requires a cb_controller image with AWS support and Secrets Manager write access (see README).
+  certRenewal: true
+  # days out to renew cert
+  renewalDays: 5
   controllerVersion: latest
 cb-ops-console:
   version: 0.0.1
@@ -126,7 +147,7 @@ cb-iotcore:
   # version:
   # Optional. Comma-separated list of the regions IOTCore will be deployed in. Leave blank or comment out if not using.
   # regions:
-  # Required if using the IOTCore sidecar. AWS EBS postgres volume handle.
+  # Required if using the IOTCore sidecar. AWS EBS iotcore volume handle.
   # volumeHandle:
 cb-ia:
   # Optional. Set to true to force the Intelligent Assets pod to wait for the Clearblade pods before starting.
@@ -137,7 +158,7 @@ cb-ia:
   limitMemory: 1G
   # Required if using the Intelligent Assets sidecar. Intelligent Assets sidecar version. Leave blank or comment out if not using.
   # version:
-  # Required if using the Intelligent Assets sidecar. AWS EBS postgres volume handle.
+  # Required if using the Intelligent Assets sidecar. AWS EBS Intelligent Assets volume handle.
   # volumeHandle:
 cb-postgres:
   # Required. Set to false if using an external postgres deployment.

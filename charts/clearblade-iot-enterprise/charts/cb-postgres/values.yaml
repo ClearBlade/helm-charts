@@ -44,7 +44,8 @@ effectiveCacheSize: 3GB #Recommended 3/4 of memory
 # PgBouncer connection pooler (enable via global.pgBouncerEnabled)
 pgBouncer:
   replicas: 1
-  image: gcr.io/api-project-320446546234/cb-pgbouncer
+  # Defaults to cb-pgbouncer from global.registry (ClearBlade's GCR if unset). Set to override the full image path.
+  image:
   imageTag: "1.25.1"
   requestCPU: 250m
   requestMemory: 256Mi

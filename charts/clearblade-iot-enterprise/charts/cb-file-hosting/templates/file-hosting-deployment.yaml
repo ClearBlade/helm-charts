@@ -21,6 +21,9 @@ spec:
       {{- if eq .Values.global.secretManager "gsm" }}
       serviceAccountName: clearblade-gsm-read
       {{- end }}
+      {{- if and (eq .Values.global.secretManager "asm") .Values.global.awsSecretsRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
       {{- if .Values.global.imagePullerSecret }}
       imagePullSecrets:
         - name: gcr-json-key
@@ -62,7 +65,7 @@ spec:
               {{- if eq .Values.global.secretManager "gsm" }}
               gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
               {{- else if eq .Values.global.secretManager "asm"}}
-              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region us-east-1 --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
               {{- else }}
               echo $filehosting_hmac_file >> /etc/clearblade/filehosting_hmac_secret
               {{- end }}
@@ -82,7 +85,7 @@ spec:
           {{- if .Values.imageURL }}
           image: "{{- .Values.imageURL }}"
           {{- else }}
-          image: "gcr.io/api-project-320446546234/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
+          image: "{{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
           {{- end }}
           ports:
             - containerPort: 80

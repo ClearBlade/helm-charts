@@ -34,6 +34,9 @@ spec:
       {{- if eq .Values.global.secretManager "gsm" }}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       {{- end }}
+      {{- if and (eq .Values.global.secretManager "asm") .Values.global.awsSecretsRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
       {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
       initContainers:
         - name: init
@@ -82,7 +85,7 @@ spec:
       {{- end }}
       containers:
         - name: pgbouncer
-          image: "{{ .Values.pgBouncer.image }}:{{ .Values.pgBouncer.imageTag }}"
+          image: "{{ default (printf "%s/cb-pgbouncer" (default "gcr.io/api-project-320446546234" .Values.global.registry)) .Values.pgBouncer.image }}:{{ .Values.pgBouncer.imageTag }}"
           imagePullPolicy: IfNotPresent
           {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}
           command: ["/bin/sh"]

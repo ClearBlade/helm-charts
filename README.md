@@ -3,7 +3,7 @@ Repository for helm charts to deploy the ClearBlade IoT Enterprise platform and 
 
 # ClearBlade IoT Enterprise
 
-The `clearblade-iot-enterprise` Helm chart enables you install an instance of the platform in your own infrastructure. The Helm charts support installing in your own Kubernetes environment, or within Google Cloud.
+The `clearblade-iot-enterprise` Helm chart enables you install an instance of the platform in your own infrastructure. The Helm charts support installing in your own Kubernetes environment, within Google Cloud, or within AWS.
 
 ## Kubernetes
 
@@ -105,6 +105,75 @@ Finally, after connecting to your GKE cluster using the gcloud cli, you will be 
 
 ```
 helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-2.13.6/clearblade-iot-enterprise-2.13.6.tgz -f ./my-values.yaml && gcloud --project={gcp project id} iam service-accounts add-iam-policy-binding clearblade-gsm-read@{gcp project id}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:{gcp project id}.svc.id.goog[{kubernetes namespace}/clearblade-gsm-read]"
+```
+
+## Amazon Web Services
+
+When installing ClearBlade IoT Enterprise in AWS, the following services are leveraged:
+
+- Elastic Kubernetes Service (EKS)
+- AWS Secrets Manager
+- Elastic Block Store (EBS)
+- Elastic IP Addresses
+- IAM (optionally with IAM Roles for Service Accounts)
+- Elastic Container Registry (optional, for mirroring images)
+
+Use the `eks-default-values.yaml` file in this repo as the starting point for your values.
+
+### Required Resources
+
+#### Kubernetes Cluster
+
+An EKS cluster is required, with the following configured:
+
+- The EBS CSI driver add-on installed
+- The AWS Load Balancer Controller installed (the chart provisions Network Load Balancers through it)
+- An OIDC provider associated with the cluster if using IAM Roles for Service Accounts (recommended)
+
+#### IP Addresses
+
+Allocate 1 Elastic IP per public subnet the primary load balancer will serve. Optionally allocate a second set to enable MQTT connections over port 443. Set the allocation IDs (`eipalloc-...`) as comma-separated lists in the `cb-haproxy.primaryIP` and `cb-haproxy.mqttIP` values.
+
+#### Volumes
+
+Pre-created EBS volumes are required for persisting data (100 GB recommended for Postgres). One volume each for:
+
+| Volume | Value for the volume ID |
+| ------ | ----------------------- |
+| Postgres | `cb-postgres.volumeHandle` |
+| File hosting | `cb-file-hosting.volumeHandle` |
+| IoT Core sidecar (if enabled) | `cb-iotcore.volumeHandle` |
+| Intelligent Assets sidecar (if enabled) | `cb-ia.volumeHandle` |
+
+EBS volumes are zonal. Set `cb-postgres.volumeAZ` to the availability zone of the Postgres volume so the pod is scheduled where the volume can attach. Create the other volumes in a zone where their pods can run, using node selectors to pin them if the cluster spans multiple zones.
+
+Snapshots via Amazon Data Lifecycle Manager are recommended for backup purposes.
+
+#### Secrets
+
+The same 6 secrets described in the Google Cloud section above must be created in AWS Secrets Manager, in the same region as the cluster, using the same `<namespace>_...` naming pattern.
+
+#### IAM Access to Secrets Manager
+
+The pods read the secrets above at startup, and the certificate renewal controller writes renewed certificates back. Grant access one of two ways:
+
+- IAM Roles for Service Accounts (recommended): create an IAM role with `secretsmanager:GetSecretValue`, `secretsmanager:DescribeSecret`, `secretsmanager:CreateSecret`, and `secretsmanager:PutSecretValue` scoped to the `<namespace>_*` secrets, trusted by the cluster OIDC provider for the `clearblade-asm-read` service account in your namespace. Set the role ARN in `global.awsSecretsRoleArn` and the chart creates the service account and attaches it to the pods that need it.
+- Node instance role: attach the same permissions to the node group role and leave `global.awsSecretsRoleArn` unset.
+
+#### Image Registry (optional)
+
+By default all ClearBlade images are pulled from ClearBlade's GCR using the `global.imagePullerSecret` provided by ClearBlade. To pull from an ECR mirror instead, copy the ClearBlade images into ECR keeping the image names and tags, and set `global.registry` to your registry prefix, for example `123456789012.dkr.ecr.us-east-1.amazonaws.com/clearblade`. Third-party images (haproxy, timescaledb, redis, and others) are referenced by their public names and can be overridden per subchart if needed.
+
+#### Certificate Renewal
+
+Automatic Let's Encrypt certificate renewal (`cb-haproxy.certRenewal`) works on AWS with a `cb_controller` image built with AWS Secrets Manager support. The controller stores renewed certificates back into `<namespace>_tls-certificates`, so its IAM role needs the write permissions listed above. If you prefer to manage certificates outside the cluster, set `cb-haproxy.certRenewal: false` and update the secret yourself.
+
+### Installation
+
+After connecting to your EKS cluster with `aws eks update-kubeconfig`, install with:
+
+```
+helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-{version}/clearblade-iot-enterprise-{version}.tgz -f ./my-values.yaml
 ```
 
 # ClearBlade Monitoring
