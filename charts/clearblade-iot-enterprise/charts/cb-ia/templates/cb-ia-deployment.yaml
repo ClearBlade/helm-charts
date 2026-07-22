@@ -125,6 +125,9 @@ spec:
                 -message-url="{{ .Values.global.enterpriseBaseURL }}" \
                 -instance-id="{{ .Values.global.enterpriseInstanceID }}" \
                 -skip-bucket-sets="{{ .Values.skipBucketSets }}" \
+                {{- if .Values.global.tilesEnabled }}
+                -tilesService="cb-tiles-service.{{ default "clearblade" .Values.global.namespace }}.svc.cluster.local:7777" \
+                {{- end }}
                 $CRED_FLAGS
           volumeMounts:
           - name: ia
