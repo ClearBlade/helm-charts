@@ -48,3 +48,7 @@ ClearBlade: changed order of flag configurations due to platform bug; Fixed mtls
 
 ## [3.3.8] - 2025-09-22
 ClearBlade: Add persistent volume to file hosting container
+
+## [3.3.18] - 2026-07-22
+
+File Hosting: Backport the HMAC secret verification (from 3.5.0) onto the 3.3.x line. cb-file-hosting pulls <namespace>_filehosting-hmac-secret and the platform signs file-hosting requests with it (GSM). Maintenance release for deployers that need the file-hosting HMAC fix without the 3.4-3.5 cb-ia/haproxy/port changes.
