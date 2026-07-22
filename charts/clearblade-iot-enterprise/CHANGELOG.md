@@ -77,3 +77,7 @@ ClearBlade: Added optional env variable for GODEBUG: madvdontneed=1
 IA, IoTCore and File Hosting: Changed deployment strategy from rolling update to recreate
 
 ClearBlade: Changed statefulsets to allow for rollout partitions on changes
+
+## [3.5.4] - 2026-07-22
+
+Tiles: Restore the cb-tiles subchart, inadvertently dropped at 3.4.0 with no replacement. Maintenance release off 3.5.3 for deployers that still self-host map tiles (gated by global.tilesEnabled).
