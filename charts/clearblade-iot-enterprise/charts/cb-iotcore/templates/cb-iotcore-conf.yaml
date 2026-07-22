@@ -14,5 +14,6 @@ metadata:
   namespace: {{ default "clearblade" .Values.global.namespace }}
 stringData:
   mailgun.json: {{ .Values.credentials.mailgun | toJson | quote }}
-  master-system-creds.json: {{ .Values.credentials.masterCreds | toJson | quote }}
+  master-system-reader-creds.json: {{ .Values.credentials.masterReaderCreds | toJson | quote }}
+  master-system-writer-creds.json: {{ .Values.credentials.masterWriterCreds | toJson | quote }}
 {{- end }}

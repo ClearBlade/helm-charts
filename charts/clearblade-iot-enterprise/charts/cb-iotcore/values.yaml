@@ -14,7 +14,13 @@ credentials:
     API_KEY: ""
     DOMAIN: ""
     SENDER: ""
-  masterCreds:
+  # Read-only catalog credentials. The sidecar mints the distributed asset_monitor_management_user_token from these.
+  masterReaderCreds:
+    email: ""
+    password: ""
+    systemKey: ""
+  # Write credentials for publishing components. The sidecar keeps this token in memory only (never distributed).
+  masterWriterCreds:
     email: ""
     password: ""
     systemKey: ""
