@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-tiles
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: cb-tiles
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cb-tiles
+        app.kubernetes.io/name: managed-prom
+    spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      containers:
+        - name: cb-tiles
+          {{- if .Values.imageURL }}
+          image: {{- .Values.imageURL }}
+          {{- else }}
+          image: gcr.io/api-project-320446546234/tiles:{{ .Values.version }}
+          {{- end }}
+          command:  [./tiles]
+          args: []
+          volumeMounts:
+          - name: tiles
+            mountPath: /tiles/tilesets
+          ports:
+            - containerPort: 7777
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: {{ .Values.requestCPU }}
+              memory: {{ .Values.requestMemory }}
+            limits:
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      volumes:
+        - name: tiles
+          persistentVolumeClaim:
+            claimName: cb-tiles-pvc
