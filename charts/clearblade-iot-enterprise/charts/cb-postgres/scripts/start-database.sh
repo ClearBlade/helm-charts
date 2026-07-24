@@ -15,6 +15,7 @@ if [ "$STREAMING_REPLICA_ENABLED" = "true" ]; then
   export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
 
   echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
+  # rm -rf /var/lib/postgresql/data/clearblade
   pg_basebackup -D /var/lib/postgresql/data/clearblade \
     -h "$STREAMING_REPLICA_HOST" -p "$STREAMING_REPLICA_PORT" \
     -U "$STREAMING_REPLICATOR_USER" \
