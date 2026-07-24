@@ -39,12 +39,44 @@ psql_primary() {
     psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" -tAc "$1"
 }
 
+psql_primary_exec() {
+  # Runs each argument as its OWN separate query (one -c flag per statement).
+  # Needed for ALTER SYSTEM/CREATE DATABASE-class statements: psql -c with
+  # multiple ;-separated statements sends them as a single simple-query
+  # message, which Postgres wraps in an implicit transaction block - and
+  # ALTER SYSTEM refuses to run inside one ("cannot run inside a transaction
+  # block"). Separate -c flags avoid that entirely.
+  local args=()
+  for stmt in "$@"; do
+    args+=(-c "$stmt")
+  done
+  kubectl --context "$KCTX" exec -n "$NAMESPACE" "$PG_POD" -c cb-postgres -- \
+    psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" "${args[@]}"
+}
+
 # ---------------------------------------------------------------------------
-# lockdown mode: run this AFTER the AWS/replica side is deployed and you know
-# its egress IP. Replaces the wide-open source range from setup with just
-# that IP. Usage: ./configure_streaming.sh lockdown
+# Firewall lockdown - shared logic used both by standalone `lockdown` mode
+# and automatically at the end of the normal setup flow.
 # ---------------------------------------------------------------------------
-lockdown_firewall() {
+apply_firewall_lockdown() {
+  local fw_rule="$1" project="$2" ip="$3"
+
+  gcloud compute firewall-rules describe "$fw_rule" --project "$project" >/dev/null 2>&1 \
+    || die "Firewall rule $fw_rule not found in project $project - run setup mode first."
+
+  local current_ranges
+  current_ranges=$(gcloud compute firewall-rules describe "$fw_rule" --project "$project" --format="value(sourceRanges)")
+  info "Current source ranges: $current_ranges"
+  confirm "Replace with just ${ip}/32 (this closes off anything else currently allowed, including 0.0.0.0/0 from setup)?" \
+    || die "Aborted before locking down firewall rule."
+
+  gcloud compute firewall-rules update "$fw_rule" --project="$project" --source-ranges="${ip}/32"
+  info "Firewall rule $fw_rule locked down to ${ip}/32 only."
+}
+
+# Standalone mode: run this later if you need to re-lock-down after the fact
+# (e.g. the replica's EIP changed). Usage: ./configure_streaming.sh lockdown
+lockdown_firewall_standalone() {
   require_cmd gcloud
 
   info "Locking down the WireGuard firewall rule to the replica's egress IP"
@@ -53,22 +85,44 @@ lockdown_firewall() {
   read -r -p "Replica's egress IP: " REPLICA_EGRESS_IP
   [[ -n "$REPLICA_EGRESS_IP" ]] || die "Replica egress IP is required."
 
-  local fw_rule="allow-wireguard-${NAMESPACE}"
-  gcloud compute firewall-rules describe "$fw_rule" --project "$GCP_PROJECT" >/dev/null 2>&1 \
-    || die "Firewall rule $fw_rule not found in project $GCP_PROJECT - run setup mode first."
+  apply_firewall_lockdown "allow-wireguard-${NAMESPACE}" "$GCP_PROJECT" "$REPLICA_EGRESS_IP"
+}
 
-  local current_ranges
-  current_ranges=$(gcloud compute firewall-rules describe "$fw_rule" --project "$GCP_PROJECT" --format="value(sourceRanges)")
-  info "Current source ranges: $current_ranges"
-  confirm "Replace with just ${REPLICA_EGRESS_IP}/32 (this closes off anything else currently allowed, including 0.0.0.0/0 from setup)?" \
-    || die "Aborted before locking down firewall rule."
+# Used automatically at the end of the normal setup flow, once the operator
+# confirms the replica-side Helm chart is deployed. Discovers the replica's
+# static Elastic IP (tagged by cb-postgres's streamingReplica.staticEgressIP
+# feature) via the AWS CLI instead of asking the operator to look it up
+# manually, then locks down the rule created earlier in this same run.
+discover_aws_egress_ip_and_lockdown() {
+  require_cmd aws
 
-  gcloud compute firewall-rules update "$fw_rule" --project="$GCP_PROJECT" --source-ranges="${REPLICA_EGRESS_IP}/32"
-  info "Firewall rule $fw_rule locked down to ${REPLICA_EGRESS_IP}/32 only."
+  info "Finding the replica's static egress IP..."
+  read -r -p "AWS region the replica's EKS cluster is in: " AWS_REGION
+  read -r -p "AWS CLI profile to use (leave blank for default): " AWS_PROFILE
+  read -r -p "EIP name tag [streaming-replica-egress]: " EIP_TAG
+  EIP_TAG=${EIP_TAG:-streaming-replica-egress}
+
+  local aws_args=(--region "$AWS_REGION")
+  [[ -n "$AWS_PROFILE" ]] && aws_args+=(--profile "$AWS_PROFILE")
+
+  local egress_ip
+  while true; do
+    egress_ip=$(aws ec2 describe-addresses "${aws_args[@]}" \
+      --filters "Name=tag:Name,Values=${EIP_TAG}" \
+      --query "Addresses[0].PublicIp" --output text 2>/dev/null || echo "")
+    if [[ -n "$egress_ip" && "$egress_ip" != "None" ]]; then
+      break
+    fi
+    warn "No Elastic IP tagged '${EIP_TAG}' found yet (or it's not associated with an instance yet). The proxy pod's init container may still be starting."
+    confirm "Retry?" || die "Aborted - re-run '$0 lockdown' later once the replica side is confirmed up."
+  done
+
+  info "Found replica egress IP: $egress_ip"
+  apply_firewall_lockdown "$FW_RULE" "$GCP_PROJECT" "$egress_ip"
 }
 
 if [[ "${1:-}" == "lockdown" ]]; then
-  lockdown_firewall
+  lockdown_firewall_standalone
   exit 0
 fi
 
@@ -156,14 +210,13 @@ cat <<SQL
 SQL
 confirm "Apply these settings to the primary now?" || die "Aborted before applying WAL settings."
 
-psql_primary "
-  ALTER SYSTEM SET max_wal_senders = 10;
-  ALTER SYSTEM SET max_replication_slots = 10;
-  ALTER SYSTEM SET wal_keep_size = '1GB';
-  ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';
-  ALTER SYSTEM SET hot_standby = on;
-  SELECT pg_reload_conf();
-" >/dev/null
+psql_primary_exec \
+  "ALTER SYSTEM SET max_wal_senders = 10;" \
+  "ALTER SYSTEM SET max_replication_slots = 10;" \
+  "ALTER SYSTEM SET wal_keep_size = '1GB';" \
+  "ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';" \
+  "ALTER SYSTEM SET hot_standby = on;" \
+  "SELECT pg_reload_conf();" >/dev/null
 info "WAL settings applied and config reloaded."
 
 # ---------------------------------------------------------------------------
@@ -345,21 +398,26 @@ else
     --target-tags="$NODE_TAG"
   info "Firewall rule created, temporarily open to 0.0.0.0/0."
 fi
-warn "This rule is wide open. Once the replica side is deployed and you've confirmed the tunnel works, lock it down with:"
-echo "  $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}") lockdown"
+warn "This rule is wide open for now - it gets locked down automatically later in this script."
 
 # ---------------------------------------------------------------------------
-# 8. Summary
+# 8. Deploy the replica side, then continue
 # ---------------------------------------------------------------------------
 info "GCP-side setup complete. Artifacts written to $OUT_DIR:"
 echo "  - $REPL_PASSWORD_FILE  (replicator role password, if created/reset this run)"
 echo "  - $PEER_CONF           (WireGuard client config - copy this to the replica side)"
 echo "  - $WG_MANIFEST         (the manifest applied for the WireGuard server pod)"
 echo
-echo "Next: deploy the replica-side Helm chart (global.streamingReplica=true) using:"
+echo "Now deploy the replica-side Helm chart (global.streamingReplica=true) using:"
 echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
 echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
 echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
 echo
-echo "Once it's deployed and you've confirmed the tunnel handshakes, lock down the wide-open firewall rule:"
-echo "  $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}") lockdown"
+read -r -p "Press Enter once the replica-side Helm chart is deployed and running (Ctrl+C to stop here and finish later with '$0 lockdown')... "
+
+# ---------------------------------------------------------------------------
+# 9. Lock down the firewall rule now that the replica exists
+# ---------------------------------------------------------------------------
+discover_aws_egress_ip_and_lockdown
+
+info "All done - primary is configured, tunnel is up, and the firewall rule is locked down to the replica's egress IP."
