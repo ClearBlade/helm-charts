@@ -39,6 +39,39 @@ psql_primary() {
     psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" -tAc "$1"
 }
 
+# ---------------------------------------------------------------------------
+# lockdown mode: run this AFTER the AWS/replica side is deployed and you know
+# its egress IP. Replaces the wide-open source range from setup with just
+# that IP. Usage: ./configure_streaming.sh lockdown
+# ---------------------------------------------------------------------------
+lockdown_firewall() {
+  require_cmd gcloud
+
+  info "Locking down the WireGuard firewall rule to the replica's egress IP"
+  read -r -p "GCP project ID: " GCP_PROJECT
+  read -r -p "Kubernetes namespace the postgres instance runs in: " NAMESPACE
+  read -r -p "Replica's egress IP: " REPLICA_EGRESS_IP
+  [[ -n "$REPLICA_EGRESS_IP" ]] || die "Replica egress IP is required."
+
+  local fw_rule="allow-wireguard-${NAMESPACE}"
+  gcloud compute firewall-rules describe "$fw_rule" --project "$GCP_PROJECT" >/dev/null 2>&1 \
+    || die "Firewall rule $fw_rule not found in project $GCP_PROJECT - run setup mode first."
+
+  local current_ranges
+  current_ranges=$(gcloud compute firewall-rules describe "$fw_rule" --project "$GCP_PROJECT" --format="value(sourceRanges)")
+  info "Current source ranges: $current_ranges"
+  confirm "Replace with just ${REPLICA_EGRESS_IP}/32 (this closes off anything else currently allowed, including 0.0.0.0/0 from setup)?" \
+    || die "Aborted before locking down firewall rule."
+
+  gcloud compute firewall-rules update "$fw_rule" --project="$GCP_PROJECT" --source-ranges="${REPLICA_EGRESS_IP}/32"
+  info "Firewall rule $fw_rule locked down to ${REPLICA_EGRESS_IP}/32 only."
+}
+
+if [[ "${1:-}" == "lockdown" ]]; then
+  lockdown_firewall
+  exit 0
+fi
+
 for c in gcloud kubectl jq openssl; do require_cmd "$c"; done
 
 # ---------------------------------------------------------------------------
@@ -287,27 +320,33 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Firewall rule (initially open to nothing but this operator's IP -
-#    the replica's egress IP gets added by the follow-up AWS-side script)
+# 7. Firewall rule
+#
+# Circular dependency: the replica's egress IP doesn't exist until the
+# AWS/replica chart is actually deployed, but the tunnel needs to work for
+# that deployment to be verified. So this opens the rule to any source for
+# now - deploy the replica side, confirm the tunnel handshakes, THEN run
+# this script again with `lockdown` to restrict it to just the replica's
+# actual egress IP.
 # ---------------------------------------------------------------------------
 FW_RULE="allow-wireguard-${NAMESPACE}"
-MY_IP=$(curl -s ifconfig.me)
 NODE_NAME=$(kubectl --context "$KCTX" get nodes -o jsonpath='{.items[0].metadata.name}')
 NODE_TAG=$(gcloud compute instances list --project "$GCP_PROJECT" --filter="name=${NODE_NAME}" --format="value(tags.items[0])")
 
 if gcloud compute firewall-rules describe "$FW_RULE" --project "$GCP_PROJECT" >/dev/null 2>&1; then
-  info "Firewall rule $FW_RULE already exists - leaving it as-is. Add the replica's egress IP to it once you have it:"
-  echo "  gcloud compute firewall-rules update $FW_RULE --project=$GCP_PROJECT --source-ranges=<existing-ips>,<replica-egress-ip>/32"
+  info "Firewall rule $FW_RULE already exists - leaving it as-is."
 else
-  confirm "Create firewall rule '$FW_RULE' allowing UDP:${WG_NODE_PORT} from your current IP ($MY_IP)?" || die "Aborted before creating firewall rule."
+  warn "Opening this rule to 0.0.0.0/0 (any source) for now, since the replica's egress IP doesn't exist until it's deployed."
+  confirm "Create firewall rule '$FW_RULE' allowing UDP:${WG_NODE_PORT} from ANYWHERE (temporary)?" || die "Aborted before creating firewall rule."
   gcloud compute firewall-rules create "$FW_RULE" \
     --project="$GCP_PROJECT" --network="$(gcloud compute instances describe "$NODE_NAME" --project "$GCP_PROJECT" --zone "$(gcloud compute instances list --project "$GCP_PROJECT" --filter="name=${NODE_NAME}" --format='value(zone.basename())')" --format='value(networkInterfaces[0].network.basename())')" \
     --direction=INGRESS --action=ALLOW --rules="udp:${WG_NODE_PORT}" \
-    --source-ranges="${MY_IP}/32" \
+    --source-ranges="0.0.0.0/0" \
     --target-tags="$NODE_TAG"
-  info "Firewall rule created, currently only allowing your IP ($MY_IP). Add the replica's egress IP once you have it from the AWS-side script:"
-  echo "  gcloud compute firewall-rules update $FW_RULE --project=$GCP_PROJECT --source-ranges=${MY_IP}/32,<replica-egress-ip>/32"
+  info "Firewall rule created, temporarily open to 0.0.0.0/0."
 fi
+warn "This rule is wide open. Once the replica side is deployed and you've confirmed the tunnel works, lock it down with:"
+echo "  $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}") lockdown"
 
 # ---------------------------------------------------------------------------
 # 8. Summary
@@ -317,8 +356,10 @@ echo "  - $REPL_PASSWORD_FILE  (replicator role password, if created/reset this 
 echo "  - $PEER_CONF           (WireGuard client config - copy this to the replica side)"
 echo "  - $WG_MANIFEST         (the manifest applied for the WireGuard server pod)"
 echo
-echo "Next: run the AWS/replica-side script, using:"
-echo "  - the WireGuard endpoint: ${NODE_EXTERNAL_IP}:${WG_NODE_PORT}"
-echo "  - the peer config: $PEER_CONF"
-echo "  - the replicator password from: $REPL_PASSWORD_FILE"
-echo "Then come back and add the replica's egress IP to firewall rule '$FW_RULE'."
+echo "Next: deploy the replica-side Helm chart (global.streamingReplica=true) using:"
+echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
+echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
+echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
+echo
+echo "Once it's deployed and you've confirmed the tunnel handshakes, lock down the wide-open firewall rule:"
+echo "  $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}") lockdown"

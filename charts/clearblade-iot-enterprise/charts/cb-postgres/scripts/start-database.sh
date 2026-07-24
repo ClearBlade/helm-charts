@@ -3,6 +3,15 @@ set -e
 
 if [ "$STREAMING_REPLICA_ENABLED" = "true" ]; then
   echo "Running database as STREAMING REPLICA of an external primary"
+
+  # pg_basebackup -R writes primary_conninfo without a password (by design -
+  # it never persists one to disk directly), so the walreceiver needs a
+  # .pgpass file to reconnect after the initial backup. Written every start
+  # (not just on first bootstrap) in case the password ever rotates.
+  export PGPASSFILE=/var/lib/postgresql/data/.pgpass
+  echo "${STREAMING_REPLICA_HOST}:${STREAMING_REPLICA_PORT}:*:${STREAMING_REPLICATOR_USER}:${STREAMING_REPLICATOR_PASSWORD}" > "$PGPASSFILE"
+  chmod 600 "$PGPASSFILE"
+
   if [ -s "/var/lib/postgresql/data/clearblade/PG_VERSION" ]; then
     echo "Database replica already exists."
   else
