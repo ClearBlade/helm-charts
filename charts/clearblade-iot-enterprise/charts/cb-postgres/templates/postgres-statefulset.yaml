@@ -202,7 +202,11 @@ spec:
             - mountPath: /dev/shm
               name: dshm
 
-          {{- if .Values.livenessProbe.enabled }}
+          {{- /* Streaming-replica bootstrap runs pg_basebackup before postgres even
+          starts listening, which can take far longer than these probes tolerate -
+          kubelet would kill the container mid-backup thinking it's unhealthy.
+          Skip both probes entirely in that mode. */}}
+          {{- if and .Values.livenessProbe.enabled (not $.Values.global.streamingReplica) }}
           livenessProbe:
             exec:
               command:
@@ -215,7 +219,7 @@ spec:
             successThreshold: {{ .Values.livenessProbe.successThreshold }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           {{- end }}
-          {{- if .Values.readinessProbe.enabled }}
+          {{- if and .Values.readinessProbe.enabled (not $.Values.global.streamingReplica) }}
           readinessProbe:
             exec:
               command:
