@@ -12,17 +12,13 @@ if [ "$STREAMING_REPLICA_ENABLED" = "true" ]; then
   echo "${STREAMING_REPLICA_HOST}:${STREAMING_REPLICA_PORT}:*:${STREAMING_REPLICATOR_USER}:${STREAMING_REPLICATOR_PASSWORD}" > "$PGPASSFILE"
   chmod 600 "$PGPASSFILE"
 
-  if [ -s "/var/lib/postgresql/data/clearblade/PG_VERSION" ]; then
-    echo "Database replica already exists."
-  else
-    export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
+  export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
 
-    echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
-    pg_basebackup -D /var/lib/postgresql/data/clearblade \
-      -h "$STREAMING_REPLICA_HOST" -p "$STREAMING_REPLICA_PORT" \
-      -U "$STREAMING_REPLICATOR_USER" \
-      -C -S streaming_replica -X stream -c fast -R
-  fi
+  echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
+  pg_basebackup -D /var/lib/postgresql/data/clearblade \
+    -h "$STREAMING_REPLICA_HOST" -p "$STREAMING_REPLICA_PORT" \
+    -U "$STREAMING_REPLICATOR_USER" \
+    -C -S streaming_replica -X stream -r 100M --checkpoint=spread -R -P
 
   echo "Starting database"
   docker-entrypoint.sh -c config_file=/etc/postgresql/postgresql.conf &

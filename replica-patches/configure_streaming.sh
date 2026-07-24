@@ -363,7 +363,7 @@ if grep -qF "${WG_POD_IP}/32" <<<"$CURRENT_HBA"; then
   warn "pg_hba.conf already has an entry for ${WG_POD_IP}/32 - skipping patch."
 else
   kubectl --context "$KCTX" get configmap postgres-config -n "$NAMESPACE" -o json | \
-    jq --arg line "\n${HBA_LINE}\n" '.data["pg_hba.conf"] += $line' | \
+    jq --arg line $'\n'"${HBA_LINE}"$'\n' '.data["pg_hba.conf"] += $line' | \
     kubectl --context "$KCTX" apply -f -
   info "ConfigMap patched. Waiting for it to sync into the pod (~30-60s)..."
   sleep 45
@@ -409,6 +409,7 @@ echo "  - $PEER_CONF           (WireGuard client config - copy this to the repli
 echo "  - $WG_MANIFEST         (the manifest applied for the WireGuard server pod)"
 echo
 echo "Now deploy the replica-side Helm chart (global.streamingReplica=true) using:"
+echo "  - global.streamingReplica=true"
 echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
 echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
 echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
