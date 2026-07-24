@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wg-postgres-proxy
+  # TODO: REPLACE
+  namespace: community
+  labels:
+    app: wg-postgres-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wg-postgres-proxy
+  template:
+    metadata:
+      labels:
+        app: wg-postgres-proxy
+    spec:
+      containers:
+        - name: wireguard-client
+          image: lscr.io/linuxserver/wireguard:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Etc/UTC"
+          volumeMounts:
+            - name: wg-conf
+              mountPath: /config/wg_confs/wg0.conf
+              subPath: wg0.conf
+        # Shares this pod's network namespace with wireguard-client, so once
+        # wg0 is up it can dial 10.92.3.63 through the tunnel directly.
+        - name: pg-proxy
+          image: alpine/socat:latest
+          command:
+            - socat
+            - TCP-LISTEN:5432,fork,reuseaddr
+            - TCP:10.92.3.63:5432
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+      volumes:
+        - name: wg-conf
+          secret:
+            secretName: wg-postgres-temp-client
+            defaultMode: 0600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wg-postgres-proxy
+  # TODO: REPLACE
+  namespace: community
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+spec:
+  type: LoadBalancer
+  selector:
+    app: wg-postgres-proxy
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP

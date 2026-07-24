@@ -1,0 +1,30 @@
+# Not directly applyable on its own - merge this container + volume into the
+# existing pod spec for your AWS streaming replica, alongside the
+# postgres-replica container. Apply wg-postgres-temp-client-secret.yaml first.
+#
+# Once the sidecar's tunnel is up, point primary_conninfo at host=10.92.3.63
+# port=5432 directly - no proxy hop needed, since the sidecar shares the pod's
+# network namespace.
+containers:
+  - name: wireguard-client
+    image: lscr.io/linuxserver/wireguard:latest
+    securityContext:
+      capabilities:
+        add:
+          - NET_ADMIN
+    env:
+      - name: PUID
+        value: "1000"
+      - name: PGID
+        value: "1000"
+      - name: TZ
+        value: "Etc/UTC"
+    volumeMounts:
+      - name: wg-conf
+        mountPath: /config/wg_confs/wg0.conf
+        subPath: wg0.conf
+volumes:
+  - name: wg-conf
+    secret:
+      secretName: wg-postgres-temp-client
+      defaultMode: 0600
