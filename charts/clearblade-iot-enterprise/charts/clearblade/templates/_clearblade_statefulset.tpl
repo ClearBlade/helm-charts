@@ -128,12 +128,12 @@ spec:
         - name: init
           {{- if eq .root.Values.global.secretManager "gsm"}}
           image: google/cloud-sdk:slim
-          {{- end }}
-          {{- if eq .root.Values.global.secretManager "asm"}}
+          {{- else if eq .root.Values.global.secretManager "asm"}}
           image: amazon/aws-cli:latest
-          {{- end }}
-          {{- if eq .root.Values.global.cloud "gdc"}}
+          {{- else if eq .root.Values.global.cloud "gdc"}}
           image: "{{ .root.Values.initImage }}"
+          {{- else }}
+          image: ubuntu:24.04
           {{- end }}
           command: ["/bin/bash"]
           args:

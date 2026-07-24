@@ -54,6 +54,9 @@ spec:
           {{- if eq .Values.global.cloud "gdc"}}
           image: "{{ .Values.initImage }}"
           {{- end }}
+          {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
+          image: ubuntu:24.04
+          {{- end }}
           command: ["/bin/bash"]
           args:
             - -c

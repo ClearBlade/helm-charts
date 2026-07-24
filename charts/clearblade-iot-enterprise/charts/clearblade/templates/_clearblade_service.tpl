@@ -11,6 +11,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-type: external
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-subnets: {{ default "us-east-2a" .root.Values.global.subnet }}
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .primaryIP }}
   {{- end }}
 

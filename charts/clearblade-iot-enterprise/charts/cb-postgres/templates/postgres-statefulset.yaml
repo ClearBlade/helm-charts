@@ -128,10 +128,16 @@ spec:
               value: /var/lib/postgresql/data/clearblade
             - name: PGPORT
               value: "{{ .Values.port }}"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
             - name: PRIMARY_USER
               value: {{ .Values.user.primary }}
             - name: REPLICA_USER
               value: {{ .Values.user.replica }}
+            - name: ENABLE_DOWNSAMPLING
+              value: "{{ .Values.enableDownsamplingExtension }}"
             {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
             - name: PRIMARY_PASSWORD
               valueFrom:

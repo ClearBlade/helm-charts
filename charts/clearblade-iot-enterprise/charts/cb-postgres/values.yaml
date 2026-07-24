@@ -28,6 +28,7 @@ readinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
+enableDownsamplingExtension: true
 storageSize: 100Gi
  # Base name of disk - "-$i" will be appended in the PV automatically.
  # Disk name must follow this convention: {namespace}-{postgresDiskName}-{number}
