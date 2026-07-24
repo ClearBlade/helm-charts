@@ -1,5 +1,27 @@
 #!/bin/bash
 set -e
+
+if [ "$STREAMING_REPLICA_ENABLED" = "true" ]; then
+  echo "Running database as STREAMING REPLICA of an external primary"
+  if [ -s "/var/lib/postgresql/data/clearblade/PG_VERSION" ]; then
+    echo "Database replica already exists."
+  else
+    export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
+
+    echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
+    pg_basebackup -D /var/lib/postgresql/data/clearblade \
+      -h "$STREAMING_REPLICA_HOST" -p "$STREAMING_REPLICA_PORT" \
+      -U "$STREAMING_REPLICATOR_USER" \
+      -C -S streaming_replica -X stream -c fast -R
+  fi
+
+  echo "Starting database"
+  docker-entrypoint.sh -c config_file=/etc/postgresql/postgresql.conf &
+  PG_PID=$!
+  wait $PG_PID
+  exit 0
+fi
+
 export SCALE_NUMBER=`echo $HOSTNAME | awk 'BEGIN { FS = "-"} ; {print $NF}'`
 export POSTGRES_SERVICE=`echo $HOSTNAME | awk 'BEGIN {FS=OFS="-"} {$NF=""; NF--; print}'`
 

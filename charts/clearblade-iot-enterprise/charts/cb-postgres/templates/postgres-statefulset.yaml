@@ -138,6 +138,21 @@ spec:
               value: {{ .Values.user.replica }}
             - name: ENABLE_DOWNSAMPLING
               value: "{{ .Values.enableDownsamplingExtension }}"
+            {{- if .Values.global.streamingReplica }}
+            - name: STREAMING_REPLICA_ENABLED
+              value: "true"
+            - name: STREAMING_REPLICA_HOST
+              value: streaming-replica-proxy
+            - name: STREAMING_REPLICA_PORT
+              value: "{{ .Values.streamingReplica.primaryPort }}"
+            - name: STREAMING_REPLICATOR_USER
+              value: {{ .Values.streamingReplica.replicatorUser }}
+            - name: STREAMING_REPLICATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.streamingReplica.replicatorSecretName }}
+                  key: password
+            {{- end }}
             {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
             - name: PRIMARY_PASSWORD
               valueFrom:
