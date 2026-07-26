@@ -14,6 +14,8 @@ if [ "$STREAMING_REPLICA_ENABLED" = "true" ]; then
 
   export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
 
+# TODO: SKIP STARTUP IF IT'S ALREADY HERE. THis will allow restarts without going back into streaming.
+
   # rm -rf /var/lib/postgresql/data/clearblade
   echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
   pg_basebackup -D /var/lib/postgresql/data/clearblade \
