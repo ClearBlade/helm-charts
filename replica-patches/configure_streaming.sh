@@ -305,6 +305,7 @@ cat <<SQL
   ALTER SYSTEM SET wal_keep_size = '1GB';
   ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';
   ALTER SYSTEM SET hot_standby = on;
+  SELECT pg_reload_conf();
 SQL
 confirm "Apply these settings to the primary now?" || die "Aborted before applying WAL settings."
 
@@ -313,7 +314,8 @@ psql_primary_exec \
   "ALTER SYSTEM SET max_replication_slots = 10;" \
   "ALTER SYSTEM SET wal_keep_size = '1GB';" \
   "ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';" \
-  "ALTER SYSTEM SET hot_standby = on;" >/dev/null
+  "ALTER SYSTEM SET hot_standby = on;" \
+  "SELECT pg_reload_conf();" >/dev/null
 info "WAL settings written to postgresql.auto.conf."
 warn "max_wal_senders and max_replication_slots need a full restart of the primary to take effect - this script does not restart it for you. Plan a restart before the replica tries to connect."
 
