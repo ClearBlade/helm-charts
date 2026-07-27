@@ -39,7 +39,7 @@ spec:
       labels:
         app: streaming-replica-proxy
     spec:
-      {{- if and (eq .Values.global.cloud "aws") .Values.streamingReplica.staticEgressIP.enabled .Values.global.streamingReplicaRoleArn }}
+      {{- if and (eq .Values.global.cloud "aws") .Values.streamingReplica.staticEgressIP.enabled .Values.global.awsHelmRoleArn }}
       serviceAccountName: clearblade-streaming-egress
       initContainers:
         - name: assign-static-egress-ip

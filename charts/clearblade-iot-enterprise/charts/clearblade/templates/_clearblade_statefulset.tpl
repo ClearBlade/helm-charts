@@ -37,7 +37,7 @@ spec:
       {{- if eq .root.Values.global.secretManager "gsm" }}
       serviceAccountName: clearblade-gsm-read
       {{- end }}
-      {{- if and (eq .root.Values.global.secretManager "asm") .root.Values.global.awsSecretsRoleArn }}
+      {{- if and (eq .root.Values.global.secretManager "asm") .root.Values.global.awsHelmRoleArn }}
       serviceAccountName: clearblade-asm-read
       {{- end }}
       {{- if .root.Values.global.imagePullerSecret }}

@@ -157,8 +157,10 @@ The same 6 secrets described in the Google Cloud section above must be created i
 
 The pods read the secrets above at startup, and the certificate renewal controller writes renewed certificates back. Grant access one of two ways:
 
-- IAM Roles for Service Accounts (recommended): create an IAM role with `secretsmanager:GetSecretValue`, `secretsmanager:DescribeSecret`, `secretsmanager:CreateSecret`, and `secretsmanager:PutSecretValue` scoped to the `<namespace>_*` secrets, trusted by the cluster OIDC provider for the `clearblade-asm-read` service account in your namespace. Set the role ARN in `global.awsSecretsRoleArn` and the chart creates the service account and attaches it to the pods that need it.
-- Node instance role: attach the same permissions to the node group role and leave `global.awsSecretsRoleArn` unset.
+- IAM Roles for Service Accounts (recommended): create an IAM role with `secretsmanager:GetSecretValue`, `secretsmanager:DescribeSecret`, `secretsmanager:CreateSecret`, and `secretsmanager:PutSecretValue` scoped to the `<namespace>_*` secrets, trusted by the cluster OIDC provider for the `clearblade-asm-read` service account in your namespace. Set the role ARN in `global.awsHelmRoleArn` and the chart creates the service account and attaches it to the pods that need it.
+- Node instance role: attach the same permissions to the node group role and leave `global.awsHelmRoleArn` unset.
+
+`global.awsHelmRoleArn` is also used for the streaming replica's static egress IP - if `cb-postgres.streamingReplica.staticEgressIP.enabled` is set, the same role additionally needs `ec2:AllocateAddress`, `ec2:DescribeAddresses`, `ec2:AssociateAddress`, and `ec2:DescribeInstances`, trusted for the `clearblade-streaming-egress` service account as well.
 
 #### Image Registry (optional)
 

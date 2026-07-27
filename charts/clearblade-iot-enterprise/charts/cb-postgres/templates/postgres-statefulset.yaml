@@ -90,7 +90,7 @@ spec:
 
       {{- end }}
       {{- if eq .Values.global.secretManager "asm"}}
-      {{- if .Values.global.awsSecretsRoleArn }}
+      {{- if .Values.global.awsHelmRoleArn }}
       serviceAccountName: clearblade-asm-read
       {{- end }}
       initContainers:

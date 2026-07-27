@@ -88,8 +88,9 @@ streamingReplica:
   # AWS only. Associates a fixed Elastic IP with whatever node this proxy
   # pod lands on, every time it starts - so the primary-side firewall
   # allowlist doesn't go stale if the pod gets rescheduled. Requires IRSA:
-  # set global.streamingReplicaRoleArn to a role with ec2:AllocateAddress,
-  # ec2:DescribeAddresses, ec2:AssociateAddress, ec2:DescribeInstances.
+  # global.awsHelmRoleArn's role needs ec2:AllocateAddress,
+  # ec2:DescribeAddresses, ec2:AssociateAddress, ec2:DescribeInstances
+  # in addition to its Secrets Manager permissions.
   staticEgressIP:
     enabled: true
     # Tag used to find/reuse the same EIP across pod restarts/reschedules.

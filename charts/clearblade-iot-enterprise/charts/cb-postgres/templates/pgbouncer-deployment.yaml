@@ -34,7 +34,7 @@ spec:
       {{- if eq .Values.global.secretManager "gsm" }}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
       {{- end }}
-      {{- if and (eq .Values.global.secretManager "asm") .Values.global.awsSecretsRoleArn }}
+      {{- if and (eq .Values.global.secretManager "asm") .Values.global.awsHelmRoleArn }}
       serviceAccountName: clearblade-asm-read
       {{- end }}
       {{- if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") }}

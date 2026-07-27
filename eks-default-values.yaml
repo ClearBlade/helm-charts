@@ -11,8 +11,8 @@ global:
   # Optional. Override the container registry for ClearBlade first-party images, e.g. an ECR mirror: "123456789012.dkr.ecr.us-east-1.amazonaws.com". Leave blank or comment out to pull from ClearBlade's GCR.
   # registry:
 
-  # Optional. IAM role ARN for Secrets Manager access via IRSA. Creates a "clearblade-asm-read" service account annotated with this role. Leave blank or comment out to use the node instance role instead.
-  # awsSecretsRoleArn:
+  # Optional. IAM role ARN for Secrets Manager access (and, if streamingReplica.staticEgressIP is enabled, the egress IP) via IRSA. Creates "clearblade-asm-read" and/or "clearblade-streaming-egress" service accounts annotated with this role. Leave blank or comment out to use the node instance role instead.
+  # awsHelmRoleArn:
 
   # Optional. Namespace to deploy to. Default is "clearblade"
   namespace:
