@@ -401,10 +401,10 @@ fi
 warn "This rule is wide open for now - it gets locked down automatically later in this script."
 
 # ---------------------------------------------------------------------------
-# 8. Set up the IRSA role the replica-side (AWS) chart needs for
-#    global.awsHelmRoleArn, then deploy the replica side.
+# 8. Set up the IRSA role and the static egress IP the replica-side (AWS)
+#    chart needs, then deploy the replica side.
 # ---------------------------------------------------------------------------
-info "Setting up the IAM role for the replica-side (AWS) Helm chart..."
+info "Setting up the IAM role and static egress IP for the replica-side (AWS) Helm chart..."
 
 read -r -p "AWS region the replica's EKS cluster is in: " REPLICA_AWS_REGION
 [[ -n "$REPLICA_AWS_REGION" ]] || die "AWS region is required."
@@ -412,24 +412,35 @@ read -r -p "Replica-side EKS cluster name: " REPLICA_EKS_CLUSTER
 [[ -n "$REPLICA_EKS_CLUSTER" ]] || die "EKS cluster name is required."
 read -r -p "Kubernetes namespace the replica-side chart deploys into [$NAMESPACE]: " REPLICA_NAMESPACE
 REPLICA_NAMESPACE=${REPLICA_NAMESPACE:-$NAMESPACE}
-read -r -p "AWS CLI profile for the replica's account (leave blank for default): " REPLICA_AWS_PROFILE
+read -r -p "AWS account ID the replica's EKS cluster lives in (chains off the 'base' profile): " REPLICA_AWS_ACCOUNT_ID
+[[ -n "$REPLICA_AWS_ACCOUNT_ID" ]] || die "AWS account ID is required."
 
-HELM_ROLE_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/create-helm-role.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HELM_ROLE_SCRIPT="$SCRIPT_DIR/create-helm-role.sh"
+EGRESS_IP_SCRIPT="$SCRIPT_DIR/allocate-egress-ip.sh"
 [[ -x "$HELM_ROLE_SCRIPT" ]] || die "Expected $HELM_ROLE_SCRIPT to exist and be executable."
+[[ -x "$EGRESS_IP_SCRIPT" ]] || die "Expected $EGRESS_IP_SCRIPT to exist and be executable."
 
 HELM_ROLE_ARN_FILE="$OUT_DIR/aws-helm-role-arn.txt"
-HELM_ROLE_ARGS=(--region "$REPLICA_AWS_REGION" --cluster "$REPLICA_EKS_CLUSTER" --namespace "$REPLICA_NAMESPACE" --out-file "$HELM_ROLE_ARN_FILE")
-[[ -n "$REPLICA_AWS_PROFILE" ]] && HELM_ROLE_ARGS+=(--profile "$REPLICA_AWS_PROFILE")
+HELM_ROLE_ARGS=(--region "$REPLICA_AWS_REGION" --cluster "$REPLICA_EKS_CLUSTER" --namespace "$REPLICA_NAMESPACE" --account-id "$REPLICA_AWS_ACCOUNT_ID" --out-file "$HELM_ROLE_ARN_FILE")
 
 "$HELM_ROLE_SCRIPT" "${HELM_ROLE_ARGS[@]}"
 AWS_HELM_ROLE_ARN=$(cat "$HELM_ROLE_ARN_FILE")
 [[ -n "$AWS_HELM_ROLE_ARN" ]] || die "create-helm-role.sh did not produce a role ARN - see output above."
 
+EGRESS_IP_ALLOCATION_FILE="$OUT_DIR/aws-egress-ip-allocation-id.txt"
+EGRESS_IP_ARGS=(--region "$REPLICA_AWS_REGION" --namespace "$REPLICA_NAMESPACE" --account-id "$REPLICA_AWS_ACCOUNT_ID" --out-file "$EGRESS_IP_ALLOCATION_FILE")
+
+"$EGRESS_IP_SCRIPT" "${EGRESS_IP_ARGS[@]}"
+AWS_EGRESS_IP_ALLOCATION_ID=$(cat "$EGRESS_IP_ALLOCATION_FILE")
+[[ -n "$AWS_EGRESS_IP_ALLOCATION_ID" ]] || die "allocate-egress-ip.sh did not produce an allocation ID - see output above."
+
 info "GCP-side setup complete. Artifacts written to $OUT_DIR:"
-echo "  - $REPL_PASSWORD_FILE      (replicator role password, if created/reset this run)"
-echo "  - $PEER_CONF               (WireGuard client config - copy this to the replica side)"
-echo "  - $WG_MANIFEST             (the manifest applied for the WireGuard server pod)"
-echo "  - $HELM_ROLE_ARN_FILE      (the IRSA role ARN created for the replica-side chart)"
+echo "  - $REPL_PASSWORD_FILE          (replicator role password, if created/reset this run)"
+echo "  - $PEER_CONF                   (WireGuard client config - copy this to the replica side)"
+echo "  - $WG_MANIFEST                 (the manifest applied for the WireGuard server pod)"
+echo "  - $HELM_ROLE_ARN_FILE          (the IRSA role ARN created for the replica-side chart)"
+echo "  - $EGRESS_IP_ALLOCATION_FILE   (the pre-provisioned EIP allocation ID for the replica-side chart)"
 echo
 echo "Now deploy the replica-side Helm chart (global.streamingReplica=true) using:"
 echo "  - global.streamingReplica=true"
@@ -437,6 +448,7 @@ echo "  - global.awsHelmRoleArn=${AWS_HELM_ROLE_ARN}"
 echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
 echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
 echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
+echo "  - cb-postgres.streamingReplica.staticEgressIP.allocationId=${AWS_EGRESS_IP_ALLOCATION_ID}"
 echo
 read -r -p "Press Enter once the replica-side Helm chart is deployed and running (Ctrl+C to stop here and finish later with '$0 lockdown')... "
 

@@ -13,17 +13,34 @@
 # Usage:
 #   ./create-helm-role.sh --region us-east-2 --cluster community --namespace community
 #
+# Authenticates by chaining off a "base" AWS CLI profile, which must already
+# exist and be able to assume the org's cross-account access role (usually
+# OrganizationAccountAccessRole) into member accounts. Prompts for the target
+# account ID if --account-id isn't passed, then creates/updates an AWS CLI
+# profile named after that account ID - pointed at "base" as its source
+# profile - so every AWS call in this script runs as that account without
+# you having to juggle credentials by hand. Safe to re-run; re-running just
+# rewrites the same profile config.
+#
 # Options:
-#   --region        AWS region the EKS cluster is in (required)
-#   --cluster       EKS cluster name (required)
-#   --namespace     Kubernetes namespace the chart is deployed into (required)
-#   --role-name     IAM role name (default: clearblade-helm-<namespace>)
-#   --profile       AWS CLI profile to use (default: whatever is already active)
-#   --no-egress-ip  Omit the EC2 permissions - use this if the namespace never
-#                   sets cb-postgres.streamingReplica.staticEgressIP.enabled
-#   --out-file      Also write just the resulting role ARN (no other text) to
-#                   this path - for chaining into other scripts
-#   -y, --yes       Skip confirmation prompts (for scripting across many accounts)
+#   --region            AWS region the EKS cluster is in (required)
+#   --cluster            EKS cluster name (required)
+#   --namespace          Kubernetes namespace the chart is deployed into (required)
+#   --account-id         AWS account ID to operate in - creates/reuses an AWS CLI
+#                        profile of this name, chained off "base". Prompted for
+#                        if omitted.
+#   --org-access-role    Role name to assume in the target account (default:
+#                        OrganizationAccountAccessRole)
+#   --base-profile       Name of the AWS CLI profile to chain off of (default: base)
+#   --role-name          IAM role name (default: clearblade-helm-<namespace>)
+#   --profile            Use this AWS CLI profile directly instead of the
+#                        account-id/base chaining above (e.g. if you're
+#                        already authenticated some other way)
+#   --no-egress-ip       Omit the EC2 permissions - use this if the namespace never
+#                        sets cb-postgres.streamingReplica.staticEgressIP.enabled
+#   --out-file           Also write just the resulting role ARN (no other text) to
+#                        this path - for chaining into other scripts
+#   -y, --yes            Skip confirmation prompts (for scripting across many accounts)
 #
 # Prints the resulting role ARN - set that as global.awsHelmRoleArn in the
 # chart's values for that account/namespace.
@@ -59,6 +76,9 @@ EKS_CLUSTER=""
 NAMESPACE=""
 ROLE_NAME=""
 AWS_PROFILE=""
+ACCOUNT_ID_INPUT=""
+ORG_ACCESS_ROLE="OrganizationAccountAccessRole"
+BASE_PROFILE="base"
 INCLUDE_EGRESS_IP=true
 ASSUME_YES=false
 OUT_FILE=""
@@ -69,6 +89,9 @@ while [[ $# -gt 0 ]]; do
     --cluster) EKS_CLUSTER="$2"; shift 2 ;;
     --namespace) NAMESPACE="$2"; shift 2 ;;
     --role-name) ROLE_NAME="$2"; shift 2 ;;
+    --account-id) ACCOUNT_ID_INPUT="$2"; shift 2 ;;
+    --org-access-role) ORG_ACCESS_ROLE="$2"; shift 2 ;;
+    --base-profile) BASE_PROFILE="$2"; shift 2 ;;
     --profile) AWS_PROFILE="$2"; shift 2 ;;
     --no-egress-ip) INCLUDE_EGRESS_IP=false; shift ;;
     --out-file) OUT_FILE="$2"; shift 2 ;;
@@ -85,26 +108,27 @@ ROLE_NAME=${ROLE_NAME:-clearblade-helm-${NAMESPACE}}
 
 for c in aws jq openssl; do require_cmd "$c"; done
 
-AWS_ARGS=(--region "$AWS_REGION")
-[[ -n "$AWS_PROFILE" ]] && AWS_ARGS+=(--profile "$AWS_PROFILE")
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/aws-org-auth.sh"
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
 # ---------------------------------------------------------------------------
-# 2. Account + cluster OIDC issuer
+# 2. AWS auth - chain a per-account profile off "base", unless --profile
+#    was passed to bypass this entirely.
 # ---------------------------------------------------------------------------
-info "Looking up account and cluster details..."
-ACCOUNT_ID=$(aws sts get-caller-identity "${AWS_ARGS[@]}" --query Account --output text)
-info "Account: $ACCOUNT_ID"
+resolve_aws_auth
 
+# ---------------------------------------------------------------------------
+# 3. Cluster OIDC issuer
+# ---------------------------------------------------------------------------
 ISSUER_URL=$(aws eks describe-cluster "${AWS_ARGS[@]}" --name "$EKS_CLUSTER" --query "cluster.identity.oidc.issuer" --output text)
 [[ -n "$ISSUER_URL" && "$ISSUER_URL" != "None" ]] || die "Could not find OIDC issuer for cluster $EKS_CLUSTER in $AWS_REGION."
 ISSUER_HOSTPATH=${ISSUER_URL#https://}
 info "Cluster OIDC issuer: $ISSUER_HOSTPATH"
 
 # ---------------------------------------------------------------------------
-# 3. Ensure the cluster's OIDC provider is registered with IAM
+# 4. Ensure the cluster's OIDC provider is registered with IAM
 #    (one-time per cluster - AWS needs to trust this issuer before any role's
 #    trust policy referencing it means anything)
 # ---------------------------------------------------------------------------
@@ -133,7 +157,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Trust policy - scoped to exactly the two service accounts this chart
+# 5. Trust policy - scoped to exactly the two service accounts this chart
 #    creates in this namespace, nothing else in the account can assume it.
 # ---------------------------------------------------------------------------
 TRUST_POLICY_FILE="$WORK_DIR/trust-policy.json"
@@ -162,11 +186,13 @@ cat > "$TRUST_POLICY_FILE" <<JSON
 JSON
 
 # ---------------------------------------------------------------------------
-# 5. Permissions policy - Secrets Manager always, EC2 egress-IP unless opted
-#    out. EC2's AllocateAddress/DescribeAddresses/AssociateAddress/
-#    DescribeInstances don't support resource-level scoping, hence Resource "*"
-#    on that statement - the Secrets Manager statement stays scoped to this
-#    namespace's secrets.
+# 6. Permissions policy - Secrets Manager always, EC2 egress-IP unless opted
+#    out. The EIP itself is provisioned once by allocate-egress-ip.sh, not by
+#    the chart - this role only needs to ASSOCIATE the pre-existing EIP with
+#    whatever node the proxy pod lands on, not allocate/tag new ones.
+#    DescribeAddresses/AssociateAddress/DescribeInstances don't support
+#    resource-level scoping, hence Resource "*". The Secrets Manager
+#    statement stays scoped to this namespace's secrets.
 # ---------------------------------------------------------------------------
 SECRETS_ARN="arn:aws:secretsmanager:${AWS_REGION}:${ACCOUNT_ID}:secret:${NAMESPACE}_*"
 
@@ -191,7 +217,6 @@ if $INCLUDE_EGRESS_IP; then
       "Sid": "StreamingReplicaEgressIP",
       "Effect": "Allow",
       "Action": [
-        "ec2:AllocateAddress",
         "ec2:DescribeAddresses",
         "ec2:AssociateAddress",
         "ec2:DescribeInstances"
@@ -223,7 +248,7 @@ JSON
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Create or update the role
+# 7. Create or update the role
 # ---------------------------------------------------------------------------
 if aws iam get-role "${AWS_ARGS[@]}" --role-name "$ROLE_NAME" >/dev/null 2>&1; then
   info "Role $ROLE_NAME already exists - updating its trust policy."

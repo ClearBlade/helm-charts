@@ -49,8 +49,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: EIP_NAME_TAG
-              value: {{ .Values.streamingReplica.staticEgressIP.eipNameTag | quote }}
+            - name: ALLOCATION_ID
+              value: {{ required "streamingReplica.staticEgressIP.allocationId is required when staticEgressIP.enabled is true - pre-provision it with replica-patches/allocate-egress-ip.sh, it is not created by the chart" .Values.streamingReplica.staticEgressIP.allocationId | quote }}
           command: ["/bin/sh"]
           args:
             - -c
@@ -59,16 +59,9 @@ spec:
 
                 INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=private-dns-name,Values=${NODE_NAME}" --query "Reservations[0].Instances[0].InstanceId" --output text);
 
-                ALLOC_ID=$(aws ec2 describe-addresses --filters "Name=tag:Name,Values=${EIP_NAME_TAG}" --query "Addresses[0].AllocationId" --output text);
-
-                if [ "$ALLOC_ID" = "None" ] || [ -z "$ALLOC_ID" ]; then
-                  echo "No existing EIP tagged ${EIP_NAME_TAG}, allocating a new one.";
-                  ALLOC_ID=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${EIP_NAME_TAG}}]" --query "AllocationId" --output text);
-                fi;
-
-                echo "Associating allocation ${ALLOC_ID} with instance ${INSTANCE_ID} (node ${NODE_NAME})";
-                aws ec2 associate-address --instance-id "$INSTANCE_ID" --allocation-id "$ALLOC_ID" --allow-reassociation;
-                aws ec2 describe-addresses --allocation-ids "$ALLOC_ID" --query "Addresses[0].PublicIp" --output text;
+                echo "Associating allocation ${ALLOCATION_ID} with instance ${INSTANCE_ID} (node ${NODE_NAME})";
+                aws ec2 associate-address --instance-id "$INSTANCE_ID" --allocation-id "$ALLOCATION_ID" --allow-reassociation;
+                aws ec2 describe-addresses --allocation-ids "$ALLOCATION_ID" --query "Addresses[0].PublicIp" --output text;
       {{- end }}
       containers:
         - name: wireguard-client
