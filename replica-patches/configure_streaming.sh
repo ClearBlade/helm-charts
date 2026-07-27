@@ -124,39 +124,7 @@ fi
 info "Primary is compatible - can add a streaming replica with no downtime."
 
 # ---------------------------------------------------------------------------
-# 3. Primary WAL settings
-# ---------------------------------------------------------------------------
-info "Checking free space on the primary's data volume (used to size max_slot_wal_keep_size)..."
-kubectl --context "$KCTX" exec -n "$NAMESPACE" "$PG_POD" -c cb-postgres -- df -h /var/lib/postgresql/data
-
-warn "max_slot_wal_keep_size caps how much WAL the primary retains for a stalled/disconnected replica."
-warn "Set it too high and a stuck replica can fill the primary's disk. Recommended: ~60% of the free space shown above."
-read -r -p "max_slot_wal_keep_size (e.g. 25GB): " MAX_SLOT_WAL_KEEP_SIZE
-[[ -n "$MAX_SLOT_WAL_KEEP_SIZE" ]] || die "max_slot_wal_keep_size is required."
-
-echo
-echo "About to run on the PRIMARY (production):"
-cat <<SQL
-  ALTER SYSTEM SET max_wal_senders = 10;
-  ALTER SYSTEM SET max_replication_slots = 10;
-  ALTER SYSTEM SET wal_keep_size = '1GB';
-  ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';
-  ALTER SYSTEM SET hot_standby = on;
-  SELECT pg_reload_conf();
-SQL
-confirm "Apply these settings to the primary now?" || die "Aborted before applying WAL settings."
-
-psql_primary_exec \
-  "ALTER SYSTEM SET max_wal_senders = 10;" \
-  "ALTER SYSTEM SET max_replication_slots = 10;" \
-  "ALTER SYSTEM SET wal_keep_size = '1GB';" \
-  "ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';" \
-  "ALTER SYSTEM SET hot_standby = on;" \
-  "SELECT pg_reload_conf();" >/dev/null
-info "WAL settings applied and config reloaded."
-
-# ---------------------------------------------------------------------------
-# 4. Replicator role
+# 3. Replicator role
 # ---------------------------------------------------------------------------
 info "Checking for existing 'replicator' role..."
 ROLE_EXISTS=$(psql_primary "SELECT 1 FROM pg_roles WHERE rolname = 'replicator';")
@@ -183,7 +151,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Deploy the WireGuard server pod
+# 4. Deploy the WireGuard server pod
 # ---------------------------------------------------------------------------
 info "Deploying the WireGuard tunnel server..."
 
@@ -288,7 +256,7 @@ sed -i.bak "s/:${WG_SERVER_PORT}\$/:${WG_NODE_PORT}/" "$PEER_CONF" && rm -f "${P
 info "Client (replica-side) WireGuard config written to $PEER_CONF"
 
 # ---------------------------------------------------------------------------
-# 6. Allow the WireGuard pod's IP to replicate in pg_hba.conf
+# 5. Allow the WireGuard pod's IP to replicate in pg_hba.conf
 # ---------------------------------------------------------------------------
 info "Patching pg_hba.conf to allow replication from ${WG_POD_IP}..."
 
@@ -307,6 +275,47 @@ else
   psql_primary "SELECT pg_reload_conf();" >/dev/null
   info "Config reloaded."
 fi
+
+# ---------------------------------------------------------------------------
+# 6. Primary WAL settings
+#
+# Applied via ALTER SYSTEM only - deliberately NOT followed by
+# pg_reload_conf() here. Run it right after this and it reloads against the
+# ConfigMap-mounted postgresql.conf as it stood before this change landed,
+# which doesn't reflect these new values; the file the pod actually sees
+# only catches up on its own schedule. Also, max_wal_senders and
+# max_replication_slots are postmaster-context settings - reload can't
+# apply them at all, only a full restart can. So there's no reload to
+# usefully call here: these values sit in postgresql.auto.conf until the
+# next restart picks them up.
+# ---------------------------------------------------------------------------
+info "Checking free space on the primary's data volume (used to size max_slot_wal_keep_size)..."
+kubectl --context "$KCTX" exec -n "$NAMESPACE" "$PG_POD" -c cb-postgres -- df -h /var/lib/postgresql/data
+
+warn "max_slot_wal_keep_size caps how much WAL the primary retains for a stalled/disconnected replica."
+warn "Set it too high and a stuck replica can fill the primary's disk. Recommended: ~60% of the free space shown above."
+read -r -p "max_slot_wal_keep_size (e.g. 25GB): " MAX_SLOT_WAL_KEEP_SIZE
+[[ -n "$MAX_SLOT_WAL_KEEP_SIZE" ]] || die "max_slot_wal_keep_size is required."
+
+echo
+echo "About to run on the PRIMARY (production):"
+cat <<SQL
+  ALTER SYSTEM SET max_wal_senders = 10;
+  ALTER SYSTEM SET max_replication_slots = 10;
+  ALTER SYSTEM SET wal_keep_size = '1GB';
+  ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';
+  ALTER SYSTEM SET hot_standby = on;
+SQL
+confirm "Apply these settings to the primary now?" || die "Aborted before applying WAL settings."
+
+psql_primary_exec \
+  "ALTER SYSTEM SET max_wal_senders = 10;" \
+  "ALTER SYSTEM SET max_replication_slots = 10;" \
+  "ALTER SYSTEM SET wal_keep_size = '1GB';" \
+  "ALTER SYSTEM SET max_slot_wal_keep_size = '${MAX_SLOT_WAL_KEEP_SIZE}';" \
+  "ALTER SYSTEM SET hot_standby = on;" >/dev/null
+info "WAL settings written to postgresql.auto.conf."
+warn "max_wal_senders and max_replication_slots need a full restart of the primary to take effect - this script does not restart it for you. Plan a restart before the replica tries to connect."
 
 # ---------------------------------------------------------------------------
 # 7. Discover the replica cluster's node public IPs
@@ -394,7 +403,7 @@ info "GCP-side setup complete. Artifacts written to $OUT_DIR:"
 echo "  - $REPL_PASSWORD_FILE   (replicator role password, if created/reset this run)"
 echo "  - $PEER_CONF            (WireGuard client config - copy this to the replica side)"
 echo "  - $WG_MANIFEST          (the manifest applied for the WireGuard server pod)"
-echo "  - $HELM_ROLE_ARN_FILE   (the IRSA role ARN created for the replica-side chart)"
+# echo "  - $HELM_ROLE_ARN_FILE   (the IRSA role ARN created for the replica-side chart)"
 echo
 echo "Firewall rule $FW_RULE is already locked down to the replica cluster's node IPs - no follow-up lockdown step needed."
 echo
