@@ -85,17 +85,3 @@ streamingReplica:
   #   kubectl create secret generic <replicatorSecretName> --from-literal=password=<password>
   replicatorPassword: ""
   replicatorSecretName: streaming-replica-replicator-credentials
-  # AWS only. Associates a fixed, pre-provisioned Elastic IP with whatever
-  # node this proxy pod lands on, every time it starts - so the primary-side
-  # firewall allowlist doesn't go stale if the pod gets rescheduled. The EIP
-  # itself is NOT allocated by this chart (it would be leaked on
-  # `helm uninstall` otherwise) - provision it once with
-  # replica-patches/allocate-egress-ip.sh and set allocationId below.
-  # Requires IRSA: global.awsHelmRoleArn's role needs ec2:DescribeAddresses,
-  # ec2:AssociateAddress, ec2:DescribeInstances in addition to its Secrets
-  # Manager permissions.
-  staticEgressIP:
-    enabled: true
-    # Allocation ID of a pre-provisioned EIP (see replica-patches/allocate-egress-ip.sh).
-    # Required when enabled is true.
-    allocationId: ""

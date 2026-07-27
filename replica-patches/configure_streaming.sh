@@ -5,8 +5,16 @@
 # Sets up the "primary" (the customer's GCP cb-postgres instance) for
 # streaming replication and stands up the WireGuard server pod that the
 # remote replica will tunnel through. This is phase 1 of 2 - a follow-up
-# script handles the AWS/replica side and feeds its egress IP back into the
-# firewall rule this script creates.
+# step deploys the replica-side (AWS) Helm chart using the values this
+# script prints out.
+#
+# The replica's AWS infrastructure (EKS cluster + node group) already exists
+# by the time this script runs, even though the streaming-replica-proxy pod
+# itself isn't deployed yet. So instead of opening the GCP firewall rule
+# wide and locking it down after the fact, this script whitelists every
+# current node's public IP up front - good enough since the proxy pod will
+# land on one of them, and re-running this script updates the rule if the
+# node pool changes later.
 #
 # "primary" = the GCP PG instance. "replica" = the remote (e.g. AWS) instance.
 
@@ -53,78 +61,6 @@ psql_primary_exec() {
   kubectl --context "$KCTX" exec -n "$NAMESPACE" "$PG_POD" -c cb-postgres -- \
     psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" "${args[@]}"
 }
-
-# ---------------------------------------------------------------------------
-# Firewall lockdown - shared logic used both by standalone `lockdown` mode
-# and automatically at the end of the normal setup flow.
-# ---------------------------------------------------------------------------
-apply_firewall_lockdown() {
-  local fw_rule="$1" project="$2" ip="$3"
-
-  gcloud compute firewall-rules describe "$fw_rule" --project "$project" >/dev/null 2>&1 \
-    || die "Firewall rule $fw_rule not found in project $project - run setup mode first."
-
-  local current_ranges
-  current_ranges=$(gcloud compute firewall-rules describe "$fw_rule" --project "$project" --format="value(sourceRanges)")
-  info "Current source ranges: $current_ranges"
-  confirm "Replace with just ${ip}/32 (this closes off anything else currently allowed, including 0.0.0.0/0 from setup)?" \
-    || die "Aborted before locking down firewall rule."
-
-  gcloud compute firewall-rules update "$fw_rule" --project="$project" --source-ranges="${ip}/32"
-  info "Firewall rule $fw_rule locked down to ${ip}/32 only."
-}
-
-# Standalone mode: run this later if you need to re-lock-down after the fact
-# (e.g. the replica's EIP changed). Usage: ./configure_streaming.sh lockdown
-lockdown_firewall_standalone() {
-  require_cmd gcloud
-
-  info "Locking down the WireGuard firewall rule to the replica's egress IP"
-  read -r -p "GCP project ID: " GCP_PROJECT
-  read -r -p "Kubernetes namespace the postgres instance runs in: " NAMESPACE
-  read -r -p "Replica's egress IP: " REPLICA_EGRESS_IP
-  [[ -n "$REPLICA_EGRESS_IP" ]] || die "Replica egress IP is required."
-
-  apply_firewall_lockdown "allow-wireguard-${NAMESPACE}" "$GCP_PROJECT" "$REPLICA_EGRESS_IP"
-}
-
-# Used automatically at the end of the normal setup flow, once the operator
-# confirms the replica-side Helm chart is deployed. Discovers the replica's
-# static Elastic IP (tagged by cb-postgres's streamingReplica.staticEgressIP
-# feature) via the AWS CLI instead of asking the operator to look it up
-# manually, then locks down the rule created earlier in this same run.
-discover_aws_egress_ip_and_lockdown() {
-  require_cmd aws
-
-  info "Finding the replica's static egress IP..."
-  read -r -p "AWS region the replica's EKS cluster is in: " AWS_REGION
-  read -r -p "AWS CLI profile to use (leave blank for default): " AWS_PROFILE
-  read -r -p "EIP name tag [streaming-replica-egress]: " EIP_TAG
-  EIP_TAG=${EIP_TAG:-streaming-replica-egress}
-
-  local aws_args=(--region "$AWS_REGION")
-  [[ -n "$AWS_PROFILE" ]] && aws_args+=(--profile "$AWS_PROFILE")
-
-  local egress_ip
-  while true; do
-    egress_ip=$(aws ec2 describe-addresses "${aws_args[@]}" \
-      --filters "Name=tag:Name,Values=${EIP_TAG}" \
-      --query "Addresses[0].PublicIp" --output text 2>/dev/null || echo "")
-    if [[ -n "$egress_ip" && "$egress_ip" != "None" ]]; then
-      break
-    fi
-    warn "No Elastic IP tagged '${EIP_TAG}' found yet (or it's not associated with an instance yet). The proxy pod's init container may still be starting."
-    confirm "Retry?" || die "Aborted - re-run '$0 lockdown' later once the replica side is confirmed up."
-  done
-
-  info "Found replica egress IP: $egress_ip"
-  apply_firewall_lockdown "$FW_RULE" "$GCP_PROJECT" "$egress_ip"
-}
-
-if [[ "${1:-}" == "lockdown" ]]; then
-  lockdown_firewall_standalone
-  exit 0
-fi
 
 for c in gcloud kubectl jq openssl aws; do require_cmd "$c"; done
 
@@ -373,38 +309,17 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Firewall rule
+# 7. Discover the replica cluster's node public IPs
 #
-# Circular dependency: the replica's egress IP doesn't exist until the
-# AWS/replica chart is actually deployed, but the tunnel needs to work for
-# that deployment to be verified. So this opens the rule to any source for
-# now - deploy the replica side, confirm the tunnel handshakes, THEN run
-# this script again with `lockdown` to restrict it to just the replica's
-# actual egress IP.
+# The replica's EKS cluster + node group already exist at this point (they
+# were provisioned before this script runs), even though the
+# streaming-replica-proxy pod hasn't been deployed yet. So rather than
+# opening the firewall wide and locking it down after the fact, whitelist
+# every current node's public IP now - the proxy pod will land on one of
+# them, and re-running this script refreshes the list if the node pool
+# changes later.
 # ---------------------------------------------------------------------------
-FW_RULE="allow-wireguard-${NAMESPACE}"
-NODE_NAME=$(kubectl --context "$KCTX" get nodes -o jsonpath='{.items[0].metadata.name}')
-NODE_TAG=$(gcloud compute instances list --project "$GCP_PROJECT" --filter="name=${NODE_NAME}" --format="value(tags.items[0])")
-
-if gcloud compute firewall-rules describe "$FW_RULE" --project "$GCP_PROJECT" >/dev/null 2>&1; then
-  info "Firewall rule $FW_RULE already exists - leaving it as-is."
-else
-  warn "Opening this rule to 0.0.0.0/0 (any source) for now, since the replica's egress IP doesn't exist until it's deployed."
-  confirm "Create firewall rule '$FW_RULE' allowing UDP:${WG_NODE_PORT} from ANYWHERE (temporary)?" || die "Aborted before creating firewall rule."
-  gcloud compute firewall-rules create "$FW_RULE" \
-    --project="$GCP_PROJECT" --network="$(gcloud compute instances describe "$NODE_NAME" --project "$GCP_PROJECT" --zone "$(gcloud compute instances list --project "$GCP_PROJECT" --filter="name=${NODE_NAME}" --format='value(zone.basename())')" --format='value(networkInterfaces[0].network.basename())')" \
-    --direction=INGRESS --action=ALLOW --rules="udp:${WG_NODE_PORT}" \
-    --source-ranges="0.0.0.0/0" \
-    --target-tags="$NODE_TAG"
-  info "Firewall rule created, temporarily open to 0.0.0.0/0."
-fi
-warn "This rule is wide open for now - it gets locked down automatically later in this script."
-
-# ---------------------------------------------------------------------------
-# 8. Set up the IRSA role and the static egress IP the replica-side (AWS)
-#    chart needs, then deploy the replica side.
-# ---------------------------------------------------------------------------
-info "Setting up the IAM role and static egress IP for the replica-side (AWS) Helm chart..."
+info "Discovering the replica cluster's node public IPs..."
 
 read -r -p "AWS region the replica's EKS cluster is in: " REPLICA_AWS_REGION
 [[ -n "$REPLICA_AWS_REGION" ]] || die "AWS region is required."
@@ -417,44 +332,78 @@ read -r -p "AWS account ID the replica's EKS cluster lives in (chains off the 'b
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HELM_ROLE_SCRIPT="$SCRIPT_DIR/create-helm-role.sh"
-EGRESS_IP_SCRIPT="$SCRIPT_DIR/allocate-egress-ip.sh"
 [[ -x "$HELM_ROLE_SCRIPT" ]] || die "Expected $HELM_ROLE_SCRIPT to exist and be executable."
-[[ -x "$EGRESS_IP_SCRIPT" ]] || die "Expected $EGRESS_IP_SCRIPT to exist and be executable."
+source "$SCRIPT_DIR/lib/aws-org-auth.sh"
 
-HELM_ROLE_ARN_FILE="$OUT_DIR/aws-helm-role-arn.txt"
-HELM_ROLE_ARGS=(--region "$REPLICA_AWS_REGION" --cluster "$REPLICA_EKS_CLUSTER" --namespace "$REPLICA_NAMESPACE" --account-id "$REPLICA_AWS_ACCOUNT_ID" --out-file "$HELM_ROLE_ARN_FILE")
+AWS_REGION="$REPLICA_AWS_REGION"
+AWS_PROFILE=""
+ACCOUNT_ID_INPUT="$REPLICA_AWS_ACCOUNT_ID"
+ORG_ACCESS_ROLE="OrganizationAccountAccessRole"
+BASE_PROFILE="base"
+resolve_aws_auth
+REPLICA_AWS_ARGS=("${AWS_ARGS[@]}")
 
-"$HELM_ROLE_SCRIPT" "${HELM_ROLE_ARGS[@]}"
-AWS_HELM_ROLE_ARN=$(cat "$HELM_ROLE_ARN_FILE")
-[[ -n "$AWS_HELM_ROLE_ARN" ]] || die "create-helm-role.sh did not produce a role ARN - see output above."
+REPLICA_KCTX="eks-${REPLICA_EKS_CLUSTER}"
+aws eks update-kubeconfig "${REPLICA_AWS_ARGS[@]}" --name "$REPLICA_EKS_CLUSTER" --alias "$REPLICA_KCTX" >/dev/null
 
-EGRESS_IP_ALLOCATION_FILE="$OUT_DIR/aws-egress-ip-allocation-id.txt"
-EGRESS_IP_ARGS=(--region "$REPLICA_AWS_REGION" --namespace "$REPLICA_NAMESPACE" --account-id "$REPLICA_AWS_ACCOUNT_ID" --out-file "$EGRESS_IP_ALLOCATION_FILE")
+mapfile -t REPLICA_NODE_IPS < <(kubectl --context "$REPLICA_KCTX" get nodes \
+  -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' \
+  | grep -v '^$')
+[[ ${#REPLICA_NODE_IPS[@]} -gt 0 ]] || die "No nodes with an external IP found in cluster $REPLICA_EKS_CLUSTER - can't build the firewall allowlist. Is the node group up yet?"
+info "Found ${#REPLICA_NODE_IPS[@]} replica node IP(s): ${REPLICA_NODE_IPS[*]}"
 
-"$EGRESS_IP_SCRIPT" "${EGRESS_IP_ARGS[@]}"
-AWS_EGRESS_IP_ALLOCATION_ID=$(cat "$EGRESS_IP_ALLOCATION_FILE")
-[[ -n "$AWS_EGRESS_IP_ALLOCATION_ID" ]] || die "allocate-egress-ip.sh did not produce an allocation ID - see output above."
+REPLICA_SOURCE_RANGES=$(printf '%s/32,' "${REPLICA_NODE_IPS[@]}")
+REPLICA_SOURCE_RANGES=${REPLICA_SOURCE_RANGES%,}
+
+# ---------------------------------------------------------------------------
+# 8. Firewall rule - create/update directly with the full node IP list from
+#    step 7. No temporary wide-open state needed.
+# ---------------------------------------------------------------------------
+FW_RULE="allow-wireguard-${NAMESPACE}"
+NODE_NAME=$(kubectl --context "$KCTX" get nodes -o jsonpath='{.items[0].metadata.name}')
+NODE_TAG=$(gcloud compute instances list --project "$GCP_PROJECT" --filter="name=${NODE_NAME}" --format="value(tags.items[0])")
+
+if gcloud compute firewall-rules describe "$FW_RULE" --project "$GCP_PROJECT" >/dev/null 2>&1; then
+  info "Firewall rule $FW_RULE already exists - updating its source ranges to the current replica node IPs."
+  confirm "Update '$FW_RULE' source ranges to: ${REPLICA_SOURCE_RANGES}?" || die "Aborted before updating firewall rule."
+  gcloud compute firewall-rules update "$FW_RULE" --project="$GCP_PROJECT" --source-ranges="$REPLICA_SOURCE_RANGES"
+else
+  confirm "Create firewall rule '$FW_RULE' allowing UDP:${WG_NODE_PORT} from: ${REPLICA_SOURCE_RANGES}?" || die "Aborted before creating firewall rule."
+  gcloud compute firewall-rules create "$FW_RULE" \
+    --project="$GCP_PROJECT" --network="$(gcloud compute instances describe "$NODE_NAME" --project "$GCP_PROJECT" --zone "$(gcloud compute instances list --project "$GCP_PROJECT" --filter="name=${NODE_NAME}" --format='value(zone.basename())')" --format='value(networkInterfaces[0].network.basename())')" \
+    --direction=INGRESS --action=ALLOW --rules="udp:${WG_NODE_PORT}" \
+    --source-ranges="$REPLICA_SOURCE_RANGES" \
+    --target-tags="$NODE_TAG"
+fi
+info "Firewall rule $FW_RULE allows UDP:${WG_NODE_PORT} from: $REPLICA_SOURCE_RANGES"
+
+# ---------------------------------------------------------------------------
+# 9. Set up the IRSA role the replica-side (AWS) chart needs, then print the
+#    values to deploy it with.
+# ---------------------------------------------------------------------------
+# info "Setting up the IAM role for the replica-side (AWS) Helm chart..."
+
+# HELM_ROLE_ARN_FILE="$OUT_DIR/aws-helm-role-arn.txt"
+# HELM_ROLE_ARGS=(--region "$REPLICA_AWS_REGION" --cluster "$REPLICA_EKS_CLUSTER" --namespace "$REPLICA_NAMESPACE" --account-id "$REPLICA_AWS_ACCOUNT_ID" --out-file "$HELM_ROLE_ARN_FILE")
+
+# "$HELM_ROLE_SCRIPT" "${HELM_ROLE_ARGS[@]}"
+# AWS_HELM_ROLE_ARN=$(cat "$HELM_ROLE_ARN_FILE")
+# [[ -n "$AWS_HELM_ROLE_ARN" ]] || die "create-helm-role.sh did not produce a role ARN - see output above."
 
 info "GCP-side setup complete. Artifacts written to $OUT_DIR:"
-echo "  - $REPL_PASSWORD_FILE          (replicator role password, if created/reset this run)"
-echo "  - $PEER_CONF                   (WireGuard client config - copy this to the replica side)"
-echo "  - $WG_MANIFEST                 (the manifest applied for the WireGuard server pod)"
-echo "  - $HELM_ROLE_ARN_FILE          (the IRSA role ARN created for the replica-side chart)"
-echo "  - $EGRESS_IP_ALLOCATION_FILE   (the pre-provisioned EIP allocation ID for the replica-side chart)"
+echo "  - $REPL_PASSWORD_FILE   (replicator role password, if created/reset this run)"
+echo "  - $PEER_CONF            (WireGuard client config - copy this to the replica side)"
+echo "  - $WG_MANIFEST          (the manifest applied for the WireGuard server pod)"
+echo "  - $HELM_ROLE_ARN_FILE   (the IRSA role ARN created for the replica-side chart)"
+echo
+echo "Firewall rule $FW_RULE is already locked down to the replica cluster's node IPs - no follow-up lockdown step needed."
 echo
 echo "Now deploy the replica-side Helm chart (global.streamingReplica=true) using:"
 echo "  - global.streamingReplica=true"
-echo "  - global.awsHelmRoleArn=${AWS_HELM_ROLE_ARN}"
+# echo "  - global.awsHelmRoleArn=${AWS_HELM_ROLE_ARN}"
 echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
 echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
 echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
-echo "  - cb-postgres.streamingReplica.staticEgressIP.allocationId=${AWS_EGRESS_IP_ALLOCATION_ID}"
 echo
-read -r -p "Press Enter once the replica-side Helm chart is deployed and running (Ctrl+C to stop here and finish later with '$0 lockdown')... "
-
-# ---------------------------------------------------------------------------
-# 9. Lock down the firewall rule now that the replica exists
-# ---------------------------------------------------------------------------
-discover_aws_egress_ip_and_lockdown
-
-info "All done - primary is configured, tunnel is up, and the firewall rule is locked down to the replica's egress IP."
+info "All done - primary is configured, tunnel is up, and the firewall rule is ready for the replica to connect once deployed."
+warn "If the replica cluster's node pool changes (nodes added/replaced) after this, re-run this script to refresh the firewall rule's source ranges."

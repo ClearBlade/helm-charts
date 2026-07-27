@@ -1,10 +1,8 @@
 #!/bin/bash
 #
-# Creates/updates the IAM role that backs global.awsHelmRoleArn - the single
-# IRSA role the chart uses for both:
-#   - clearblade-asm-read       (Secrets Manager access)
-#   - clearblade-streaming-egress (static egress IP for streaming replicas,
-#                                   unless --no-egress-ip is passed)
+# Creates/updates the IAM role that backs global.awsHelmRoleArn - the IRSA
+# role behind the clearblade-asm-read service account (Secrets Manager
+# access).
 #
 # Meant to be re-run per AWS account / EKS cluster / namespace combo. Safe to
 # re-run against an existing role - it updates the trust and permissions
@@ -36,8 +34,6 @@
 #   --profile            Use this AWS CLI profile directly instead of the
 #                        account-id/base chaining above (e.g. if you're
 #                        already authenticated some other way)
-#   --no-egress-ip       Omit the EC2 permissions - use this if the namespace never
-#                        sets cb-postgres.streamingReplica.staticEgressIP.enabled
 #   --out-file           Also write just the resulting role ARN (no other text) to
 #                        this path - for chaining into other scripts
 #   -y, --yes            Skip confirmation prompts (for scripting across many accounts)
@@ -79,7 +75,6 @@ AWS_PROFILE=""
 ACCOUNT_ID_INPUT=""
 ORG_ACCESS_ROLE="OrganizationAccountAccessRole"
 BASE_PROFILE="base"
-INCLUDE_EGRESS_IP=true
 ASSUME_YES=false
 OUT_FILE=""
 
@@ -93,7 +88,6 @@ while [[ $# -gt 0 ]]; do
     --org-access-role) ORG_ACCESS_ROLE="$2"; shift 2 ;;
     --base-profile) BASE_PROFILE="$2"; shift 2 ;;
     --profile) AWS_PROFILE="$2"; shift 2 ;;
-    --no-egress-ip) INCLUDE_EGRESS_IP=false; shift ;;
     --out-file) OUT_FILE="$2"; shift 2 ;;
     -y|--yes) ASSUME_YES=true; shift ;;
     -h|--help) usage ;;
@@ -174,10 +168,7 @@ cat > "$TRUST_POLICY_FILE" <<JSON
           "${ISSUER_HOSTPATH}:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "${ISSUER_HOSTPATH}:sub": [
-            "system:serviceaccount:${NAMESPACE}:clearblade-asm-read",
-            "system:serviceaccount:${NAMESPACE}:clearblade-streaming-egress"
-          ]
+          "${ISSUER_HOSTPATH}:sub": "system:serviceaccount:${NAMESPACE}:clearblade-asm-read"
         }
       }
     }
@@ -186,48 +177,13 @@ cat > "$TRUST_POLICY_FILE" <<JSON
 JSON
 
 # ---------------------------------------------------------------------------
-# 6. Permissions policy - Secrets Manager always, EC2 egress-IP unless opted
-#    out. The EIP itself is provisioned once by allocate-egress-ip.sh, not by
-#    the chart - this role only needs to ASSOCIATE the pre-existing EIP with
-#    whatever node the proxy pod lands on, not allocate/tag new ones.
-#    DescribeAddresses/AssociateAddress/DescribeInstances don't support
-#    resource-level scoping, hence Resource "*". The Secrets Manager
-#    statement stays scoped to this namespace's secrets.
+# 6. Permissions policy - Secrets Manager access, scoped to this namespace's
+#    secrets.
 # ---------------------------------------------------------------------------
 SECRETS_ARN="arn:aws:secretsmanager:${AWS_REGION}:${ACCOUNT_ID}:secret:${NAMESPACE}_*"
 
 PERMISSIONS_POLICY_FILE="$WORK_DIR/permissions-policy.json"
-if $INCLUDE_EGRESS_IP; then
-  cat > "$PERMISSIONS_POLICY_FILE" <<JSON
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "SecretsManagerAccess",
-      "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:DescribeSecret",
-        "secretsmanager:CreateSecret",
-        "secretsmanager:PutSecretValue"
-      ],
-      "Resource": "${SECRETS_ARN}"
-    },
-    {
-      "Sid": "StreamingReplicaEgressIP",
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DescribeAddresses",
-        "ec2:AssociateAddress",
-        "ec2:DescribeInstances"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-JSON
-else
-  cat > "$PERMISSIONS_POLICY_FILE" <<JSON
+cat > "$PERMISSIONS_POLICY_FILE" <<JSON
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -245,7 +201,6 @@ else
   ]
 }
 JSON
-fi
 
 # ---------------------------------------------------------------------------
 # 7. Create or update the role
@@ -262,7 +217,7 @@ else
   aws iam create-role "${AWS_ARGS[@]}" \
     --role-name "$ROLE_NAME" \
     --assume-role-policy-document "file://$TRUST_POLICY_FILE" \
-    --description "IRSA role for ClearBlade Helm chart (namespace: ${NAMESPACE}) - Secrets Manager$($INCLUDE_EGRESS_IP && echo ' + streaming replica egress IP')" \
+    --description "IRSA role for ClearBlade Helm chart (namespace: ${NAMESPACE}) - Secrets Manager" \
     >/dev/null
 fi
 
@@ -284,6 +239,3 @@ echo "  Role ARN: $ROLE_ARN"
 echo
 echo "Set this in your values for account ${ACCOUNT_ID} / namespace ${NAMESPACE}:"
 echo "  global.awsHelmRoleArn: ${ROLE_ARN}"
-if ! $INCLUDE_EGRESS_IP; then
-  warn "Created without EC2 egress-IP permissions. Also set cb-postgres.streamingReplica.staticEgressIP.enabled=false for this namespace, or the init container will fail with AccessDenied."
-fi

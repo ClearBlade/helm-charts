@@ -39,30 +39,6 @@ spec:
       labels:
         app: streaming-replica-proxy
     spec:
-      {{- if and (eq .Values.global.cloud "aws") .Values.streamingReplica.staticEgressIP.enabled .Values.global.awsHelmRoleArn }}
-      serviceAccountName: clearblade-streaming-egress
-      initContainers:
-        - name: assign-static-egress-ip
-          image: amazon/aws-cli:latest
-          env:
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: ALLOCATION_ID
-              value: {{ required "streamingReplica.staticEgressIP.allocationId is required when staticEgressIP.enabled is true - pre-provision it with replica-patches/allocate-egress-ip.sh, it is not created by the chart" .Values.streamingReplica.staticEgressIP.allocationId | quote }}
-          command: ["/bin/sh"]
-          args:
-            - -c
-            - >-
-                set -e;
-
-                INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=private-dns-name,Values=${NODE_NAME}" --query "Reservations[0].Instances[0].InstanceId" --output text);
-
-                echo "Associating allocation ${ALLOCATION_ID} with instance ${INSTANCE_ID} (node ${NODE_NAME})";
-                aws ec2 associate-address --instance-id "$INSTANCE_ID" --allocation-id "$ALLOCATION_ID" --allow-reassociation;
-                aws ec2 describe-addresses --allocation-ids "$ALLOCATION_ID" --query "Addresses[0].PublicIp" --output text;
-      {{- end }}
       containers:
         - name: wireguard-client
           image: "{{ .Values.streamingReplica.wireguard.image }}:{{ .Values.streamingReplica.wireguard.imageTag }}"
