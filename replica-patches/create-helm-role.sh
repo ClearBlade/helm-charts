@@ -21,6 +21,8 @@
 #   --profile       AWS CLI profile to use (default: whatever is already active)
 #   --no-egress-ip  Omit the EC2 permissions - use this if the namespace never
 #                   sets cb-postgres.streamingReplica.staticEgressIP.enabled
+#   --out-file      Also write just the resulting role ARN (no other text) to
+#                   this path - for chaining into other scripts
 #   -y, --yes       Skip confirmation prompts (for scripting across many accounts)
 #
 # Prints the resulting role ARN - set that as global.awsHelmRoleArn in the
@@ -59,6 +61,7 @@ ROLE_NAME=""
 AWS_PROFILE=""
 INCLUDE_EGRESS_IP=true
 ASSUME_YES=false
+OUT_FILE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -68,6 +71,7 @@ while [[ $# -gt 0 ]]; do
     --role-name) ROLE_NAME="$2"; shift 2 ;;
     --profile) AWS_PROFILE="$2"; shift 2 ;;
     --no-egress-ip) INCLUDE_EGRESS_IP=false; shift ;;
+    --out-file) OUT_FILE="$2"; shift 2 ;;
     -y|--yes) ASSUME_YES=true; shift ;;
     -h|--help) usage ;;
     *) die "Unknown argument: $1 (see --help)" ;;
@@ -244,6 +248,10 @@ aws iam put-role-policy "${AWS_ARGS[@]}" \
   --policy-document "file://$PERMISSIONS_POLICY_FILE"
 
 ROLE_ARN=$(aws iam get-role "${AWS_ARGS[@]}" --role-name "$ROLE_NAME" --query "Role.Arn" --output text)
+
+if [[ -n "$OUT_FILE" ]]; then
+  echo -n "$ROLE_ARN" > "$OUT_FILE"
+fi
 
 info "Done."
 echo
