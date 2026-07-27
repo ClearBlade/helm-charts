@@ -2,26 +2,27 @@
 set -e
 
 if [ "$STREAMING_REPLICA_ENABLED" = "true" ]; then
-  echo "Running database as STREAMING REPLICA of an external primary"
+  if [ -z "$(ls -A /var/lib/postgresql/data/clearblade 2>/dev/null)" ]; then
+    echo "Running database as STREAMING REPLICA of an external primary"
 
-  # pg_basebackup -R writes primary_conninfo without a password (by design -
-  # it never persists one to disk directly), so the walreceiver needs a
-  # .pgpass file to reconnect after the initial backup. Written every start
-  # (not just on first bootstrap) in case the password ever rotates.
-  export PGPASSFILE=/var/lib/postgresql/data/.pgpass
-  echo "${STREAMING_REPLICA_HOST}:${STREAMING_REPLICA_PORT}:*:${STREAMING_REPLICATOR_USER}:${STREAMING_REPLICATOR_PASSWORD}" > "$PGPASSFILE"
-  chmod 600 "$PGPASSFILE"
+    # pg_basebackup -R writes primary_conninfo without a password (by design -
+    # it never persists one to disk directly), so the walreceiver needs a
+    # .pgpass file to reconnect after the initial backup. Written every start
+    # (not just on first bootstrap) in case the password ever rotates.
+    export PGPASSFILE=/var/lib/postgresql/data/.pgpass
+    echo "${STREAMING_REPLICA_HOST}:${STREAMING_REPLICA_PORT}:*:${STREAMING_REPLICATOR_USER}:${STREAMING_REPLICATOR_PASSWORD}" > "$PGPASSFILE"
+    chmod 600 "$PGPASSFILE"
 
-  export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
+    export PGPASSWORD=$STREAMING_REPLICATOR_PASSWORD
 
-# TODO: SKIP STARTUP IF IT'S ALREADY HERE. THis will allow restarts without going back into streaming.
-
-  # rm -rf /var/lib/postgresql/data/clearblade
-  echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
-  pg_basebackup -D /var/lib/postgresql/data/clearblade \
-    -h "$STREAMING_REPLICA_HOST" -p "$STREAMING_REPLICA_PORT" \
-    -U "$STREAMING_REPLICATOR_USER" \
-    -C -S streaming_replica -X stream -r 100M --checkpoint=spread -R -P
+    echo "Creating backup from external primary at $STREAMING_REPLICA_HOST:$STREAMING_REPLICA_PORT"
+    pg_basebackup -D /var/lib/postgresql/data/clearblade \
+      -h "$STREAMING_REPLICA_HOST" -p "$STREAMING_REPLICA_PORT" \
+      -U "$STREAMING_REPLICATOR_USER" \
+      -C -S streaming_replica -X stream -r 100M --checkpoint=spread -R -P
+  else
+    echo "Data directory already populated, starting as PRIMARY instead of re-running streaming replication"
+  fi
 
   echo "Starting database"
   docker-entrypoint.sh -c config_file=/etc/postgresql/postgresql.conf &
