@@ -157,8 +157,13 @@ info "Deploying the WireGuard tunnel server..."
 
 WG_NAME="wg-postgres-${NAMESPACE}"
 WG_SERVER_PORT=51820
-WG_NODE_PORT=31820
 WG_INTERNAL_SUBNET="10.13.13.0"
+
+# NodePorts are cluster-wide, not per-namespace, so a fixed value here would
+# collide with any other WireGuard tunnel Service already running on the same
+# node pool. Pick a random one in the default NodePort range instead.
+WG_NODE_PORT=$(( (RANDOM % 2768) + 30000 ))
+info "Picked NodePort: $WG_NODE_PORT"
 
 NODE_EXTERNAL_IP=$(kubectl --context "$KCTX" get nodes \
   -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' \
