@@ -70,7 +70,7 @@ spec:
               {{- else if eq .Values.global.secretManager "asm"}}
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text >> /etc/clearblade/filehosting_hmac_secret
               {{- else }}
-              echo $filehosting_hmac_file >> /etc/clearblade/filehosting_hmac_secret
+              echo $filehosting_hmac_secret >> /etc/clearblade/filehosting_hmac_secret
               {{- end }}
           {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
           env:
