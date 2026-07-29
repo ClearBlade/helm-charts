@@ -227,7 +227,6 @@ echo "  AWS region (replica)      : $REPLICA_AWS_REGION"
 echo "  AWS account ID (replica)  : $REPLICA_AWS_ACCOUNT_ID"
 echo "  EKS cluster (replica)     : $REPLICA_EKS_CLUSTER"
 echo "  Namespace (replica)       : $REPLICA_NAMESPACE"
-echo "  awsHelmRoleArn            : $AWS_HELM_ROLE_ARN"
 echo
 confirm "Does this all look correct? Continue?" || die "Aborted at user request before making any changes."
 
@@ -547,20 +546,16 @@ info "Firewall rule $FW_RULE allows UDP:${WG_NODE_PORT} from: $REPLICA_SOURCE_RA
 # HELM_ROLE_ARGS=(--region "$REPLICA_AWS_REGION" --cluster "$REPLICA_EKS_CLUSTER" --namespace "$REPLICA_NAMESPACE" --account-id "$REPLICA_AWS_ACCOUNT_ID" --out-file "$HELM_ROLE_ARN_FILE")
 
 # "$HELM_ROLE_SCRIPT" "${HELM_ROLE_ARGS[@]}"
-# AWS_HELM_ROLE_ARN=$(cat "$HELM_ROLE_ARN_FILE")
-# [[ -n "$AWS_HELM_ROLE_ARN" ]] || die "create-helm-role.sh did not produce a role ARN - see output above."
 
 info "GCP-side setup complete. Artifacts written to $OUT_DIR:"
 echo "  - $REPL_PASSWORD_FILE   (replicator role password, if created/reset this run)"
 echo "  - $PEER_CONF            (WireGuard client config - copy this to the replica side)"
 echo "  - $WG_MANIFEST          (the manifest applied for the WireGuard server pod)"
-# echo "  - $HELM_ROLE_ARN_FILE   (the IRSA role ARN created for the replica-side chart)"
 echo
 echo "Firewall rule $FW_RULE is already locked down to the replica cluster's node IPs - no follow-up lockdown step needed."
 echo
 echo "Now deploy the replica-side Helm chart (global.streamingReplica=true) using:"
 echo "  - global.streamingReplica=true"
-# echo "  - global.awsHelmRoleArn=${AWS_HELM_ROLE_ARN}"
 echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
 echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
 echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
