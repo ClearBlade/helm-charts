@@ -121,7 +121,7 @@ psql_primary_exec() {
     psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" "${args[@]}"
 }
 
-for c in gcloud kubectl jq openssl aws; do require_cmd "$c"; done
+for c in gcloud kubectl jq openssl aws python3; do require_cmd "$c"; done
 [[ -n "${CBOPS:-}" ]] || die "\$CBOPS is not set - expected it to point at the clearblade-ops checkout."
 [[ -d "$CBOPS/deploy/helm-values" ]] || die "\$CBOPS/deploy/helm-values not found (CBOPS=$CBOPS)."
 
@@ -537,8 +537,8 @@ fi
 info "Firewall rule $FW_RULE allows UDP:${WG_NODE_PORT} from: $REPLICA_SOURCE_RANGES"
 
 # ---------------------------------------------------------------------------
-# 8. Set up the IRSA role the replica-side (AWS) chart needs, then print the
-#    values to deploy it with.
+# 8. Set up the IRSA role the replica-side (AWS) chart needs, then write the
+#    replica-side values directly into the customer's eks-values.yaml.
 # ---------------------------------------------------------------------------
 # info "Setting up the IAM role for the replica-side (AWS) Helm chart..."
 
@@ -547,18 +547,113 @@ info "Firewall rule $FW_RULE allows UDP:${WG_NODE_PORT} from: $REPLICA_SOURCE_RA
 
 # "$HELM_ROLE_SCRIPT" "${HELM_ROLE_ARGS[@]}"
 
+info "Writing replica-side values into $AWS_VALUES_FILE..."
+
+EKS_VALUES_BACKUP="$OUT_DIR/$(basename "$AWS_VALUES_FILE").bak"
+cp "$AWS_VALUES_FILE" "$EKS_VALUES_BACKUP"
+
+STREAM_PRIMARY_HOST="$PG_POD_IP" \
+STREAM_REPL_PASSWORD="$(cat "$REPL_PASSWORD_FILE")" \
+STREAM_WG_CONF_PATH="$PEER_CONF" \
+python3 - "$AWS_VALUES_FILE" <<'PYEOF'
+import os
+import sys
+
+path = sys.argv[1]
+primary_host = os.environ["STREAM_PRIMARY_HOST"]
+repl_password = os.environ["STREAM_REPL_PASSWORD"]
+wg_conf_path = os.environ["STREAM_WG_CONF_PATH"]
+
+with open(wg_conf_path) as f:
+    wg_lines = f.read().splitlines()
+
+with open(path) as f:
+    lines = f.readlines()
+
+
+def indent_of(line):
+    return len(line) - len(line.lstrip(" "))
+
+
+def find_top_key(lines, key):
+    for i, line in enumerate(lines):
+        if indent_of(line) == 0 and line.rstrip("\n") == f"{key}:":
+            return i
+    return None
+
+
+def block_end(lines, start, indent):
+    # First index after `start` whose (non-blank) indent is <= `indent`.
+    i = start + 1
+    n = len(lines)
+    while i < n:
+        if lines[i].strip() != "" and indent_of(lines[i]) <= indent:
+            break
+        i += 1
+    return i
+
+
+# --- global.streamingReplica: true ---
+gi = find_top_key(lines, "global")
+if gi is None:
+    sys.exit(f"ERROR: no top-level 'global:' key found in {path}")
+gend = block_end(lines, gi, 0)
+
+si = None
+for i in range(gi + 1, gend):
+    if indent_of(lines[i]) == 2 and lines[i].strip().startswith("streamingReplica:"):
+        si = i
+        break
+if si is not None:
+    lines[si] = "  streamingReplica: true\n"
+else:
+    lines.insert(gi + 1, "  streamingReplica: true\n")
+
+# --- cb-postgres.streamingReplica.{primaryHost,replicatorPassword,wgConfig} ---
+new_block = ["  streamingReplica:\n"]
+new_block.append(f"    primaryHost: {primary_host}\n")
+new_block.append(f"    replicatorPassword: {repl_password}\n")
+new_block.append("    wgConfig: |\n")
+for wl in wg_lines:
+    new_block.append(f"      {wl}\n" if wl.strip() else "\n")
+
+ci = find_top_key(lines, "cb-postgres")
+if ci is None:
+    if lines and lines[-1].strip() != "":
+        lines.append("\n")
+    lines.append("cb-postgres:\n")
+    lines.extend(new_block)
+else:
+    cend = block_end(lines, ci, 0)
+    si2 = send2 = None
+    for i in range(ci + 1, cend):
+        if indent_of(lines[i]) == 2 and lines[i].strip().startswith("streamingReplica:"):
+            si2 = i
+            send2 = block_end(lines, i, 2)
+            break
+    if si2 is not None:
+        lines[si2:send2] = new_block
+    else:
+        lines[ci + 1 : ci + 1] = new_block
+
+with open(path, "w") as f:
+    f.writelines(lines)
+PYEOF
+
+info "$AWS_VALUES_FILE updated in place:"
+echo "  - global.streamingReplica = true"
+echo "  - cb-postgres.streamingReplica.primaryHost = ${PG_POD_IP}"
+echo "  - cb-postgres.streamingReplica.wgConfig = <contents of $PEER_CONF> (endpoint ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
+echo "  - cb-postgres.streamingReplica.replicatorPassword = <contents of $REPL_PASSWORD_FILE>"
+warn "Pre-edit copy of the file saved to $EKS_VALUES_BACKUP - diff against it before committing/deploying."
+
 info "GCP-side setup complete. Artifacts written to $OUT_DIR:"
 echo "  - $REPL_PASSWORD_FILE   (replicator role password, if created/reset this run)"
-echo "  - $PEER_CONF            (WireGuard client config - copy this to the replica side)"
+echo "  - $PEER_CONF            (WireGuard client config)"
 echo "  - $WG_MANIFEST          (the manifest applied for the WireGuard server pod)"
+echo "  - $EKS_VALUES_BACKUP    (backup of $AWS_VALUES_FILE from before this run's edits)"
 echo
 echo "Firewall rule $FW_RULE is already locked down to the replica cluster's node IPs - no follow-up lockdown step needed."
 echo
-echo "Now deploy the replica-side Helm chart (global.streamingReplica=true) using:"
-echo "  - global.streamingReplica=true"
-echo "  - cb-postgres.streamingReplica.primaryHost=${PG_POD_IP}"
-echo "  - cb-postgres.streamingReplica.wgConfig=\"\$(cat $PEER_CONF)\"  (endpoint already set to ${NODE_EXTERNAL_IP}:${WG_NODE_PORT})"
-echo "  - cb-postgres.streamingReplica.replicatorPassword=\"\$(cat $REPL_PASSWORD_FILE)\""
-echo
-info "All done - primary is configured, tunnel is up, and the firewall rule is ready for the replica to connect once deployed."
+info "All done - primary is configured, tunnel is up, the firewall rule is ready, and $AWS_VALUES_FILE has the replica-side values. Review/commit that file, then deploy the replica-side Helm chart."
 warn "If the replica cluster's node pool changes (nodes added/replaced) after this, re-run this script to refresh the firewall rule's source ranges."
