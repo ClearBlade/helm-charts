@@ -1,15 +1,7 @@
-{{- $useGSM := false -}}
-{{- $useASM := false -}}
-{{- if eq .Values.credentialsSource "gsm" -}}
-{{- $useGSM = true -}}
-{{- else if eq .Values.credentialsSource "asm" -}}
-{{- $useASM = true -}}
-{{- else if eq .Values.credentialsSource "values" -}}
-{{- $useGSM = false -}}
-{{- else -}}
-{{- $useGSM = eq .Values.global.secretManager "gsm" -}}
-{{- $useASM = eq .Values.global.secretManager "asm" -}}
-{{- end -}}
+{{- $source := .Values.credentialsSource | default "" -}}
+{{- $useGSM := eq $source "gsm" -}}
+{{- $useASM := eq $source "asm" -}}
+{{- $useValues := eq $source "values" -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -206,11 +198,11 @@ spec:
         - name: ia
           persistentVolumeClaim:
             claimName: cb-ia-pvc
-        {{- if or $useGSM $useASM }}
-        - name: cb-ia-config-volume
-          emptyDir: {}
-        {{- else }}
+        {{- if $useValues }}
         - name: cb-ia-config-volume
           secret:
             secretName: cb-ia-config
+        {{- else }}
+        - name: cb-ia-config-volume
+          emptyDir: {}
         {{- end }}

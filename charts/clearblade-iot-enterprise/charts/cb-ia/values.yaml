@@ -6,7 +6,7 @@ storageSize: 10Gi
 checkClearbladeReadiness: true
 version:
 volumeHandle:
-credentialsSource: "values"
+credentialsSource: ""
 gsmSecretName: ia-credentials
 skipBucketSets: false
 credentials:
