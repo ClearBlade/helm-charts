@@ -16,7 +16,23 @@ resolve_aws_auth() {
     fi
     [[ "$ACCOUNT_ID_INPUT" =~ ^[0-9]{12}$ ]] || die "Account ID must be 12 digits, got: '$ACCOUNT_ID_INPUT'"
 
-    aws configure list-profiles 2>/dev/null | grep -qx "$BASE_PROFILE" \
+    # ~/.aws/config has no locking, and every invocation of this script (or
+    # create-helm-role.sh) rewrites it via `aws configure set` a few lines
+    # down. If two runs overlap, a list-profiles read here can land mid-write
+    # and come back short even though the file is fine a moment later - so
+    # retry a few times before concluding the profile is actually missing.
+    base_profile_found=0
+    for attempt in 1 2 3 4 5; do
+      if aws configure list-profiles 2>/dev/null | grep -qx "$BASE_PROFILE"; then
+        base_profile_found=1
+        break
+      fi
+      if [[ "$attempt" -eq 1 ]]; then
+        warn "'$BASE_PROFILE' profile not seen on first check - retrying in case ~/.aws/config is mid-write from a concurrent run..."
+      fi
+      sleep 1
+    done
+    [[ "$base_profile_found" -eq 1 ]] \
       || die "No '$BASE_PROFILE' AWS CLI profile found. Configure it first (aws configure --profile $BASE_PROFILE) with credentials that can assume $ORG_ACCESS_ROLE into member accounts."
 
     info "Configuring profile '$ACCOUNT_ID_INPUT' to assume $ORG_ACCESS_ROLE via '$BASE_PROFILE'..."
