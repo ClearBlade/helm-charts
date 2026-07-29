@@ -22,7 +22,7 @@ resolve_aws_auth() {
     # and come back short even though the file is fine a moment later - so
     # retry a few times before concluding the profile is actually missing.
     base_profile_found=0
-    for attempt in 1 2 3 4 5; do
+    for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
       if aws configure list-profiles 2>/dev/null | grep -qx "$BASE_PROFILE"; then
         base_profile_found=1
         break
