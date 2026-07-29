@@ -1,12 +1,16 @@
 {{- $useGSM := false -}}
+{{- $useASM := false -}}
 {{- if eq .Values.credentialsSource "gsm" -}}
 {{- $useGSM = true -}}
+{{- else if eq .Values.credentialsSource "asm" -}}
+{{- $useASM = true -}}
 {{- else if eq .Values.credentialsSource "values" -}}
 {{- $useGSM = false -}}
 {{- else -}}
 {{- $useGSM = eq .Values.global.secretManager "gsm" -}}
+{{- $useASM = eq .Values.global.secretManager "asm" -}}
 {{- end -}}
-{{- if not $useGSM }}
+{{- if and (not $useGSM) (not $useASM) }}
 apiVersion: v1
 kind: Secret
 metadata:

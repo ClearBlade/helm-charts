@@ -100,7 +100,7 @@ spec:
       {{- end }}
         {{- if eq .Values.global.secretManager "gsm"}}
         - name: pull-certificates
-          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_controller:cli-latest
+          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_controller:0.0.3
           env: 
             - name: CERT_DIR
               value: etc/haproxy-ssl
@@ -117,7 +117,7 @@ spec:
         {{- end }}
         {{- if eq .Values.global.secretManager "asm" }}
         - name: pull-certificates
-          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_controller:cli-latest
+          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_controller:0.0.3
           env:
             - name: CERT_DIR
               value: etc/haproxy-ssl

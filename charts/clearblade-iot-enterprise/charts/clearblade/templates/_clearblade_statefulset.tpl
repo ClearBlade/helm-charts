@@ -97,7 +97,7 @@ spec:
       {{- end }}  
         {{- if $pullCertsFromSecretManager }}
         - name: pull-mtls-certificate
-          image: {{ default "gcr.io/api-project-320446546234" .root.Values.global.registry }}/cb_controller:cli-latest
+          image: {{ default "gcr.io/api-project-320446546234" .root.Values.global.registry }}/cb_controller:0.0.3
           env:
             - name: CERT_DIR
               value: etc/clearblade/ssl
