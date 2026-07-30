@@ -1,0 +1,186 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cb-haproxy-legacy
+  namespace: dev
+  labels:
+    app: cb-haproxy-legacy
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: cb-haproxy-legacy
+  serviceName: cb-haproxy-legacy-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cb-haproxy-legacy
+        app.kubernetes.io/name: managed-prom
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - cb-haproxy-legacy
+                topologyKey: "topology.kubernetes.io/zone"
+      volumes:
+        - name: haproxy-config-volume
+          secret:
+            secretName: cb-haproxy-config 
+        - name: haproxy-cert-volume
+          emptyDir: {}
+      serviceAccountName: clearblade-gsm-read
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      initContainers:
+        - name: check-clearblade-readiness
+          image: ellerbrock/alpine-bash-curl-ssl
+          command:
+          - bash
+          - "-c"
+          - |
+            set -x;
+            while [ $(curl -sw '%{http_code}' "clearblade-service.dev.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
+              echo waiting for clearblade; sleep 5;
+            done;
+            # Give clearblade just a little more time to really start for real
+            sleep 10;
+        - name: init
+          image: google/cloud-sdk:slim
+          command: ["/bin/bash"]
+          args:
+            - -c
+            - |
+              certificates="$(gcloud secrets versions access "latest" --secret=legacy_tls-certificates)"
+              IFS='|' read -d '' -ra certificate_array <<< "$certificates"
+              for each in "${certificate_array[@]}"
+              do
+                echo "$each"
+              done
+              x=0
+              for i in "${certificate_array[@]}"
+              do
+                echo "$i" > /etc/ssl/clearblade-$x.pem
+                ((x=x+1))
+              done
+          volumeMounts:
+           - name: haproxy-cert-volume
+             mountPath: /etc/ssl/
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "2000 65001"
+      containers:
+        - name: cb-haproxy-legacy
+          image: "haproxy:2.9.3-alpine"
+          resources:
+            requests:
+              memory: 4G
+              cpu: 1
+            limits:
+              cpu: 1
+              memory: 4G
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: haproxy-config-volume
+              mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-cert-volume
+              mountPath: /etc/ssl
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-haproxy-legacy-service
+  namespace: dev
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 34.9.217.43
+  externalTrafficPolicy: Local
+  ports:
+    - name: http
+      targetPort: 8080
+      port: 80
+      protocol: TCP
+    - name: https
+      targetPort: 8443
+      port: 443
+      protocol: TCP
+    - name: mqtt
+      targetPort: 1884
+      port: 1884
+      protocol: TCP
+    - name: secondary-mqtt
+      targetPort: 1884
+      port: 8885
+      protocol: TCP
+    #   {{- if .Values.ports.tertiaryMqttEnabled }}
+    # - name: tertiary-mqtt
+    #   targetPort: 1884
+    #   port: {{ .Values.ports.tertiaryMqtt }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttWSEnabled }}
+    # - name: mqtt-ws
+    #   targetPort: 8904
+    #   port: {{ .Values.ports.mqttWS }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttAuthEnabled }}
+    # - name: mqtt-auth
+    #   targetPort: 8906
+    #   port: {{ .Values.ports.mqttAuth }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttAuthUnsecureEnabled }}
+    # - name: mqtt-auth-unsecure
+    #   targetPort: 8905
+    #   port: {{ .Values.ports.mqttAuthUnsecure }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttWSAuthEnabled }}
+    # - name: mqtt-ws-auth
+    #   targetPort: 8907
+    #   port: {{ .Values.ports.mqttWSAuth }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.edgeRPCEnabled }}
+    # - name: edge-rpc
+    #   targetPort: 8951
+    #   port: {{ .Values.ports.edge }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttUnsecureEnabled}}
+    # - name: mqtt-old
+    #   targetPort: 1883
+    #   port: {{ .Values.ports.mqttUnsecure }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttUnsecureSecondaryEnabled}}
+    # - name: mqtt-unsecure-secondary
+    #   targetPort: 1883
+    #   port: {{ .Values.ports.mqttUnsecureSecondary }}
+    #   protocol: TCP
+    #   {{- end }}
+    #   {{- if .Values.ports.mqttUnsecureTertiaryEnabled}}
+    # - name: mqtt-unsecure-tertiary
+    #   targetPort: 1883
+    #   port: {{ .Values.ports.mqttUnsecureTertiary }}
+    #   protocol: TCP
+    #   {{- end }}
+  selector:
+    app: cb-haproxy-legacy
