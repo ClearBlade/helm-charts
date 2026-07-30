@@ -1,9 +1,20 @@
 replicas: 3
 monitoringEnabled: false
 image: timescale/timescaledb
+# Optional. Overrides the auto-selected image tag. If unset, derived from
+# majorVersion below (latest-pg15 if majorVersion is unset, latest-pg10 if
+# majorVersion is 10).
 imageTag: "latest-pg15"
 cnpgImage: gcr.io/api-project-320446546234/cb_cnpg
 cnpgImageTag: 15-18
+# Optional. Set to 10 to deploy PostgreSQL 10 instead of the default 15 -
+# e.g. to match an existing PG10 primary for streaming replication. Only
+# affects the StatefulSet-based deployment (global.dynamicVolumes: false);
+# the CNPG path always uses cnpgImageTag. Switches the image tag (see
+# imageTag above) and adjusts postgresql.conf for PG10 (wal_keep_segments
+# instead of wal_keep_size, which was only added in PG13). If unset, the
+# chart renders exactly as it does today.
+majorVersion:
 requestCPU: 1
 requestMemory: 4G
 limitCPU: 1

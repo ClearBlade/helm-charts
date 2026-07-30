@@ -109,7 +109,15 @@ spec:
       {{- end }}
       containers:
         - name: cb-postgres
-          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+          {{- $imageTag := .Values.imageTag }}
+          {{- if not $imageTag }}
+          {{- if eq (.Values.majorVersion | toString) "10" }}
+          {{- $imageTag = "latest-pg10" }}
+          {{- else }}
+          {{- $imageTag = "latest-pg15" }}
+          {{- end }}
+          {{- end }}
+          image: "{{ .Values.image }}:{{ $imageTag }}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args:
