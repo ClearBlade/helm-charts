@@ -250,3 +250,7 @@ blueTerminateTls: false
 
 # Set to true if the TLS certs from the database should be used instead of from an external secret manager
 useDbTlsCerts: false
+
+# Set to true if the mTLS listener must present a deployment-supplied certificate held in
+# <namespace>_mtls-certificates, instead of the ACME certificate issued for enterpriseBaseURL.
+mtlsCustomCert: false

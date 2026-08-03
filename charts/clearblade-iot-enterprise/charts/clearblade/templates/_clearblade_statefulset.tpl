@@ -1,5 +1,6 @@
 {{- define "clearblade.statefulset" -}}
 {{- $pullCertsFromSecretManager := and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) -}}
+{{- $customMtlsCert := and $pullCertsFromSecretManager .root.Values.mtlsCustomCert -}}
 {{- $rootRedirectUrl := "" -}}
 {{- if ne .root.Values.rootRedirectUrl "" -}}
 {{- $rootRedirectUrl = .root.Values.rootRedirectUrl -}}
@@ -95,7 +96,7 @@ spec:
             done
           {{- end }}
       {{- end }}  
-        {{- if $pullCertsFromSecretManager }}
+        {{- if and $pullCertsFromSecretManager (not .root.Values.mtlsCustomCert) }}
         - name: pull-mtls-certificate
           image: {{ default "gcr.io/api-project-320446546234" .root.Values.global.registry }}/cb_controller:0.0.3
           env:
@@ -177,6 +178,15 @@ spec:
               aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_filehosting-hmac-secret --region {{ default "us-east-1" .root.Values.global.awsRegion }} --query SecretString --output text >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
               {{- else }}
               echo $filehosting_hmac_secret >> /etc/clearblade/conf/clearblade/filehosting_hmac_secret
+              {{- end }}
+              {{- if $customMtlsCert }}
+              # The mTLS listener must present the deployment's own device PKI, not the ACME cert
+              # issued for the web domain, so it is read straight from the secret manager.
+              {{- if eq .root.Values.global.secretManager "gsm"}}
+              gcloud secrets versions access latest --secret={{ default "clearblade" .root.Values.global.namespace }}_mtls-certificates > /etc/clearblade/ssl/clearblade-0.pem
+              {{- else if eq .root.Values.global.secretManager "asm"}}
+              aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .root.Values.global.namespace }}_mtls-certificates --region {{ default "us-east-1" .root.Values.global.awsRegion }} --query SecretString --output text > /etc/clearblade/ssl/clearblade-0.pem
+              {{- end }}
               {{- end }}
           {{ if and (ne .root.Values.global.secretManager "gsm") (ne .root.Values.global.secretManager "asm")}}
           env:
