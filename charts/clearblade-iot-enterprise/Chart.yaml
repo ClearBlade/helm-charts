@@ -38,3 +38,7 @@ dependencies:
     version: 3.8.0
     condition: global.opsConsoleEnabled
     repository: file://charts/cb-ops-console
+  - name: cb-tiles
+    version: 3.8.0
+    condition: global.tilesEnabled
+    repository: file://charts/cb-tiles
