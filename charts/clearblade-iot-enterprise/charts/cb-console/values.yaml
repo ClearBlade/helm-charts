@@ -2,3 +2,6 @@ requestCPU: 1
 requestMemory: 1G
 limitCPU: 1
 limitMemory: 1G
+adminIoTDisk: false
+volumeHandle:
+storageSize: 10Gi
