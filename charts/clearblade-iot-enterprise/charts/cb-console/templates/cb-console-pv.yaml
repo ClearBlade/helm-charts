@@ -1,0 +1,28 @@
+{{- if .Values.adminIoTDisk }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ default "clearblade" .Values.global.namespace}}-console-pv
+  namespace: {{ default "clearblade" .Values.global.namespace}}
+spec:
+  storageClassName: {{ .Values.global.storageClassName }}
+  {{- if eq .Values.global.cloud "aws" }}
+  persistentVolumeReclaimPolicy: Retain
+  {{- end }}
+  capacity:
+    storage: {{ .Values.storageSize }}
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: {{ default "clearblade" .Values.global.namespace }}
+    name: cb-console-pvc
+  csi:
+  {{- if eq .Values.global.cloud "gcp" }}
+    driver: pd.csi.storage.gke.io
+    volumeHandle: projects/{{ .Values.global.gcpProject }}/regions/{{ .Values.global.gcpRegion }}/disks/{{ default (printf "%s_console" (default "clearblade" .Values.global.namespace)) .Values.gcpDiskName }}
+    fsType: ext4
+  {{- else if eq .Values.global.cloud "aws" }}
+    driver: ebs.csi.aws.com
+    volumeHandle: {{ .Values.volumeHandle }}
+  {{- end }}
+{{- end }}

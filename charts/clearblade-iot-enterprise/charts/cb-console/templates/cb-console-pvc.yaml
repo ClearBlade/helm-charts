@@ -1,0 +1,14 @@
+{{- if .Values.adminIoTDisk }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cb-console-pvc
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  storageClassName: {{ .Values.global.storageClassName }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.storageSize }}
+{{- end }}
