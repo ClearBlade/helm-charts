@@ -45,6 +45,11 @@ spec:
           ]
           ports:
             - containerPort: 3000
+          {{- if .Values.adminIoTDisk }}
+          volumeMounts:
+            - name: public-iot-core
+              mountPath: /public-iot-core
+          {{- end }}
           resources:
             requests:
               memory: {{ .Values.requestMemory }}
@@ -52,6 +57,12 @@ spec:
             limits:
               cpu: {{ .Values.limitCPU }}
               memory: {{ .Values.limitMemory }}
+      {{- if .Values.adminIoTDisk }}
+      volumes:
+        - name: public-iot-core
+          persistentVolumeClaim:
+            claimName: cb-console-pvc
+      {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
