@@ -2,7 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wg-postgres-temp
-  namespace: community
+  # TODO: set to your namespace
+  namespace: REPLACE_NAMESPACE
   labels:
     app: wg-postgres-temp
 spec:
@@ -34,21 +35,20 @@ spec:
               value: "Etc/UTC"
             # Any node's external IP works - NodePort listens on all of them.
             - name: SERVERURL
-              value: "136.112.6.206"
+              value: "REPLACE_NODE_EXTERNAL_IP"
             - name: SERVERPORT
               value: "51820"
             - name: PEERS
               value: "1"
             - name: PEERDNS
               value: "off"
-            # Arbitrary tunnel subnet, not overlapping pod (10.92.0.0/14),
-            # service (34.118.224.0/20), or node (10.111.0.0/24) CIDRs.
+            # Arbitrary tunnel subnet, not overlapping pod, service, or node CIDRs.
             - name: INTERNAL_SUBNET
               value: "10.13.13.0"
             # Routes pushed to the CLIENT config - scoped to just the
             # postgres pod IP. Widen only if you need more than that one host.
             - name: ALLOWEDIPS
-              value: "10.92.3.63/32"
+              value: "REPLACE_PRIMARY_POD_IP/32"
           ports:
             - containerPort: 51820
               protocol: UDP
@@ -63,7 +63,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: wg-postgres-temp
-  namespace: community
+  # TODO: set to your namespace
+  namespace: REPLACE_NAMESPACE
   labels:
     app: wg-postgres-temp
 spec:

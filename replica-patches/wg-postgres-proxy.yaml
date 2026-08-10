@@ -2,8 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wg-postgres-proxy
-  # TODO: REPLACE
-  namespace: community
+  # TODO: set to your namespace
+  namespace: REPLACE_NAMESPACE
   labels:
     app: wg-postgres-proxy
 spec:
@@ -35,13 +35,13 @@ spec:
               mountPath: /config/wg_confs/wg0.conf
               subPath: wg0.conf
         # Shares this pod's network namespace with wireguard-client, so once
-        # wg0 is up it can dial 10.92.3.63 through the tunnel directly.
+        # wg0 is up it can dial the primary pod IP through the tunnel directly.
         - name: pg-proxy
           image: alpine/socat:latest
           command:
             - socat
             - TCP-LISTEN:5432,fork,reuseaddr
-            - TCP:10.92.3.63:5432
+            - TCP:REPLACE_PRIMARY_POD_IP:5432
           ports:
             - containerPort: 5432
               protocol: TCP
@@ -55,8 +55,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: wg-postgres-proxy
-  # TODO: REPLACE
-  namespace: community
+  # TODO: set to your namespace
+  namespace: REPLACE_NAMESPACE
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: external
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip

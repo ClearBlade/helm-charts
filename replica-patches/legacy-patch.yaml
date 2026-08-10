@@ -2,7 +2,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: cb-haproxy-legacy
-  namespace: dev
+  # TODO: set to your namespace
+  namespace: REPLACE_NAMESPACE
   labels:
     app: cb-haproxy-legacy
 spec:
@@ -54,7 +55,7 @@ spec:
           - "-c"
           - |
             set -x;
-            while [ $(curl -sw '%{http_code}' "clearblade-service.dev.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
+            while [ $(curl -sw '%{http_code}' "clearblade-service.REPLACE_NAMESPACE.svc.cluster.local:9000/api/about" -o /dev/null) -ne 200 ]; do
               echo waiting for clearblade; sleep 5;
             done;
             # Give clearblade just a little more time to really start for real
@@ -65,7 +66,7 @@ spec:
           args:
             - -c
             - |
-              certificates="$(gcloud secrets versions access "latest" --secret=legacy_tls-certificates)"
+              certificates="$(gcloud secrets versions access "latest" --secret=REPLACE_NAMESPACE_tls-certificates)"
               IFS='|' read -d '' -ra certificate_array <<< "$certificates"
               for each in "${certificate_array[@]}"
               do
@@ -109,7 +110,7 @@ metadata:
   namespace: dev
 spec:
   type: LoadBalancer
-  loadBalancerIP: 34.9.217.43
+  loadBalancerIP: REPLACE_LOAD_BALANCER_IP
   externalTrafficPolicy: Local
   ports:
     - name: http

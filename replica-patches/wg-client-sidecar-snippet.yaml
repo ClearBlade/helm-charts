@@ -2,9 +2,9 @@
 # existing pod spec for your AWS streaming replica, alongside the
 # postgres-replica container. Apply wg-postgres-temp-client-secret.yaml first.
 #
-# Once the sidecar's tunnel is up, point primary_conninfo at host=10.92.3.63
-# port=5432 directly - no proxy hop needed, since the sidecar shares the pod's
-# network namespace.
+# Once the sidecar's tunnel is up, point primary_conninfo at the primary's pod
+# IP (visible through the tunnel) port=5432 directly - no proxy hop needed,
+# since the sidecar shares the pod's network namespace.
 containers:
   - name: wireguard-client
     image: lscr.io/linuxserver/wireguard:latest
