@@ -9,6 +9,11 @@ volumeHandle:
 credentialsSource: ""
 gsmSecretName: ia-credentials
 skipBucketSets: false
+# Extra flags passed to the ia-sidecar binary. Each entry is rendered as a
+# separate CLI flag. Example:
+#   extraFlags:
+#     - "-flagURL=cb-service.mynamespace.svc.cluster.local:1234"
+extraFlags: []
 credentials:
   bandwidth:
     APITOKEN: ""
