@@ -316,8 +316,10 @@ spec:
             - name: GODEBUG
               value: netdns=go
           {{- end }}
+          {{- if .useMallocConf }}
             - name: MALLOC_CONF
               value: narenas:{{ $narenas }},metadata_thp:auto,background_thread:true,abort_conf:true
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
