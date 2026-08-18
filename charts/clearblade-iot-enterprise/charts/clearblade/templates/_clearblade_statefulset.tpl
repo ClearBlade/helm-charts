@@ -317,7 +317,7 @@ spec:
               value: netdns=go
           {{- end }}
             - name: MALLOC_CONF
-              value: narenas:{{ $narenas }},background_thread:true,abort_conf:true
+              value: narenas:{{ $narenas }},metadata_thp:auto,background_thread:true,abort_conf:true
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/
