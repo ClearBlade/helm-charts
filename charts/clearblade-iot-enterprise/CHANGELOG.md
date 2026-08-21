@@ -93,3 +93,7 @@ Postgres: Add pgstattuple extension
 ## [4.0.1] - 2026-08-21
 
 ClearBlade: Set MALLOC_CONF environment variable
+
+## [4.0.2] - 2026-08-21
+
+Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.
