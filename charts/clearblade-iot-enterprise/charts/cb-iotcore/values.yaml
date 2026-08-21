@@ -7,7 +7,7 @@ checkClearbladeReadiness: true
 regions:
 version:
 volumeHandle:
-credentialsSource: "values"
+credentialsSource: ""
 gsmSecretName: iotcore-credentials
 credentials:
   mailgun:
