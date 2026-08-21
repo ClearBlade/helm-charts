@@ -55,7 +55,7 @@ takes precedence over the chart-level requestMemory/limitMemory values.
 */}}
 {{- define "cb-postgres.memoryRequest" -}}
 {{- if .Values.global.postgresMemoryLimitGB -}}
-{{- .Values.global.postgresMemoryLimitGB -}}Gi
+{{- .Values.global.postgresMemoryLimitGB -}}G
 {{- else -}}
 {{- .Values.requestMemory -}}
 {{- end -}}
@@ -63,7 +63,7 @@ takes precedence over the chart-level requestMemory/limitMemory values.
 
 {{- define "cb-postgres.memoryLimit" -}}
 {{- if .Values.global.postgresMemoryLimitGB -}}
-{{- .Values.global.postgresMemoryLimitGB -}}Gi
+{{- .Values.global.postgresMemoryLimitGB -}}G
 {{- else -}}
 {{- .Values.limitMemory -}}
 {{- end -}}
