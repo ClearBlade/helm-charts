@@ -19,6 +19,7 @@
   "node_suffix" ""
   "clearblade_image" $image
   "madvdontneed" .Values.goMadvDontNeed
+  "useMallocConf" .Values.useMallocConf
   "node_selector" $node_selector
   "terminate_tls" .Values.blueTerminateTls
   "root" .
@@ -52,6 +53,7 @@
   "node_suffix" "-green"
   "clearblade_image" $image
   "madvdontneed" $madvdontneed
+  "useMallocConf" .Values.greenUseMallocConf
   "node_selector" $node_selector
   "terminate_tls" .Values.greenTerminateTls
   "root" .

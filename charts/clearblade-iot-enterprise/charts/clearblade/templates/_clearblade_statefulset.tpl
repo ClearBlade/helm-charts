@@ -9,6 +9,13 @@
 {{- else if .root.Values.global.opsConsoleEnabled -}}
 {{- $rootRedirectUrl = "/ops-console" -}}
 {{- end -}}
+{{- $cpuLimit := .root.Values.limitCPU | toString -}}
+{{- $narenas := 0 -}}
+{{- if hasSuffix "m" $cpuLimit -}}
+{{- $narenas = ceil (divf (trimSuffix "m" $cpuLimit | float64) 1000) | int -}}
+{{- else -}}
+{{- $narenas = ceil ($cpuLimit | float64) | int -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -328,6 +335,10 @@ spec:
           env:
             - name: GODEBUG
               value: netdns=go
+          {{- end }}
+          {{- if .useMallocConf }}
+            - name: MALLOC_CONF
+              value: narenas:{{ $narenas }},metadata_thp:auto,background_thread:true,abort_conf:true
           {{- end }}
           volumeMounts:
             - name: config-volume
