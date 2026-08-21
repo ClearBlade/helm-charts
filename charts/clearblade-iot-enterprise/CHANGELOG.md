@@ -90,6 +90,6 @@ ClearBlade: Add values for setting min TLS version, root redirect URL, and enabl
 
 Postgres: Add pgstattuple extension
 
-## [3.8.1] - 2026-08-18
+## [4.0.1] - 2026-08-21
 
 ClearBlade: Set MALLOC_CONF environment variable
