@@ -98,6 +98,6 @@ ClearBlade: Set MALLOC_CONF environment variable
 
 Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.
 
-## [5.0.0] - 2026-08-21
+## [4.1.0] - 2026-08-21
 
 Postgres: Renamed `global.postgresMemoryLimitMB` to `global.postgresMemoryLimitGB`. Values files using the old key must be updated to specify the memory limit in gigabytes instead of megabytes.
