@@ -50,44 +50,44 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Pod memory request/limit. global.postgresMemoryLimitMB (a number in megabytes)
+Pod memory request/limit. global.postgresMemoryLimitGB (a number in gigabytes)
 takes precedence over the chart-level requestMemory/limitMemory values.
 */}}
 {{- define "cb-postgres.memoryRequest" -}}
-{{- if .Values.global.postgresMemoryLimitMB -}}
-{{- .Values.global.postgresMemoryLimitMB -}}Mi
+{{- if .Values.global.postgresMemoryLimitGB -}}
+{{- .Values.global.postgresMemoryLimitGB -}}Gi
 {{- else -}}
 {{- .Values.requestMemory -}}
 {{- end -}}
 {{- end }}
 
 {{- define "cb-postgres.memoryLimit" -}}
-{{- if .Values.global.postgresMemoryLimitMB -}}
-{{- .Values.global.postgresMemoryLimitMB -}}Mi
+{{- if .Values.global.postgresMemoryLimitGB -}}
+{{- .Values.global.postgresMemoryLimitGB -}}Gi
 {{- else -}}
 {{- .Values.limitMemory -}}
 {{- end -}}
 {{- end }}
 
 {{/*
-shared_buffers: 1/4 of global.postgresMemoryLimitMB when set, otherwise the
+shared_buffers: 1/4 of global.postgresMemoryLimitGB when set, otherwise the
 chart-level sharedBuffers value.
 */}}
 {{- define "cb-postgres.sharedBuffers" -}}
-{{- if .Values.global.postgresMemoryLimitMB -}}
-{{- div (.Values.global.postgresMemoryLimitMB | int) 4 -}}MB
+{{- if .Values.global.postgresMemoryLimitGB -}}
+{{- mul (.Values.global.postgresMemoryLimitGB | int) 256 -}}MB
 {{- else -}}
 {{- .Values.sharedBuffers | default "1GB" -}}
 {{- end -}}
 {{- end }}
 
 {{/*
-effective_cache_size: 3/4 of global.postgresMemoryLimitMB when set, otherwise
+effective_cache_size: 3/4 of global.postgresMemoryLimitGB when set, otherwise
 the chart-level effectiveCacheSize value.
 */}}
 {{- define "cb-postgres.effectiveCacheSize" -}}
-{{- if .Values.global.postgresMemoryLimitMB -}}
-{{- div (mul (.Values.global.postgresMemoryLimitMB | int) 3) 4 -}}MB
+{{- if .Values.global.postgresMemoryLimitGB -}}
+{{- mul (.Values.global.postgresMemoryLimitGB | int) 768 -}}MB
 {{- else -}}
 {{- .Values.effectiveCacheSize | default "3GB" -}}
 {{- end -}}
