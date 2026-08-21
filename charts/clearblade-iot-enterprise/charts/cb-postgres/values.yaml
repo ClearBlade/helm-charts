@@ -1,9 +1,20 @@
 replicas: 3
 monitoringEnabled: false
 image: timescale/timescaledb
+# Optional. Overrides the auto-selected image tag. If unset, derived from
+# majorVersion below (latest-pg15 if majorVersion is unset, latest-pg10 if
+# majorVersion is 10).
 imageTag: "latest-pg15"
 cnpgImage: gcr.io/api-project-320446546234/cb_cnpg
 cnpgImageTag: 15-18
+# Optional. Set to 10 to deploy PostgreSQL 10 instead of the default 15 -
+# e.g. to match an existing PG10 primary for streaming replication. Only
+# affects the StatefulSet-based deployment (global.dynamicVolumes: false);
+# the CNPG path always uses cnpgImageTag. Switches the image tag (see
+# imageTag above) and adjusts postgresql.conf for PG10 (wal_keep_segments
+# instead of wal_keep_size, which was only added in PG13). If unset, the
+# chart renders exactly as it does today.
+majorVersion:
 requestCPU: 1
 requestMemory: 4G
 limitCPU: 1
@@ -28,6 +39,7 @@ readinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
+enableDownsamplingExtension: true
 storageSize: 100Gi
  # Base name of disk - "-$i" will be appended in the PV automatically.
  # Disk name must follow this convention: {namespace}-{postgresDiskName}-{number}
@@ -44,7 +56,8 @@ effectiveCacheSize: 3GB #Recommended 3/4 of memory
 # PgBouncer connection pooler (enable via global.pgBouncerEnabled)
 pgBouncer:
   replicas: 1
-  image: gcr.io/api-project-320446546234/cb-pgbouncer
+  # Defaults to cb-pgbouncer from global.registry (ClearBlade's GCR if unset). Set to override the full image path.
+  image:
   imageTag: "1.25.1"
   requestCPU: 250m
   requestMemory: 256Mi
@@ -54,3 +67,32 @@ pgBouncer:
   maxClientConn: 10000
   maxPreparedStatements: 200
   database: admin
+
+# WireGuard tunnel + TCP proxy giving this cluster's postgres replica a path
+# to a remote primary for streaming replication (enable via
+# global.streamingReplica). Pairs with the primary-side setup script in
+# replica-patches/configure_streaming.sh.
+streamingReplica:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard
+    imageTag: latest
+  proxy:
+    image: alpine/socat
+    imageTag: latest
+  # Raw wg0.conf content (the peer1.conf produced by the primary-side
+  # script). If set, the chart creates the Secret below for you. If left
+  # blank, you must create it yourself before install:
+  #   kubectl create secret generic <wgConfigSecretName> --from-file=wg0.conf=peer1.conf
+  wgConfig: ""
+  wgConfigSecretName: streaming-replica-wg-client
+  # Required. The primary's pod IP, reachable once the tunnel is up.
+  primaryHost: ""
+  primaryPort: 5432
+  # Role pg_basebackup connects as - must match the role created on the
+  # primary by the primary-side setup script.
+  replicatorUser: replicator
+  # Password for that role. If set, the chart creates the Secret below for
+  # you. If left blank, you must create it yourself before install:
+  #   kubectl create secret generic <replicatorSecretName> --from-literal=password=<password>
+  replicatorPassword: ""
+  replicatorSecretName: streaming-replica-replicator-credentials

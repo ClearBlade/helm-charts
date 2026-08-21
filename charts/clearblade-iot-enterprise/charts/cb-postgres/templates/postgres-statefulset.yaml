@@ -90,6 +90,9 @@ spec:
 
       {{- end }}
       {{- if eq .Values.global.secretManager "asm"}}
+      {{- if .Values.global.awsHelmRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
       initContainers:
         - name: init
           image: amazon/aws-cli:latest
@@ -97,16 +100,24 @@ spec:
           args:
             - -c
             - >-
-                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
-                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-replica-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars &&
-                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password --region us-east-1 --query SecretString --output text)" >> /env/db/vars
+                echo "export PRIMARY_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-primary-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text)" >> /env/db/vars &&
+                echo "export REPLICA_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-replica-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text)" >> /env/db/vars &&
+                echo "export POSTGRES_PASSWORD=$(aws secretsmanager get-secret-value --secret-id {{ default "clearblade" .Values.global.namespace }}_postgres-postgres-password --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text)" >> /env/db/vars
           volumeMounts:
             - name: postgres-env-vars-volume
               mountPath: /env/db
       {{- end }}
       containers:
         - name: cb-postgres
-          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+          {{- $imageTag := .Values.imageTag }}
+          {{- if not $imageTag }}
+          {{- if eq (.Values.majorVersion | toString) "10" }}
+          {{- $imageTag = "latest-pg10" }}
+          {{- else }}
+          {{- $imageTag = "latest-pg15" }}
+          {{- end }}
+          {{- end }}
+          image: "{{ .Values.image }}:{{ $imageTag }}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args:
@@ -125,10 +136,31 @@ spec:
               value: /var/lib/postgresql/data/clearblade
             - name: PGPORT
               value: "{{ .Values.port }}"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
             - name: PRIMARY_USER
               value: {{ .Values.user.primary }}
             - name: REPLICA_USER
               value: {{ .Values.user.replica }}
+            - name: ENABLE_DOWNSAMPLING
+              value: "{{ .Values.enableDownsamplingExtension }}"
+            {{- if .Values.global.streamingReplica }}
+            - name: STREAMING_REPLICA_ENABLED
+              value: "true"
+            - name: STREAMING_REPLICA_HOST
+              value: streaming-replica-proxy
+            - name: STREAMING_REPLICA_PORT
+              value: "{{ .Values.streamingReplica.primaryPort }}"
+            - name: STREAMING_REPLICATOR_USER
+              value: {{ .Values.streamingReplica.replicatorUser }}
+            - name: STREAMING_REPLICATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.streamingReplica.replicatorSecretName }}
+                  key: password
+            {{- end }}
             {{ if and (ne .Values.global.secretManager "gsm") (ne .Values.global.secretManager "asm")}}
             - name: PRIMARY_PASSWORD
               valueFrom:
@@ -178,7 +210,11 @@ spec:
             - mountPath: /dev/shm
               name: dshm
 
-          {{- if .Values.livenessProbe.enabled }}
+          {{- /* Streaming-replica bootstrap runs pg_basebackup before postgres even
+          starts listening, which can take far longer than these probes tolerate -
+          kubelet would kill the container mid-backup thinking it's unhealthy.
+          Skip both probes entirely in that mode. */}}
+          {{- if and .Values.livenessProbe.enabled (not $.Values.global.streamingReplica) }}
           livenessProbe:
             exec:
               command:
@@ -191,7 +227,7 @@ spec:
             successThreshold: {{ .Values.livenessProbe.successThreshold }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           {{- end }}
-          {{- if .Values.readinessProbe.enabled }}
+          {{- if and .Values.readinessProbe.enabled (not $.Values.global.streamingReplica) }}
           readinessProbe:
             exec:
               command:

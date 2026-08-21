@@ -1,0 +1,92 @@
+{{- if .Values.global.streamingReplica }}
+{{- if .Values.streamingReplica.wgConfig }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.streamingReplica.wgConfigSecretName }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+type: Opaque
+stringData:
+  wg0.conf: |
+{{ .Values.streamingReplica.wgConfig | indent 4 }}
+---
+{{- end }}
+{{- if .Values.streamingReplica.replicatorPassword }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.streamingReplica.replicatorSecretName }}
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+type: Opaque
+stringData:
+  password: {{ .Values.streamingReplica.replicatorPassword | quote }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streaming-replica-proxy
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: streaming-replica-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streaming-replica-proxy
+  template:
+    metadata:
+      labels:
+        app: streaming-replica-proxy
+    spec:
+      containers:
+        - name: wireguard-client
+          image: "{{ .Values.streamingReplica.wireguard.image }}:{{ .Values.streamingReplica.wireguard.imageTag }}"
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Etc/UTC"
+          volumeMounts:
+            - name: wg-conf
+              mountPath: /config/wg_confs/wg0.conf
+              subPath: wg0.conf
+        # Shares this pod's network namespace with wireguard-client, so once
+        # the tunnel is up it can dial the primary's pod IP directly.
+        - name: pg-proxy
+          image: "{{ .Values.streamingReplica.proxy.image }}:{{ .Values.streamingReplica.proxy.imageTag }}"
+          command:
+            - socat
+            - "TCP-LISTEN:{{ .Values.streamingReplica.primaryPort }},fork,reuseaddr"
+            - "TCP:{{ required "streamingReplica.primaryHost is required when global.streamingReplica is enabled" .Values.streamingReplica.primaryHost }}:{{ .Values.streamingReplica.primaryPort }}"
+          ports:
+            - containerPort: {{ .Values.streamingReplica.primaryPort }}
+              protocol: TCP
+      volumes:
+        - name: wg-conf
+          secret:
+            secretName: {{ .Values.streamingReplica.wgConfigSecretName }}
+            defaultMode: 0600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: streaming-replica-proxy
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: streaming-replica-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app: streaming-replica-proxy
+  ports:
+    - port: {{ .Values.streamingReplica.primaryPort }}
+      targetPort: {{ .Values.streamingReplica.primaryPort }}
+      protocol: TCP
+{{- end }}

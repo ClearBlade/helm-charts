@@ -29,8 +29,8 @@ spec:
     volumeHandle: "{{ $.Values.global.postgresVolumeHandle }}"
     fsType: "{{ $.Values.global.fsType }}"
   {{- else if eq $.Values.global.cloud "aws" }}
-  driver: ebs.csi.aws.com
-  volumeHandle: {{ $.Values.volumeHandle }}
+    driver: ebs.csi.aws.com
+    volumeHandle: {{ $.Values.volumeHandle }}
   {{- end }}
 ---
 {{- end }}

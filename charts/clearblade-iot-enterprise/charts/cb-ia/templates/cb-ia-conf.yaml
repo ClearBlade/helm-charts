@@ -1,12 +1,5 @@
-{{- $useGSM := false -}}
-{{- if eq .Values.credentialsSource "gsm" -}}
-{{- $useGSM = true -}}
-{{- else if eq .Values.credentialsSource "values" -}}
-{{- $useGSM = false -}}
-{{- else -}}
-{{- $useGSM = eq .Values.global.secretManager "gsm" -}}
-{{- end -}}
-{{- if not $useGSM }}
+{{- $source := .Values.credentialsSource | default "" -}}
+{{- if eq $source "values" }}
 apiVersion: v1
 kind: Secret
 metadata:

@@ -10,13 +10,23 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE USER $REPLICA_USER REPLICATION LOGIN ENCRYPTED PASSWORD '$REPLICA_PASSWORD';
     CREATE DATABASE admin;
     GRANT ALL PRIVILEGES ON DATABASE admin TO $PRIMARY_USER;
-    CREATE EXTENSION pg_stat_statements;
+
+EOSQL
+
+echo "Installing extensions in admin database..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "admin" <<-EOSQL
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
     CREATE EXTENSION IF NOT EXISTS timescaledb;
-    CREATE EXTENSION pg_trgm;
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
     CREATE EXTENSION IF NOT EXISTS pgstattuple;
     GRANT EXECUTE ON FUNCTION pgstattuple_approx(regclass) TO $PRIMARY_USER;
     GRANT EXECUTE ON FUNCTION pgstatindex(regclass) TO $PRIMARY_USER;
     GRANT EXECUTE ON FUNCTION pgstatginindex(regclass) TO $PRIMARY_USER;
-    CREATE DATABASE secondary;
-    GRANT ALL PRIVILEGES ON DATABASE secondary TO $PRIMARY_USER;
 EOSQL
+
+if [ "$ENABLE_DOWNSAMPLING" = "true" ]; then
+  echo "Installing downsampling extension..."
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "admin" <<-EOSQL
+    CREATE EXTENSION IF NOT EXISTS downsampling;
+EOSQL
+fi
