@@ -90,6 +90,10 @@ ClearBlade: Add values for setting min TLS version, root redirect URL, and enabl
 
 Postgres: Add pgstattuple extension
 
-## [3.8.1] - 2026-07-14
+## [4.0.1] - 2026-08-21
+
+ClearBlade: Set MALLOC_CONF environment variable
+
+## [4.0.2] - 2026-08-21
 
 Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.

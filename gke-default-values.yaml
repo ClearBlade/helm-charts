@@ -219,6 +219,10 @@ cb-postgres:
   limitCPU: 1
   limitMemory: 2G
   postgres0DiskName: postgres-0
+  # Optional. Set to 10 to deploy PostgreSQL 10 instead of the default 15 -
+  # e.g. to match an existing PG10 primary for streaming replication. Only
+  # applies to the StatefulSet-based deployment (global.dynamicVolumes: false).
+  # majorVersion: 10
   # PgBouncer settings (requires global.pgBouncerEnabled: true)
   # pgBouncer:
   #   replicas: 1

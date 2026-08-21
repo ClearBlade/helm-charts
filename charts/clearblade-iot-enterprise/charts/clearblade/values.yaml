@@ -7,6 +7,8 @@ logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
 goMadvDontNeed: true
+useMallocConf: true
+greenUseMallocConf: true
 bluePartition: 0
 greenPartition: 0
 enableWeakCiphers: false
@@ -250,3 +252,7 @@ blueTerminateTls: false
 
 # Set to true if the TLS certs from the database should be used instead of from an external secret manager
 useDbTlsCerts: false
+
+# Set to true if the mTLS listener must present a deployment-supplied certificate
+# from the secret manager instead of the default one
+mtlsCustomCert: false

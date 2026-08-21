@@ -16,10 +16,10 @@ data:
       {{- $defaultConfig := list
         (dict 
           "directory" "https://acme-v02.api.letsencrypt.org/directory" 
-          "key_type" "rsa" 
+          "keyType" "rsa" 
           "email" "serversupport@clearblade.com" 
           "domains" $domains 
-          "file_name" "clearblade-0.pem"
+          "fileName" "clearblade-0.pem"
         )
       }}
 

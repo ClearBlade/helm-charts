@@ -1,5 +1,6 @@
 # Calculate the clearblade docker image URL
-{{- $image := printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseBlueVersion -}}
+{{- $registry := default "gcr.io/api-project-320446546234" .Values.global.registry -}}
+{{- $image := printf "%s/clearblade:%s" $registry .Values.global.enterpriseBlueVersion -}}
 {{- if .Values.imageURLBlue -}}
 {{- $image = .Values.imageURLBlue -}}
 {{ end }}
@@ -18,17 +19,19 @@
   "node_suffix" ""
   "clearblade_image" $image
   "madvdontneed" .Values.goMadvDontNeed
+  "useMallocConf" .Values.useMallocConf
   "node_selector" $node_selector
   "terminate_tls" .Values.blueTerminateTls
   "root" .
 ) }}
 ---
 # Calculate the clearblade docker image URL
-{{- $image := printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseBlueVersion -}}
+{{- $registry := default "gcr.io/api-project-320446546234" .Values.global.registry -}}
+{{- $image := printf "%s/clearblade:%s" $registry .Values.global.enterpriseBlueVersion -}}
 {{- if .Values.imageURLGreen -}}
 {{- $image = .Values.imageURLGreen -}}
 {{- else if .Values.global.enterpriseGreenVersion -}}
-{{- $image = printf "gcr.io/api-project-320446546234/clearblade:%s" .Values.global.enterpriseGreenVersion -}}
+{{- $image = printf "%s/clearblade:%s" $registry .Values.global.enterpriseGreenVersion -}}
 {{ end }}
 
 # Calculate whether to set madvdontneed
@@ -50,6 +53,7 @@
   "node_suffix" "-green"
   "clearblade_image" $image
   "madvdontneed" $madvdontneed
+  "useMallocConf" .Values.greenUseMallocConf
   "node_selector" $node_selector
   "terminate_tls" .Values.greenTerminateTls
   "root" .
