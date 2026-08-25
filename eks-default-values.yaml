@@ -60,6 +60,9 @@ global:
   # Required. Set to "true" if this deployment uses the IOTCore Sidecar.
   iotCoreEnabled: false
 
+  # Optional. Enables the IoT Core SaaS sidecar (cb-iotcore-saas). Mutually exclusive with iotCoreEnabled: both serve /iot-core.
+  iotCoreSaasEnabled: false
+
   # Required. Set to "true" if this deployment uses the Intelligent Assets Sidecar.
   iaEnabled: false
 
@@ -149,6 +152,29 @@ cb-iotcore:
   # regions:
   # Required if using the IOTCore sidecar. AWS EBS iotcore volume handle.
   # volumeHandle:
+cb-iotcore-saas:
+  # Optional. Set to true to force the IoT Core SaaS sidecar to wait for the Clearblade pods before starting.
+  checkClearbladeReadiness: true
+  requestCPU: 0.5
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 2G
+  # Required if using the IoT Core SaaS sidecar. Sidecar image tag.
+  # version:
+  # Required if using the IoT Core SaaS sidecar. Key of the admin system, which must already exist.
+  # adminSystemKey:
+  # Required if using the IoT Core SaaS sidecar. Platform developer the sidecar authenticates as.
+  # devEmail:
+  # Required if using the IoT Core SaaS sidecar. Region name -> the platform URL hosting it.
+  # regions:
+  #   us-central1: https://us-central1-g5.clearblade.com
+  # Required if using the IoT Core SaaS sidecar. Where the developer password comes from: "values", "asm" or "gsm".
+  # credentialsSource:
+  # Optional. Name of the secret manager secret holding the password, prefixed with the namespace.
+  # secretName: iotcore-saas-credentials
+  # Only used when credentialsSource is "values".
+  # credentials:
+  #   devPassword:
 cb-ia:
   # Optional. Set to true to force the Intelligent Assets pod to wait for the Clearblade pods before starting.
   checkClearbladeReadiness: false

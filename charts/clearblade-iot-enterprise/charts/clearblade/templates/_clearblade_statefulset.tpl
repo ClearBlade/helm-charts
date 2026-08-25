@@ -4,7 +4,7 @@
 {{- $rootRedirectUrl := "" -}}
 {{- if ne .root.Values.rootRedirectUrl "" -}}
 {{- $rootRedirectUrl = .root.Values.rootRedirectUrl -}}
-{{- else if .root.Values.global.iotCoreEnabled -}}
+{{- else if or .root.Values.global.iotCoreEnabled .root.Values.global.iotCoreSaasEnabled -}}
 {{- $rootRedirectUrl = "/iot-core" -}}
 {{- else if .root.Values.global.opsConsoleEnabled -}}
 {{- $rootRedirectUrl = "/ops-console" -}}
@@ -315,7 +315,11 @@ spec:
             - "-rpc-use-tls=true"
             - "-console-host=cb-console-service"
             - "-ia-host=cb-ia-service"
+            {{- if .root.Values.global.iotCoreSaasEnabled }}
+            - "-iotcore-host=cb-iotcore-saas-service"
+            {{- else }}
             - "-iotcore-host=cb-iotcore-service"
+            {{- end }}
             - "-ops-console-host=cb-ops-console-service"
             - "-enable-automatic-certificate-renewal=true"
             {{- end }}

@@ -1,0 +1,22 @@
+{{- $source := .Values.credentialsSource | default "" -}}
+{{- if eq $source "values" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-iotcore-saas-config
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+stringData:
+  {{- $cfg := include "cb-iotcore-saas.baseConfig" . | fromJson }}
+  {{- $_ := set $cfg "devPassword" .Values.credentials.devPassword }}
+  config.json: {{ $cfg | toJson | quote }}
+{{- else if or (eq $source "asm") (eq $source "gsm") }}
+# Everything but the password. The init container merges the secret manager's copy
+# over this and writes the result where the sidecar reads it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cb-iotcore-saas-base
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+data:
+  config-base.json: {{ include "cb-iotcore-saas.baseConfig" . | quote }}
+{{- end }}
