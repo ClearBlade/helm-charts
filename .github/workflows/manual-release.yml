@@ -34,6 +34,10 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
-          mark_latest: false
+          # Skip charts whose version/tag already exists (e.g. clearblade-monitoring),
+          # so the release only creates tags for charts with a new version.
+          skip_existing: true
+          # Test releases must not become the "latest" release.
+          mark_as_latest: false
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
