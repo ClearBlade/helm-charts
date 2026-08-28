@@ -2,6 +2,9 @@ Title = "ClearBlade IoT Enterprise Configuration File"
 
 [Database]
 DBPassword = "{db_password}"
+{{- if .Values.global.postgresMemoryLimitMB }}
+HypertableDynamicChunkTargetSizeMb = {{ div (.Values.global.postgresMemoryLimitMB | int) 4 }}
+{{- end }}
 {{- if .Values.databaseConfig }}
 {{ .Values.databaseConfig }}
 {{- end }}

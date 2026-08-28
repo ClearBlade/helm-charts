@@ -7,6 +7,8 @@ logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
 goMadvDontNeed: true
+useMallocConf: true
+greenUseMallocConf: true
 bluePartition: 0
 greenPartition: 0
 enableWeakCiphers: false
