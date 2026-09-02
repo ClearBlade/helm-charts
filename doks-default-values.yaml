@@ -1,0 +1,211 @@
+global:
+  # Required. Supported clouds are "aws", "gcp", and "doks". As this values file is for DigitalOcean Kubernetes Service, the value should be "doks".
+  cloud: doks
+
+  # Required.
+  haproxyEnabled: true
+
+  # Required. The DigitalOcean region the cluster and Volumes are in.
+  doRegion: nyc1
+
+  # Optional. Override the container registry for ClearBlade first-party images, e.g. a DO Container Registry mirror. Leave blank or comment out to pull from ClearBlade's GCR.
+  # registry:
+
+  # Optional. Namespace to deploy to. Default is "clearblade"
+  namespace:
+
+  # Optional. Leave blank or comment out if not using.
+  # nodeSelector:
+
+  # Optional. Add as many key blocks as necessary. Leave blank or comment out if not using.
+  # tolerations:
+  # - key: "key1"
+  #   operator: "Equal"
+  #   value: "value1"
+  #   effect: "NoSchedule"
+
+  # Optional. Manually define the image puller secret key needed to pull the container images from GCR. Leave blank or comment out if not using.
+  imagePullerSecret:
+
+  # Required. The base URL the platform will be reachable at. Format: "example.com"
+  enterpriseBaseURL:
+
+  # Optional. The URL the ClearBlade Console will be reachable at. Format: "example.com". Leave blank or comment out if not using.
+  # enterpriseConsoleURL:
+
+  # Required. The blue version is the default ClearBlade version, even if not using Blue/Green upgrades.
+  enterpriseBlueVersion:
+
+  # Optional. Utilized during Blue/Green upgrades. See README for detailed process explanation. Leave blank or comment out if not using.
+  # enterpriseGreenVersion:
+
+  # Required. The Instance ID for the deployment, provided by ClearBlade.
+  enterpriseInstanceID:
+
+  # Optional. Highly recommended to create a unique registration key for new users to register with the platform. Leave blank or comment out if not using.
+  enterpriseRegistrationKey:
+
+  # Optional. Utilized during Blue/Green upgrades. See README for detailed process explanation. Leave blank or comment out if not using.
+  # enterpriseSlot: blue
+
+  # Optional. Manually override the version tag for the ClearBlade container. Leave blank or comment out if not using.
+  # enterpriseTagOverride: false
+
+  # Required. Controls image tag for both console and file hosting containers
+  enterpriseConsoleVersion:
+
+  # Required. Set to "true" if this deployment uses the IOTCore Sidecar.
+  iotCoreEnabled: false
+
+  # Required. Set to "true" if this deployment uses the Intelligent Assets Sidecar.
+  iaEnabled: false
+
+  # Required if using the Intelligent Assets sidecar. Intelligent Assets sidecar version. Leave blank or comment out if not using.
+  # iaVersion:
+
+  # Optional. Set to true if you manage the namespace outside of Helm. Leave blank or comment out if not using.
+  # predefinedNamespace: false
+
+  # Required. DigitalOcean has no managed secrets-manager integration (no "asm"/"gsm" equivalent). "k8s" stores/reads secrets as plain Kubernetes Secrets via a namespaced Role/RoleBinding (see cb-haproxy/templates/haproxy-controller-rbac.yaml) instead of cloud IAM federation.
+  secretManager: k8s
+
+  # Optional. Directly input your Base64 encoded TLS certificate. Required, since no secret manager integration is available.
+  # tlsCertificate: |
+
+  # Optional. Directly input your mekfile provided by ClearBlade. Required, since no secret manager integration is available.
+  # mekfile:
+
+  # Optional. Directly input your filehosting hmac secret. Required, since no secret manager integration is available.
+  # filehosting_hmac_secret:
+
+  # Optional. Directly input your postgres password. Required, since no secret manager integration is available.
+  # postgresPassword:
+
+  # Optional. Define the storage class used by all Persistent Volume Claims in the deployment. Leave blank or comment out if not using.
+  storageClassName: do-block-storage
+
+  # Optional. Set to true if you wish to enable mTLS support on the ClearBlade pods. Leave blank or comment out if not using.
+  # mtlsClearBlade:
+
+  # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
+  # mtlsHAProxy:
+
+  # Optional. PgBouncer connection pooler in front of Postgres.
+  # pgBouncerEnabled: false
+
+  # Optional. Set to true if you plan on utilizing the monitoring deployment. Leave blank or comment out if not using.
+  # monitoringEnabled:
+
+  # Optional. The namespace where the monitoring stack is deployed. Used by the NetworkPolicy to allow Prometheus scraping. Default is "monitoring".
+  monitoringNamespace: monitoring
+
+# Requests and limits for CPU/memory have default settings in each chart values file. They can be overidden for each chart below.
+cb-console:
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+cb-file-hosting:
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  # Required. DigitalOcean Volume ID (or name, depending on your CSI driver version) for file hosting.
+  volumeHandle:
+cb-haproxy:
+  replicas: 1
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  # Required. Set to false if using an external HAProxy deployment.
+  enabled: true
+  # Optional. DigitalOcean Reserved IP to attach to the primary Load Balancer. DO does not support assigning a reserved IP via Service manifest; attach it to the created Load Balancer via the DO console/API/doctl after the first deploy.
+  primaryIP:
+  # Optional. DigitalOcean Reserved IP to attach to the MQTT Load Balancer, if utilizing external MQTT connections. Same manual-attach caveat as primaryIP.
+  mqttIP:
+  # Required. Set to true if you would like MQTT connections to work over 443 in addition to the default 1883.
+  mqttOver443: false
+  # Automatic cert renewal with letsencrypt. Uses the k8s-native secret backend (see global.secretManager) instead of a cloud secrets manager.
+  certRenewal: true
+  # days out to renew cert
+  renewalDays: 5
+  # Note: global.secretManager: k8s requires a cb_controller image with SECRET_MANAGER=k8s support (0.0.4+) — pin controllerVersion accordingly if "latest" does not resolve to one.
+  # Optional. Overrides global.registry for the cb_controller image only; leave unset to pull it from the same place as other ClearBlade images.
+  # controllerRegistry:
+  controllerVersion: latest
+cb-ops-console:
+  version: 0.0.1
+cb-iotcore:
+  # Optional. Set to true to force the IOTCore pod to wait for the Clearblade pods before starting.
+  checkClearbladeReadiness: false
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  # Required if using the IOTCore sidecar. IOTCore sidecar version. Leave blank or comment out if not using.
+  # version:
+  # Optional. Comma-separated list of the regions IOTCore will be deployed in. Leave blank or comment out if not using.
+  # regions:
+  # Required if using the IOTCore sidecar. DigitalOcean Volume ID for iotcore.
+  # volumeHandle:
+cb-ia:
+  # Optional. Set to true to force the Intelligent Assets pod to wait for the Clearblade pods before starting.
+  checkClearbladeReadiness: false
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G
+  # Required if using the Intelligent Assets sidecar. Intelligent Assets sidecar version. Leave blank or comment out if not using.
+  # version:
+  # Required if using the Intelligent Assets sidecar. DigitalOcean Volume ID for Intelligent Assets.
+  # volumeHandle:
+cb-postgres:
+  # Required. Set to false if using an external postgres deployment.
+  enabled: true
+  replicas: 1
+  requestCPU: 1
+  requestMemory: 2G
+  limitCPU: 1
+  limitMemory: 2G
+  # Required. DigitalOcean Volumes are region-scoped — the region the postgres volume was created in, e.g. "nyc1". DOKS nodes have no zone-level topology label, so the pod is pinned via topology.kubernetes.io/region instead of /zone.
+  volumeAZ:
+  # Required. DigitalOcean Volume ID for postgres.
+  volumeHandle:
+  # Optional. Set to 10 to deploy PostgreSQL 10 instead of the default 15 -
+  # e.g. to match an existing PG10 primary for streaming replication.
+  # majorVersion: 10
+  # PgBouncer settings (requires global.pgBouncerEnabled: true)
+  # pgBouncer:
+  #   replicas: 1
+  #   image: gcr.io/api-project-320446546234/cb-pgbouncer
+  #   imageTag: "1.25.1"
+  #   requestCPU: 250m
+  #   requestMemory: 256Mi
+  #   limitCPU: 500m
+  #   limitMemory: 512Mi
+  #   poolMode: session
+  #   defaultPoolSize: 30
+  #   maxClientConn: 500
+  #   maxPreparedStatements: 200
+  #   database: admin
+cb-redis:
+  # Required. Set to false if using an external redis deployment.
+  enabled: true
+  # Required. Set to true to utilize redis sentinel with automatic failover. Requires roughly 4x CPU/mem as a non-HA deployment.
+  highAvailability: false
+  requestCPU: 1
+  requestMemory: 2G
+  limitCPU: 1
+  limitMemory: 2G
+clearblade:
+  # Required. If not using blue/green deployments, blue is the default. See the README for an explanation on blue/green deployments.
+  blueReplicas: 2
+  # Required. If not using blue/green deployments, set to 0. See the README for an explanation on blue/green deployments.
+  greenReplicas: 0
+  # Required. Set to true to allow duplicate client IDs. Set to false to reject duplicate connections. The IOTCore default behavior is true.
+  mqttAllowDuplicateClientID: true
+  requestCPU: 1
+  requestMemory: 1G
+  limitCPU: 1
+  limitMemory: 1G

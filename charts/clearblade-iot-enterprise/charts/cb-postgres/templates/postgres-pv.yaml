@@ -31,6 +31,10 @@ spec:
   {{- else if eq $.Values.global.cloud "aws" }}
     driver: ebs.csi.aws.com
     volumeHandle: {{ $.Values.volumeHandle }}
+  {{- else if eq $.Values.global.cloud "doks" }}
+    driver: dobs.csi.digitalocean.com
+    volumeHandle: {{ $.Values.volumeHandle }}
+    fsType: ext4
   {{- end }}
 ---
 {{- end }}

@@ -6,19 +6,24 @@ metadata:
   namespace: {{ default "clearblade" .root.Values.global.namespace }}
   labels:
     slot: {{ .slot }}
-  {{- if and .reverse_proxy_enabled (eq .root.Values.global.cloud "aws") }}
+  {{- if .reverse_proxy_enabled }}
+  {{- if eq .root.Values.global.cloud "aws" }}
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: external
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-subnets: {{ default "us-east-2a" .root.Values.global.subnet }}
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .primaryIP }}
+  {{- else if eq .root.Values.global.cloud "doks" }}
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: {{ .name }}
+  {{- end }}
   {{- end }}
 
 spec:
   {{- if .reverse_proxy_enabled }}
   type: LoadBalancer
-  {{- if ne .root.Values.global.cloud "aws" }}
+  {{- if and (ne .root.Values.global.cloud "aws") (ne .root.Values.global.cloud "doks") }}
   loadBalancerIP: {{ .primaryIP }}
   {{- end }}
   externalTrafficPolicy: Local

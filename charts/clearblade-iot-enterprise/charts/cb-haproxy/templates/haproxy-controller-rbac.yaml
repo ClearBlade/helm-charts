@@ -1,0 +1,36 @@
+{{- if eq .Values.global.secretManager "k8s" }}
+{{/* Namespaced RBAC for the k8s-native SecretStorer (build/kube_controller/secrets/k8s.go
+     in clearblade-ops) -- used on clouds with no managed secrets manager
+     (e.g. DOKS, which has neither a GSM nor ASM equivalent). Plain
+     get/create/update on Secrets in this namespace only, no cluster-wide
+     access and no cloud IAM federation needed. */}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cb-haproxy-controller
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cb-haproxy-controller
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cb-haproxy-controller
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: cb-haproxy-controller
+    namespace: {{ default "clearblade" .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: cb-haproxy-controller
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

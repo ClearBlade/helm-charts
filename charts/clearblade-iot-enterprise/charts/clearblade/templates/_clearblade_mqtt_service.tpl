@@ -8,7 +8,7 @@ metadata:
     app: clearblade
     slot: {{ .slot }}
 {{- include "clearblade.labels" .root | nindent 4 }}
-  {{- if or .root.Values.mqttLoadBalancer.annotations (eq .root.Values.global.cloud "aws") }}
+  {{- if or .root.Values.mqttLoadBalancer.annotations (eq .root.Values.global.cloud "aws") (eq .root.Values.global.cloud "doks") }}
   annotations:
     {{- if eq .root.Values.global.cloud "aws" }}
     service.beta.kubernetes.io/aws-load-balancer-type: external
@@ -18,6 +18,8 @@ metadata:
     {{- if .root.Values.mqttLoadBalancer.mqttIP }}
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .root.Values.mqttLoadBalancer.mqttIP }}
     {{- end }}
+    {{- else if eq .root.Values.global.cloud "doks" }}
+    service.beta.kubernetes.io/do-loadbalancer-name: clearblade-mqtt-service
     {{- end }}
     {{- with .root.Values.mqttLoadBalancer.annotations }}
     {{- toYaml . | nindent 4 }}
@@ -25,7 +27,7 @@ metadata:
   {{- end }}
 spec:
   type: LoadBalancer
-  {{- if and .root.Values.mqttLoadBalancer.mqttIP (ne .root.Values.global.cloud "aws") }}
+  {{- if and .root.Values.mqttLoadBalancer.mqttIP (ne .root.Values.global.cloud "aws") (ne .root.Values.global.cloud "doks") }}
   loadBalancerIP: {{ .root.Values.mqttLoadBalancer.mqttIP }}
   {{- end }}
   externalTrafficPolicy: Local

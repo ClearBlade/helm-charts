@@ -25,9 +25,15 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       {{- end }}
-      {{- if eq .Values.global.cloud "aws"}}
+      {{- if eq .Values.global.cloud "aws" }}
       nodeSelector:
         topology.kubernetes.io/zone: {{ .Values.volumeAZ }}
+      {{- else if eq .Values.global.cloud "doks" }}
+      {{/* DO regions (e.g. nyc3) don't subdivide into zones the way AWS AZs
+           do -- DOKS nodes never carry a topology.kubernetes.io/zone label,
+           only topology.kubernetes.io/region, so pin on region instead. */}}
+      nodeSelector:
+        topology.kubernetes.io/region: {{ .Values.volumeAZ }}
       {{- end }}
       {{- if eq .Values.global.secretManager "gsm"}}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}

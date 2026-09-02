@@ -97,3 +97,7 @@ ClearBlade: Set MALLOC_CONF environment variable
 ## [4.0.2] - 2026-08-21
 
 Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.
+
+## [4.1.0] - 2026-08-26
+
+DigitalOcean Support: Added required functionality to support DOKS deployments (`global.cloud: doks`), including DO Volumes (`dobs.csi.digitalocean.com`) for all persistent volumes, region-based pinning for Postgres (DOKS nodes carry no zone-level topology label), and DigitalOcean Load Balancer annotations. Pairs with the new `global.secretManager: k8s` mode (plain in-cluster Secrets via a namespaced RBAC role, see `cb-haproxy/templates/haproxy-controller-rbac.yaml`), which `doks-default-values.yaml` uses to support automatic Let's Encrypt certificate renewal without a cloud secrets manager. See `doks-default-values.yaml` and the README's DigitalOcean section.

@@ -10,6 +10,9 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-subnets: {{ default "us-east-2a" .Values.global.subnet }}
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .Values.primaryIP }}
+  {{- else if eq .Values.global.cloud "doks" }}
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: {{ default "clearblade" .Values.global.namespace }}-cb-haproxy
   {{- end }}
 spec:
   type: LoadBalancer
@@ -134,10 +137,13 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-subnets: {{ default "us-east-2a" .Values.global.subnet }}
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .Values.mqttIP }}
+  {{- else if eq .Values.global.cloud "doks" }}
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: {{ default "clearblade" .Values.global.namespace }}-cb-haproxy-mqtt
   {{- end }}
 spec:
   type: LoadBalancer
-  {{- if ne .Values.global.cloud "aws" }}
+  {{- if and (ne .Values.global.cloud "aws") (ne .Values.global.cloud "doks") }}
   loadBalancerIP: {{.Values.mqttIP}}
   {{- end }}
   externalTrafficPolicy: Local

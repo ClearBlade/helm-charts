@@ -50,7 +50,7 @@ spec:
           emptyDir: {}
         {{- end }}
         - name: haproxy-cert-volume
-          {{ if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm")}}
+          {{ if or (eq .Values.global.secretManager "gsm") (eq .Values.global.secretManager "asm") (eq .Values.global.secretManager "k8s")}}
           emptyDir: {}
           {{- else }}
           secret:
@@ -66,9 +66,25 @@ spec:
       {{- if and (eq .Values.global.secretManager "asm") .Values.global.awsHelmRoleArn }}
       serviceAccountName: clearblade-asm-read
       {{- end}}
-      {{- if .Values.global.imagePullerSecret }}
+      {{- if eq .Values.global.secretManager "k8s" }}
+      {{/* No cloud IAM federation needed -- see haproxy-controller-rbac.yaml,
+           a plain namespaced Role/RoleBinding granting get/create/update on
+           Secrets, for clouds with no managed secrets manager (e.g. DOKS). */}}
+      serviceAccountName: cb-haproxy-controller
+      {{- end}}
+      {{- if or .Values.global.imagePullerSecret .Values.global.doRegistryPullSecret }}
       imagePullSecrets:
+        {{- if .Values.global.imagePullerSecret }}
         - name: gcr-json-key
+        {{- end }}
+        {{- if .Values.global.doRegistryPullSecret }}
+        {{/* DO's registry_integration auto-provisions a dockerconfigjson
+             Secret named after the registry itself, synced into every
+             namespace -- needed here because controllerRegistry can point
+             cb_controller at a DOCR registry instead of the shared GCR
+             project everything else in this pod still pulls from. */}}
+        - name: {{ .Values.global.doRegistryPullSecret }}
+        {{- end }}
       {{- end }}
       tolerations:
       - key: node.kubernetes.io/not-ready
@@ -147,6 +163,30 @@ spec:
               mountPath: /etc/mtls/
         {{- end}}
         {{- end }}
+        {{- if eq .Values.global.secretManager "k8s" }}
+        - name: pull-certificates
+          {{/* Unlike the gsm/asm blocks above (pinned to the old 0.0.3 tag),
+               this uses controllerVersion -- SECRET_MANAGER=k8s support
+               doesn't exist in 0.0.3. controllerRegistry (falling back to
+               the same default as every other image) lets this specific
+               image be hosted somewhere other than the shared GCR project,
+               e.g. a cloud-native registry when there's no GCR pull path
+               already established (unlike gsm/asm, which always run
+               alongside GCP/AWS anyway). */}}
+          image: "{{ default (default "gcr.io/api-project-320446546234" .Values.global.registry) .Values.controllerRegistry }}/cb_controller:{{ .Values.controllerVersion }}"
+          env:
+            - name: CERT_DIR
+              value: etc/haproxy-ssl
+            - name: SECRET_MANAGER
+              value: k8s
+            - name: NAMESPACE
+              value: {{ default "clearblade" .Values.global.namespace }}
+            - name: PULL_ONLY
+              value: "true"
+          volumeMounts:
+            - name: haproxy-cert-volume
+              mountPath: /etc/haproxy-ssl/
+        {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
@@ -193,7 +233,8 @@ spec:
             {{- end}}
         {{- if .Values.certRenewal }}
         - name: haproxy-controller
-          image: "{{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_controller:{{ .Values.controllerVersion }}"
+          {{/* controllerRegistry: see the pull-certificates k8s branch above. */}}
+          image: "{{ default (default "gcr.io/api-project-320446546234" .Values.global.registry) .Values.controllerRegistry }}/cb_controller:{{ .Values.controllerVersion }}"
           env:
             - name: CERT_DIR
               value: etc/haproxy-ssl
@@ -206,6 +247,11 @@ spec:
               value: asm
             - name: AWS_REGION
               value: {{ default "us-east-1" .Values.global.awsRegion }}
+            - name: NAMESPACE
+              value: {{ default "clearblade" .Values.global.namespace }}
+            {{- else if eq .Values.global.secretManager "k8s" }}
+            - name: SECRET_MANAGER
+              value: k8s
             - name: NAMESPACE
               value: {{ default "clearblade" .Values.global.namespace }}
             {{- else }}

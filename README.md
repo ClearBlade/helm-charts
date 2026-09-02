@@ -3,7 +3,7 @@ Repository for helm charts to deploy the ClearBlade IoT Enterprise platform and 
 
 # ClearBlade IoT Enterprise
 
-The `clearblade-iot-enterprise` Helm chart enables you install an instance of the platform in your own infrastructure. The Helm charts support installing in your own Kubernetes environment, within Google Cloud, or within AWS.
+The `clearblade-iot-enterprise` Helm chart enables you install an instance of the platform in your own infrastructure. The Helm charts support installing in your own Kubernetes environment, within Google Cloud, within AWS, or within DigitalOcean.
 
 ## Kubernetes
 
@@ -173,6 +173,60 @@ Automatic Let's Encrypt certificate renewal (`cb-haproxy.certRenewal`) works on 
 ### Installation
 
 After connecting to your EKS cluster with `aws eks update-kubeconfig`, install with:
+
+```
+helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-{version}/clearblade-iot-enterprise-{version}.tgz -f ./my-values.yaml
+```
+
+## DigitalOcean
+
+When installing ClearBlade IoT Enterprise in DigitalOcean, the following services are leveraged:
+
+- DigitalOcean Kubernetes (DOKS)
+- DigitalOcean Volumes (block storage)
+- DigitalOcean Load Balancers
+- DigitalOcean Container Registry (optional, for mirroring images)
+
+Use the `doks-default-values.yaml` file in this repo as the starting point for your values.
+
+DigitalOcean has no equivalent of AWS Secrets Manager or Google Secret Manager integrated into this chart. Set `global.secretManager: k8s`, which stores/reads secrets as plain Kubernetes Secrets in-namespace via a dedicated `cb-haproxy-controller` ServiceAccount and Role (see `cb-haproxy/templates/haproxy-controller-rbac.yaml`) instead of federating with a cloud IAM provider. Initial secret material (the TLS certificate, mekfile, filehosting HMAC secret, and postgres password) is still supplied directly as values on first install. With `secretManager: k8s`, automatic Let's Encrypt certificate renewal (`cb-haproxy.certRenewal`) is supported — the renewal controller writes renewed certificates back to the in-cluster Secret directly, no cloud credentials required. This requires a `cb_controller` image with `SECRET_MANAGER=k8s` support (0.0.4+); set `cb-haproxy.controllerVersion` accordingly.
+
+### Required Resources
+
+#### Kubernetes Cluster
+
+A DOKS cluster is required, with the DO Block Storage CSI driver enabled (installed by default on DOKS) and the DigitalOcean Cloud Controller Manager active (also default on DOKS) so the chart can provision Load Balancers.
+
+#### IP Addresses
+
+The chart creates a standard DigitalOcean Load Balancer via `type: LoadBalancer`; DigitalOcean does not support pinning a Service to a pre-existing reserved IP through the Service manifest (unlike AWS's EIP-allocation annotations or GCP's `loadBalancerIP`). If you need a stable public IP, attach a [Reserved IP](https://docs.digitalocean.com/products/networking/reserved-ips/) to the created Load Balancer via the DO console, API, or `doctl` after the first deploy. Optionally create a second Load Balancer to enable MQTT connections over port 443.
+
+#### Volumes
+
+Pre-created DigitalOcean Volumes are required for persisting data (100 GB recommended for Postgres). One volume each for:
+
+| Volume | Value for the volume ID |
+| ------ | ----------------------- |
+| Postgres | `cb-postgres.volumeHandle` |
+| File hosting | `cb-file-hosting.volumeHandle` |
+| IoT Core sidecar (if enabled) | `cb-iotcore.volumeHandle` |
+| Intelligent Assets sidecar (if enabled) | `cb-ia.volumeHandle` |
+
+DigitalOcean Volumes are region-scoped. Set `cb-postgres.volumeAZ` to the region of the Postgres volume (e.g. `nyc1`) so the pod is scheduled where the volume can attach — DOKS nodes carry no zone-level topology label, so this pins via `topology.kubernetes.io/region` rather than `/zone`. Create the other volumes in a region where their pods can run.
+
+DigitalOcean's built-in Volume Snapshots are recommended for backup purposes.
+
+#### Secrets
+
+Rather than the Secrets Manager pattern used in the Google Cloud and AWS sections above, supply the same secret material directly as Helm values in `doks-default-values.yaml`: `global.tlsCertificate`, `global.mekfile`, `global.filehosting_hmac_secret`, and `global.postgresPassword`.
+
+#### Image Registry (optional)
+
+By default all ClearBlade images are pulled from ClearBlade's GCR using the `global.imagePullerSecret` provided by ClearBlade. To pull from a DigitalOcean Container Registry mirror instead, copy the ClearBlade images into your registry keeping the image names and tags, and set `global.registry` to your registry prefix. Third-party images (haproxy, timescaledb, redis, and others) are referenced by their public names and can be overridden per subchart if needed.
+
+### Installation
+
+After connecting to your DOKS cluster with `doctl kubernetes cluster kubeconfig save`, install with:
 
 ```
 helm install clearblade-iot-enterprise https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-{version}/clearblade-iot-enterprise-{version}.tgz -f ./my-values.yaml
