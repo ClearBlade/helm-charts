@@ -6,6 +6,13 @@ checkReadiness: true
 logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
+# Local Google Pub/Sub emulator sidecar (testing only - no persistence, not for production)
+pubSubEmulator: false
+pubSubEmulatorImage: quay.io/thekevjames/gcloud-pubsub-emulator:latest
+pubSubEmulatorProjectID: ""
+pubSubEmulatorRegistry: ""
+pubSubEmulatorTopic: ""
+pubSubEmulatorNodePort: 30001
 goMadvDontNeed: true
 useMallocConf: true
 greenUseMallocConf: true

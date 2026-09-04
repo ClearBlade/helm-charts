@@ -222,7 +222,22 @@ spec:
             - name: mtls-cert-volume
               mountPath: /etc/clearblade/ssl/
             {{- end}}   
+      {{- if .root.Values.pubSubEmulator }}
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "2000 65001"
+      {{- end }}
       containers:
+        {{- if .root.Values.pubSubEmulator }}
+        - name: pubsub-emulator
+          image: {{ .root.Values.pubSubEmulatorImage }}
+          env:
+            - name: PUBSUB_PROJECT1
+              value: {{ .root.Values.pubSubEmulatorProjectID }},{{ .root.Values.pubSubEmulatorRegistry }}:{{ .root.Values.pubSubEmulatorTopic }}
+            - name: PUBSUB_EMULATOR_HOST
+              value: 0.0.0.0:8681
+        {{- end }}
         {{- if .root.Values.global.gcpCloudSQLConnectionName }}
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
@@ -339,6 +354,10 @@ spec:
           {{- if .useMallocConf }}
             - name: MALLOC_CONF
               value: narenas:{{ $narenas }},metadata_thp:auto,background_thread:true,abort_conf:true
+          {{- end }}
+          {{- if .root.Values.pubSubEmulator }}
+            - name: PUBSUB_EMULATOR_HOST
+              value: 0.0.0.0:8681
           {{- end }}
           volumeMounts:
             - name: config-volume

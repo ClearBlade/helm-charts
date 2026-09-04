@@ -110,3 +110,22 @@ spec:
 {{- end}}
 {{- end}}
 {{- end}}
+{{- if .Values.pubSubEmulator }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pubsub-service
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+  labels:
+    app: clearblade
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8008
+      targetPort: 8681
+      nodePort: {{ .Values.pubSubEmulatorNodePort }}
+  selector:
+    app: clearblade
+{{- end }}
