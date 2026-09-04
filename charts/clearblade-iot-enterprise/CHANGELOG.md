@@ -97,3 +97,9 @@ ClearBlade: Set MALLOC_CONF environment variable
 ## [4.0.2] - 2026-08-21
 
 Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.
+
+## [4.0.4] - 2026-09-04
+
+Global Defaults: Added a chart-level `values.yaml` defaulting `global.secretManager` to `gsm` and `global.opsConsoleEnabled` to `false`. Templates that compare `global.secretManager` no longer fail when the value is omitted.
+
+Add-on Versions: `cb-iotcore` and `cb-ops-console` fail with a named error when the subchart is enabled without `version` set, instead of rendering an invalid image reference.
