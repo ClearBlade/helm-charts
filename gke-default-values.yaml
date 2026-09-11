@@ -265,12 +265,10 @@ clearblade:
   requestMemory: 1G
   limitCPU: 1
   limitMemory: 1G
-  # Optional. Local Google Pub/Sub emulator sidecar for the clearblade pods (testing only).
-  pubSubEmulator: false
-  # Required when pubSubEmulator is true.
-  # pubSubEmulatorProjectID:
-  # pubSubEmulatorRegistry:
-  # pubSubEmulatorTopic:
+  # Optional. Extra environment variables for the clearblade container.
+  # extraEnv:
+  #   - name: PUBSUB_EMULATOR_HOST
+  #     value: "pubsub-emulator.pubsub.svc.cluster.local:8681"
   # Place any additional clearblade configs here. REQUIRES ClearBlade 2025.2.0 or newer!
   # clearbladeConfig: |
     

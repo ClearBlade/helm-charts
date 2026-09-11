@@ -6,13 +6,11 @@ checkReadiness: true
 logLevel: debug
 storeCodeLogs: true
 storeMessageHistory: true
-# Local Google Pub/Sub emulator sidecar (testing only - no persistence, not for production)
-pubSubEmulator: false
-pubSubEmulatorImage: quay.io/thekevjames/gcloud-pubsub-emulator:latest
-pubSubEmulatorProjectID: ""
-pubSubEmulatorRegistry: ""
-pubSubEmulatorTopic: ""
-pubSubEmulatorNodePort: 30001
+# Extra environment variables set on the clearblade container. Example:
+#   extraEnv:
+#     - name: PUBSUB_EMULATOR_HOST
+#       value: "pubsub-emulator.pubsub.svc.cluster.local:8681"
+extraEnv: []
 goMadvDontNeed: true
 useMallocConf: true
 greenUseMallocConf: true

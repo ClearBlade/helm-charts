@@ -1,0 +1,5 @@
+apiVersion: v2
+name: pubsub-emulator
+description: Google Pub/Sub emulator for non-production ClearBlade environments
+type: application
+version: 0.1.0

@@ -1,0 +1,32 @@
+image: quay.io/thekevjames/gcloud-pubsub-emulator:latest
+imagePullPolicy: IfNotPresent
+replicas: 1
+port: 8681
+
+# Project the emulator hosts. Any project ID works - the emulator does not
+# validate it against Google.
+projectID: ""
+
+# Topics (and their subscriptions) created when the emulator starts. For IoT
+# Core connectors the topic name is typically the registry name.
+#   topics:
+#     - name: my-registry
+#       subscription: my-registry-sub
+topics: []
+
+service:
+  # ClusterIP is enough for in-cluster clients. Use NodePort only if you need
+  # to reach the emulator from outside the cluster (e.g. a local gcloud CLI).
+  type: ClusterIP
+  # nodePort: 30001
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
