@@ -9,7 +9,7 @@ storeMessageHistory: true
 # Extra environment variables set on the clearblade container. Example:
 #   extraEnv:
 #     - name: PUBSUB_EMULATOR_HOST
-#       value: "pubsub-emulator.pubsub.svc.cluster.local:8681"
+#       value: "cb-pubsub-emulator-service.pubsub.svc.cluster.local:8681"
 extraEnv: []
 goMadvDontNeed: true
 useMallocConf: true
