@@ -142,7 +142,7 @@ spec:
           {{- if .Values.imageURL }}
           image: {{- .Values.imageURL }}
           {{- else }}
-          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/iotcore:{{ .Values.version }}
+          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/iotcore:{{ required "cb-iotcore.version is required when the cb-iotcore subchart is enabled (global.iotCoreEnabled)" .Values.version }}
           {{- end }}
           command: ["/bin/sh"]
           args:
