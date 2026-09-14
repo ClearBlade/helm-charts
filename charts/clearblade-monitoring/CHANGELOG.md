@@ -41,4 +41,4 @@ Prom retention config bug fix
 
 AWS Support: When `global.cloud` is `aws`, Prometheus mounts an EBS volume by `prometheusVolumeHandle`, HAProxy pulls certificates from AWS Secrets Manager (`global.secretManager: asm`) through a service account annotated with `global.awsHelmRoleArn`, and the HAProxy service is provisioned as an internal NLB on `global.subnet`.
 
-GCP Service Account: The `clearblade-gsm-read` service account and its GKE annotation are rendered only when `global.cloud` is not `aws`, so `global.gcpProject` and `global.gcpGSMServiceAccount` are no longer required on AWS.
+GCP Service Account: The `clearblade-gsm-read` service account and its GKE annotation are rendered only when `global.cloud` is not `aws`, so `global.gcpProject` and `global.gcpGSMServiceAccount` are no longer required on AWS. On AWS, Grafana runs as `clearblade-asm-read` when `global.awsHelmRoleArn` is set, otherwise as the namespace default service account.

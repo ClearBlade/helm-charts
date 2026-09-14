@@ -24,7 +24,13 @@ spec:
       labels:
         app: grafana-server
     spec:
+      {{- if eq .Values.global.cloud "aws" }}
+      {{- if .Values.global.awsHelmRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
+      {{- else }}
       serviceAccountName: clearblade-gsm-read
+      {{- end }}
       containers:
         - name: grafana
           image: grafana/grafana:10.3.3
