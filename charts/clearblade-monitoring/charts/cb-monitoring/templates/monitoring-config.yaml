@@ -1,4 +1,4 @@
-{{- if eq (default .Values.global.gmpEnabled false) false}}
+{{- if eq (default false .Values.global.gmpEnabled) false}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
