@@ -98,7 +98,11 @@ ClearBlade: Set MALLOC_CONF environment variable
 
 Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.
 
-## [4.0.4] - 2026-09-04
+## [4.0.4] - 2026-09-08
+
+PodDisruptionBudgets: Added `global.podDisruptionBudgetsEnabled`. Default `true` renders the budgets exactly as before. Set it to `false` and the chart renders no PodDisruptionBudget, so nothing in the release blocks a voluntary eviction.
+
+## [4.0.5] - 2026-09-14
 
 Global Defaults: Added a chart-level `values.yaml` defaulting `global.secretManager` to `gsm` and `global.opsConsoleEnabled` to `false`. Templates that compare `global.secretManager` no longer fail when the value is omitted.
 
