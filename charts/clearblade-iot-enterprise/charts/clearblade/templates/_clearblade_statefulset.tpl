@@ -340,6 +340,10 @@ spec:
             - name: MALLOC_CONF
               value: narenas:{{ $narenas }},metadata_thp:auto,background_thread:true,abort_conf:true
           {{- end }}
+          {{- range .root.Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/clearblade/conf/clearblade/

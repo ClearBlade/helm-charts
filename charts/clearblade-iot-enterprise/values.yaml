@@ -1,0 +1,6 @@
+# Defaults for values read by every subchart. A deployment's values file overrides any of these.
+global:
+  # Secret manager holding platform credentials and certificates: "gsm" (Google Secret Manager) or "asm" (AWS Secrets Manager).
+  secretManager: gsm
+  # Optional Ops Console sidecar. Enable with true; the cb-ops-console block must then set version.
+  opsConsoleEnabled: false

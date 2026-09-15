@@ -99,6 +99,7 @@ roleRef:
   kind: Role
   name: restrict-discovery
   apiGroup: rbac.authorization.k8s.io
+{{- if ne .Values.global.podDisruptionBudgetsEnabled false }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -185,4 +186,5 @@ spec:
   selector:
     matchLabels:
       app: cb-pgbouncer
+{{- end }}
 {{- end }}

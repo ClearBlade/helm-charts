@@ -79,6 +79,10 @@ global:
   # Optional. Set to true if you wish to enable mTLS support on the HAProxy pods. Leave blank or comment out if not using.
   # mtlsHAProxy:
 
+  # Optional. Set to false to skip rendering the chart's PodDisruptionBudgets, so no budget blocks a voluntary
+  # eviction of any pod in the release. Default is true (budgets are rendered).
+  # podDisruptionBudgetsEnabled: true
+
   # Optional. PgBouncer connection pooler in front of Postgres.
   # pgBouncerEnabled: false
 
