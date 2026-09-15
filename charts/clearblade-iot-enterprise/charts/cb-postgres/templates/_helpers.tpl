@@ -75,7 +75,7 @@ chart-level sharedBuffers value.
 */}}
 {{- define "cb-postgres.sharedBuffers" -}}
 {{- if .Values.global.postgresMemoryLimitGB -}}
-{{- mul (.Values.global.postgresMemoryLimitGB | int) 256 -}}MB
+{{- mulf .Values.global.postgresMemoryLimitGB 256 | int -}}MB
 {{- else -}}
 {{- .Values.sharedBuffers | default "1GB" -}}
 {{- end -}}
@@ -87,7 +87,7 @@ the chart-level effectiveCacheSize value.
 */}}
 {{- define "cb-postgres.effectiveCacheSize" -}}
 {{- if .Values.global.postgresMemoryLimitGB -}}
-{{- mul (.Values.global.postgresMemoryLimitGB | int) 768 -}}MB
+{{- mulf .Values.global.postgresMemoryLimitGB 768 | int -}}MB
 {{- else -}}
 {{- .Values.effectiveCacheSize | default "3GB" -}}
 {{- end -}}
