@@ -1,4 +1,4 @@
-{{- if eq (default .Values.global.gmpEnabled false) false}}
+{{- if eq (default false .Values.global.gmpEnabled) false}}
 # kube-state-metrics deployed locally in the monitoring namespace.
 # No PodMonitoring CR or managed-prom labels — invisible to GKE managed collection.
 apiVersion: apps/v1

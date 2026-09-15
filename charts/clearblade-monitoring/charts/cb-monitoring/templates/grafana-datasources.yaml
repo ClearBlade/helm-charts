@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: datasources
   namespace: {{ default "monitoring" .Values.global.namespace }}
-{{- if eq (default .Values.global.gmpEnabled false) true }}
+{{- if eq (default false .Values.global.gmpEnabled) true }}
 data:
   datasources.yaml: |
     apiVersion: 1
