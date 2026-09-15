@@ -4,6 +4,10 @@ set -e
 echo "Initializing Database for ClearBlade Platform"
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SET log_statement = 'none';
+    SET log_min_duration_statement = -1;
+    SET log_min_error_statement = panic;
+    SET pg_stat_statements.track_utility = off;
     CREATE USER $PRIMARY_USER;
     ALTER USER $PRIMARY_USER WITH SUPERUSER;
     ALTER USER $PRIMARY_USER WITH PASSWORD '$PRIMARY_PASSWORD';
