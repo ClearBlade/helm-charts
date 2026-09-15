@@ -107,3 +107,7 @@ PodDisruptionBudgets: Added `global.podDisruptionBudgetsEnabled`. Default `true`
 Global Defaults: Added a chart-level `values.yaml` defaulting `global.secretManager` to `gsm` and `global.opsConsoleEnabled` to `false`. Templates that compare `global.secretManager` no longer fail when the value is omitted.
 
 Add-on Versions: `cb-iotcore` and `cb-ops-console` fail with a named error when the subchart is enabled without `version` set, instead of rendering an invalid image reference.
+
+## [4.1.3] - 2026-09-15
+
+Postgres: Renamed `global.postgresMemoryLimitMB` to `global.postgresMemoryLimitGB`. Values files using the old key must be updated to specify the memory limit in gigabytes instead of megabytes.
