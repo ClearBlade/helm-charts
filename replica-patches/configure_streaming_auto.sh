@@ -106,6 +106,13 @@ psql_primary() {
     psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" -tAc "$1"
 }
 
+SESSION_LOGGING_OFF=(
+  "SET log_statement = 'none'"
+  "SET log_min_duration_statement = -1"
+  "SET log_min_error_statement = panic"
+  "SET pg_stat_statements.track_utility = off"
+)
+
 psql_primary_exec() {
   # Runs each argument as its OWN separate query (one -c flag per statement).
   # Needed for ALTER SYSTEM/CREATE DATABASE-class statements: psql -c with
@@ -118,7 +125,7 @@ psql_primary_exec() {
     args+=(-c "$stmt")
   done
   kubectl --context "$KCTX" exec -n "$NAMESPACE" "$PG_POD" -c cb-postgres -- \
-    psql -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" "${args[@]}"
+    psql -v ON_ERROR_STOP=1 -U "$PG_SUPERUSER" -d "$PG_SUPERUSER_DB" "${args[@]}"
 }
 
 for c in gcloud kubectl jq openssl aws python3; do require_cmd "$c"; done
@@ -286,7 +293,7 @@ if [[ "$ROLE_EXISTS" == "1" ]]; then
   warn "Role 'replicator' already exists."
   if confirm "Reset its password?"; then
     REPL_PASSWORD=$(openssl rand -base64 18)
-    psql_primary "ALTER ROLE replicator WITH PASSWORD '${REPL_PASSWORD}';" >/dev/null
+    psql_primary_exec "${SESSION_LOGGING_OFF[@]}" "ALTER ROLE replicator WITH PASSWORD '${REPL_PASSWORD}';" >/dev/null
     echo -n "$REPL_PASSWORD" > "$REPL_PASSWORD_FILE"
     chmod 600 "$REPL_PASSWORD_FILE"
     info "Password reset and saved to $REPL_PASSWORD_FILE"
@@ -296,7 +303,7 @@ if [[ "$ROLE_EXISTS" == "1" ]]; then
 else
   confirm "Create replication role 'replicator' on the primary?" || die "Aborted before creating replicator role."
   REPL_PASSWORD=$(openssl rand -base64 18)
-  psql_primary "CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD '${REPL_PASSWORD}';" >/dev/null
+  psql_primary_exec "${SESSION_LOGGING_OFF[@]}" "CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD '${REPL_PASSWORD}';" >/dev/null
   echo -n "$REPL_PASSWORD" > "$REPL_PASSWORD_FILE"
   chmod 600 "$REPL_PASSWORD_FILE"
   info "Role created. Password saved to $REPL_PASSWORD_FILE (chmod 600) - you'll need it on the replica for pg_basebackup."
