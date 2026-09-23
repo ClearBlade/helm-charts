@@ -3,9 +3,19 @@ kind: Service
 metadata:
   name: cb-haproxy-service
   namespace: {{ default "clearblade" .Values.global.namespace }}
+  {{- if eq .Values.global.cloud "aws" }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-subnets: {{ default "us-east-2a" .Values.global.subnet }}
+    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .Values.primaryIP }}
+  {{- end }}
 spec:
   type: LoadBalancer
+  {{- if ne .Values.global.cloud "aws" }}
   loadBalancerIP: {{.Values.primaryIP}}
+  {{- end }}
   ports:
     - name: http
       targetPort: 8080

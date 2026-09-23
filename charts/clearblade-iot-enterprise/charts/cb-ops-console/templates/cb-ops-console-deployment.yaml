@@ -47,7 +47,7 @@ spec:
           {{- if .Values.imageURL }}
           image: {{- .Values.imageURL }}
           {{- else }}
-          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/ops-console:{{ .Values.version }}
+          image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/ops-console:{{ required "cb-ops-console.version is required when the cb-ops-console subchart is enabled (global.opsConsoleEnabled)" .Values.version }}
           {{- end }}
           command:  ["ops-console-sidecar"]
           args: ["-reg-key={{ .Values.global.enterpriseRegistrationKey }}", "-url=https://{{ .Values.global.enterpriseBaseURL }}", "-message-url={{ .Values.global.enterpriseBaseURL }}", "-message-port=8904", "-message-tls=true"]

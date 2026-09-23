@@ -150,7 +150,7 @@ spec:
               {{- if eq .root.Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
-              set -ex
+              set -e
               # Generate clearblade host from pod ordinal index.
               [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
@@ -343,6 +343,10 @@ spec:
           {{- if .useMallocConf }}
             - name: MALLOC_CONF
               value: narenas:{{ $narenas }},metadata_thp:auto,background_thread:true,abort_conf:true
+          {{- end }}
+          {{- range .root.Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
           {{- end }}
           volumeMounts:
             - name: config-volume

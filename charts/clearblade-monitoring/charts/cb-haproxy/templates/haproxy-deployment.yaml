@@ -45,8 +45,32 @@ spec:
         {{- end }}
         - name: haproxy-cert-volume
           emptyDir: {}
+      {{- if eq .Values.global.secretManager "asm" }}
+      {{- if .Values.global.awsHelmRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
+      {{- else }}
       serviceAccountName: {{ .Values.global.gcpGSMServiceAccount }}
+      {{- end }}
       initContainers:
+      {{- if eq .Values.global.secretManager "asm" }}
+      - name: pull-certificates
+        image: {{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/cb_controller:0.0.3
+        env:
+          - name: CERT_DIR
+            value: etc/haproxy-ssl
+          - name: SECRET_MANAGER
+            value: asm
+          - name: AWS_REGION
+            value: {{ default "us-east-1" .Values.global.awsRegion }}
+          - name: NAMESPACE
+            value: {{ default "clearblade" .Values.global.namespace }}
+          - name: PULL_ONLY
+            value: "true"
+        volumeMounts:
+          - name: haproxy-cert-volume
+            mountPath: /etc/haproxy-ssl/
+      {{- else }}
       - name: pull-certificates
         image: gcr.io/api-project-320446546234/cb_controller:0.0.3
         env:
@@ -61,6 +85,7 @@ spec:
         volumeMounts:
           - name: haproxy-cert-volume
             mountPath: /etc/haproxy-ssl/
+      {{- end }}
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}

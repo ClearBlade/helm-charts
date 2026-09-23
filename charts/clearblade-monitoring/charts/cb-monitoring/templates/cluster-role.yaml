@@ -29,7 +29,7 @@ roleRef:
   name: prometheus-{{ default "monitoring" .Values.global.namespace }}
 subjects:
 - kind: ServiceAccount
-  {{- if eq (default .Values.global.gmpEnabled false) false}}
+  {{- if eq (default false .Values.global.gmpEnabled) false}}
   name: default
   {{- else }}
   name: {{ .Values.global.gcpGSMServiceAccount }}

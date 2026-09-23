@@ -64,7 +64,7 @@ spec:
               {{- if eq .Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
-              set -ex
+              set -e
               {{- if eq .Values.global.secretManager "gsm" }}
               gcloud secrets versions access latest --secret={{ default "clearblade" .Values.global.namespace }}_filehosting-hmac-secret >> /etc/clearblade/filehosting_hmac_secret
               {{- else if eq .Values.global.secretManager "asm"}}

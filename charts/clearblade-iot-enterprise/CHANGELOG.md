@@ -98,7 +98,17 @@ ClearBlade: Set MALLOC_CONF environment variable
 
 Postgres: Add `global.postgresMemoryLimitMB` to automatically set sensible defaults for Postgres and Platform settings.
 
-## [4.1.0] - 2026-08-25
+## [4.0.4] - 2026-09-08
+
+PodDisruptionBudgets: Added `global.podDisruptionBudgetsEnabled`. Default `true` renders the budgets exactly as before. Set it to `false` and the chart renders no PodDisruptionBudget, so nothing in the release blocks a voluntary eviction.
+
+## [4.0.5] - 2026-09-14
+
+Global Defaults: Added a chart-level `values.yaml` defaulting `global.secretManager` to `gsm` and `global.opsConsoleEnabled` to `false`. Templates that compare `global.secretManager` no longer fail when the value is omitted.
+
+Add-on Versions: `cb-iotcore` and `cb-ops-console` fail with a named error when the subchart is enabled without `version` set, instead of rendering an invalid image reference.
+
+## [4.2.0] - 2026-09-23
 
 IoT Core SaaS Sidecar: New optional `cb-iotcore-saas` subchart, enabled with `global.iotCoreSaasEnabled`. It runs the `iotcore-saas` image, which serves the IoT Core UI and the operator admin UI and applies the admin system, each region's creator system and the registry template on every start. Configured from a JSON file built out of the values and, with `credentialsSource: asm|gsm`, the developer password pulled from the secret manager. Stateless, so no PVC.
 
