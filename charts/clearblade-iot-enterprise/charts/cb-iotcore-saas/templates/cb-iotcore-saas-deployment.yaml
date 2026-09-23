@@ -1,0 +1,158 @@
+{{- $source := .Values.credentialsSource | default "" -}}
+{{- $useGSM := eq $source "gsm" -}}
+{{- $useASM := eq $source "asm" -}}
+{{- $useValues := eq $source "values" -}}
+{{- $configDir := "/etc/clearblade/iot-core" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-iotcore-saas
+  namespace: {{ default "clearblade" .Values.global.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: cb-iotcore-saas
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cb-iotcore-saas
+        app.kubernetes.io/name: managed-prom
+    spec:
+      {{- if $useGSM }}
+      serviceAccountName: clearblade-gsm-read
+      {{- else if and $useASM .Values.global.awsHelmRoleArn }}
+      serviceAccountName: clearblade-asm-read
+      {{- end }}
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      {{- if or .Values.checkClearbladeReadiness $useGSM $useASM }}
+      initContainers:
+      {{- end }}
+      {{- if .Values.checkClearbladeReadiness }}
+      - name: check-clearblade-readiness
+        image: ellerbrock/alpine-bash-curl-ssl
+        command:
+        - bash
+        - "-c"
+        - |
+          set -x;
+          while [ $(curl -sw '%{http_code}' "https://{{ .Values.global.enterpriseBaseURL }}/api/about" -o /dev/null) -ne 200 ]; do
+            echo waiting for clearblade; sleep 5;
+          done;
+          # Give clearblade just a little more time to really start for real
+          sleep 10;
+      {{- end }}
+      {{- if or $useGSM $useASM }}
+      # Unlike the other sidecars this one cannot start without its credential: the
+      # config is a single file and the password is a required field in it. So a
+      # missing or malformed secret fails here, with the secret's name in the log,
+      # rather than as a validation error in a crash-looping sidecar.
+      - name: pull-iotcore-saas-credentials
+        {{- if $useGSM }}
+        image: google/cloud-sdk:slim
+        {{- else }}
+        image: amazon/aws-cli:latest
+        {{- end }}
+        command: ["/bin/bash"]
+        args:
+          - -c
+          - |
+            set -e
+            SECRET_NAME="{{ default "clearblade" .Values.global.namespace }}_{{ default "iotcore-saas-credentials" .Values.secretName }}"
+            echo "Fetching secret: $SECRET_NAME"
+            {{- if $useGSM }}
+            gcloud secrets versions access latest --secret="$SECRET_NAME" > /tmp/credentials.json
+            {{- else }}
+            aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --region {{ default "us-east-1" .Values.global.awsRegion }} --query SecretString --output text > /tmp/credentials.json
+            {{- end }}
+            python3 -c "
+            import json, sys
+            cfg = json.load(open('/etc/iotcore-saas-base/config-base.json'))
+            cfg.update(json.load(open('/tmp/credentials.json')))
+            if not cfg.get('devPassword'):
+                sys.exit('secret $SECRET_NAME has no devPassword; the sidecar cannot start without it')
+            json.dump(cfg, open('{{ $configDir }}/config.json', 'w'))
+            print('Wrote config for developer', cfg.get('devEmail'))
+            "
+        volumeMounts:
+          - name: cb-iotcore-saas-base
+            mountPath: /etc/iotcore-saas-base/
+          - name: cb-iotcore-saas-config
+            mountPath: {{ $configDir }}
+      {{- end }}
+      containers:
+        - name: cb-iotcore-saas
+          {{- if .Values.imageURL }}
+          image: {{ .Values.imageURL | quote }}
+          {{- else }}
+          image: "{{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/iotcore-saas:{{ required "cb-iotcore-saas.version is required" .Values.version }}"
+          {{- end }}
+          args: ["-config={{ $configDir }}/config.json"]
+          volumeMounts:
+          - name: cb-iotcore-saas-config
+            mountPath: {{ $configDir }}
+            readOnly: true
+          ports:
+            - containerPort: 8080
+          # The listener comes up before the startup updates run, so /healthz answers
+          # while /readyz stays red until the admin system, the creator systems and
+          # the template are all applied. Traffic is held back without the liveness
+          # probe killing a pod that is still working through them.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 60
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: {{ .Values.requestCPU }}
+              memory: {{ .Values.requestMemory }}
+            limits:
+              cpu: {{ .Values.limitCPU }}
+              memory: {{ .Values.limitMemory }}
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- else if .Values.global.nodeSelector }}
+      nodeSelector:
+        {{ .Values.global.nodeSelector }}
+      {{- end }}
+      volumes:
+        {{- if $useValues }}
+        - name: cb-iotcore-saas-config
+          secret:
+            secretName: cb-iotcore-saas-config
+        {{- else }}
+        - name: cb-iotcore-saas-config
+          emptyDir: {}
+        - name: cb-iotcore-saas-base
+          configMap:
+            name: cb-iotcore-saas-base
+        {{- end }}
