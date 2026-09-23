@@ -2,6 +2,53 @@ apiVersion: v1
 entries:
   clearblade-iot-enterprise:
   - apiVersion: v2
+    created: "2026-09-23T21:42:46.115043205Z"
+    dependencies:
+    - condition: cb-postgres.enabled
+      name: cb-postgres
+      repository: file://charts/cb-postgres
+      version: 4.2.0
+    - condition: global.haproxyEnabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 4.2.0
+    - name: clearblade
+      repository: file://charts/clearblade
+      version: 4.2.0
+    - name: cb-console
+      repository: file://charts/cb-console
+      version: 4.2.0
+    - name: cb-file-hosting
+      repository: file://charts/cb-file-hosting
+      version: 4.2.0
+    - condition: cb-redis.enabled
+      name: cb-redis
+      repository: file://charts/cb-redis
+      version: 4.2.0
+    - condition: global.iotCoreEnabled
+      name: cb-iotcore
+      repository: file://charts/cb-iotcore
+      version: 4.2.0
+    - condition: global.iaEnabled
+      name: cb-ia
+      repository: file://charts/cb-ia
+      version: 4.2.0
+    - condition: global.iotCoreSaasEnabled
+      name: cb-iotcore-saas
+      repository: file://charts/cb-iotcore-saas
+      version: 4.2.0
+    - condition: global.opsConsoleEnabled
+      name: cb-ops-console
+      repository: file://charts/cb-ops-console
+      version: 4.2.0
+    description: ClearBlade IoT Enterprise
+    digest: 37944335e648f40a611fa3848c7cf3723fc30fa4792dc0c36290293177e010ea
+    name: clearblade-iot-enterprise
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-4.2.0/clearblade-iot-enterprise-4.2.0.tgz
+    version: 4.2.0
+  - apiVersion: v2
     created: "2026-09-21T20:08:11.108037448Z"
     dependencies:
     - condition: cb-postgres.enabled
@@ -3831,4 +3878,4 @@ entries:
     urls:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.0/clearblade-monitoring-2.13.0.tgz
     version: 2.13.0
-generated: "2026-09-21T20:08:11.108260814Z"
+generated: "2026-09-23T21:42:46.115320894Z"
