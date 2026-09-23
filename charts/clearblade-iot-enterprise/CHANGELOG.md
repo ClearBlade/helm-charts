@@ -113,3 +113,7 @@ Add-on Versions: `cb-iotcore` and `cb-ops-console` fail with a named error when 
 IoT Core SaaS Sidecar: New optional `cb-iotcore-saas` subchart, enabled with `global.iotCoreSaasEnabled`. It runs the `iotcore-saas` image, which serves the IoT Core UI and the operator admin UI and applies the admin system, each region's creator system and the registry template on every start. Configured from a JSON file built out of the values and, with `credentialsSource: asm|gsm`, the developer password pulled from the secret manager. Stateless, so no PVC.
 
 It is mutually exclusive with the existing `cb-iotcore` subchart: both serve `/iot-core`. With haproxy, that prefix routes to whichever one is enabled. Without haproxy the platform is the reverse proxy, so `-iotcore-host` on the clearblade StatefulSet points at `cb-iotcore-saas-service` instead when `global.iotCoreSaasEnabled` is set — a MINOR bump, since it changes a critical container's args.
+
+## [4.2.1] - 2026-09-23
+
+IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in the chart-level `values.yaml`. Before, a values file that omitted it rendered `cb-iotcore-saas` anyway, because Helm treats an undefined dependency condition as enabled, and the render failed with `cb-iotcore-saas.version is required`.
