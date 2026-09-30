@@ -207,6 +207,27 @@ data:
          description: "The number of connections to redis is using 80% of the connection pool"
       {{- end }}
       {{- end }}
+{{- if .Values.certMonitor.enabled }}
+     - alert: {{ $.Values.global.customerName }} CertificateExpiringSoon
+       expr: cert_expiry_seconds < {{ .Values.certMonitor.alertThresholdSeconds }}
+       for: 5m
+       labels:
+         priority: {{ .Values.certMonitor.alertPriority }}
+         frequency: daily
+         severity: warning
+       annotations:
+         summary: "Certificate {{ "{{" }} $labels.name }} ({{ "{{" }} $labels.cipher }}) expires in {{ "{{" }} $value | humanizeDuration }}"
+         description: "Certificate at {{ "{{" }} $labels.url }} using cipher {{ "{{" }} $labels.cipher }} is expiring soon"
+     - alert: {{ $.Values.global.customerName }} CertCheckFailing
+       expr: cert_check_success == 0
+       for: 10m
+       labels:
+         priority: {{ .Values.certMonitor.alertPriority }}
+         severity: warning
+       annotations:
+         summary: "Cert check failing for {{ "{{" }} $labels.name }} ({{ "{{" }} $labels.url }})"
+         description: "The certificate check for {{ "{{" }} $labels.url }} with cipher {{ "{{" }} $labels.cipher }} has been failing for 10 minutes"
+{{- end }}
     {{- if $.Values.alerts.expensiveStuff }}
    - name: ExpensiveStuff
      rules:
