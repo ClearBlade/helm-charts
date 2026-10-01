@@ -118,12 +118,8 @@ It is mutually exclusive with the existing `cb-iotcore` subchart: both serve `/i
 
 IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in the chart-level `values.yaml`. Before, a values file that omitted it rendered `cb-iotcore-saas` anyway, because Helm treats an undefined dependency condition as enabled, and the render failed with `cb-iotcore-saas.version is required`.
 
-## [5.0.0] - 2026-09-24
+## [5.0.0] - 2026-10-01
 
-Requires a platform version with listener config support.
+Requires a version of the platform that supports listener configs.
 
-Listeners: `clearblade.toml` now includes a `[Listeners]` config generated from the existing port values, `blueTerminateTls`/`greenTerminateTls`, `global.mtlsClearBlade` and the root redirect URL. It matches what the platform's listeners migration generated from the flags the chart used to pass. No values were added.
-
-The config secret now has a `clearblade-green.toml` key as well, since the TLS listeners differ between slots. If `clearbladeConfig` defines its own `[Listeners]` tables, none are generated.
-
-MAJOR bump: the listener flags (`-addr`, `-messaging-addr`, `-websocket-messaging-addr`, `-message-auth-addr`, `-message-auth-websocket`, `-enable-mutual-tls-auth`, `-enable-reverse-proxy`, `-max-concurrent-connects-per-node`, the `-*-use-tls` flags and `-root-redirect-url`) are no longer passed, so older platform versions won't start the TLS, mTLS or reverse proxy listeners. The init container also copies a slot-specific config file. Once `[Listeners]` is set, the platform ignores the deprecated listener settings in `clearbladeConfig` (e.g. `MQTT.EnabledAuthMethods`, `BrokerAuthService`, `BrokerAuthSystem`, `BasicAuthDefaultSystem`, `MaxConcurrentConnectsPerNode`, `Security.MTLSMQTTALPN` and the TLS port settings). Move them into `[Listeners]` in `clearbladeConfig`.
+ClearBlade: The `clearblade.toml` file now generates a `[Listeners]` section unless custom listeners are provided in the `clearbladeConfig` section.
