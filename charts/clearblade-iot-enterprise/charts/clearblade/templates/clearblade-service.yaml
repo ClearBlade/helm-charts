@@ -26,12 +26,13 @@
 {{- end }}
 
 {{- if .Values.externalLoadBalancer.enabled }}
-{{ include "clearblade.service" (dict 
+{{ include "clearblade.service" (dict
   "name" "clearblade-external-service"
   "slot" $slot
   "reverse_proxy_enabled" true
   "reverseProxy" .Values.externalLoadBalancer.reverseProxy
   "primaryIP" .Values.externalLoadBalancer.primaryIP
+  "internalLB" .Values.externalLoadBalancer.internalLB
   "root" .
 ) }}
 {{- end }}

@@ -23,6 +23,10 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
+  {{- if and (eq .root.Values.global.cloud "gcp") .root.Values.mqttLoadBalancer.internalLB }}
+  annotations:
+    cloud.google.com/load-balancer-type: Internal
+  {{- end }}
 spec:
   type: LoadBalancer
   {{- if and .root.Values.mqttLoadBalancer.mqttIP (ne .root.Values.global.cloud "aws") }}
@@ -44,6 +48,18 @@ spec:
     - name: mqtt-secondary
       targetPort: 1884
       port: {{ .root.Values.mqttLoadBalancer.secondaryMqttPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .root.Values.mqttLoadBalancer.enableMqttInsecure }}
+    - name: mqtt-nontls
+      targetPort: 1883
+      port: {{ default 1883 .root.Values.mqttLoadBalancer.mqttInsecurePort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .root.Values.mqttLoadBalancer.enableMqttTls }}
+    - name: mqtt-tls
+      targetPort: 1884
+      port: {{ default 1884 .root.Values.mqttLoadBalancer.mqttTlsPort }}
       protocol: TCP
     {{- end }}
   selector:
