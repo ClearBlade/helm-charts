@@ -1,5 +1,5 @@
 {{/*
-Root redirect URL for the platform. Used by the -root-redirect-url flag and the HTTP listeners.
+Root redirect URL for the HTTP listeners. Keep in sync with -root-redirect-url in the statefulset.
 */}}
 {{- define "clearblade.rootRedirectUrl" -}}
 {{- if ne .Values.rootRedirectUrl "" -}}
