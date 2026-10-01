@@ -1,6 +1,4 @@
-{{/*
-Root redirect URL for the HTTP listeners.
-*/}}
+{{- /* Root redirect URL for the HTTP listeners */ -}}
 {{- define "clearblade.rootRedirectUrl" -}}
 {{- if ne .Values.rootRedirectUrl "" -}}
 {{- .Values.rootRedirectUrl -}}
