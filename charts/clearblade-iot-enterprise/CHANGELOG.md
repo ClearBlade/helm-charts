@@ -122,4 +122,4 @@ IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in th
 
 Requires a version of the platform that supports listener configs.
 
-ClearBlade: The `clearblade.toml` file now generates a `[Listeners]` section unless custom listeners are provided in the `clearbladeConfig` section.
+ClearBlade: The `clearblade.toml` file now generates a `[Listeners]` section unless custom listeners are provided in the `clearbladeConfig` value.
