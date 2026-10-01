@@ -6,13 +6,18 @@ metadata:
   namespace: {{ default "clearblade" .root.Values.global.namespace }}
   labels:
     slot: {{ .slot }}
-  {{- if and .reverse_proxy_enabled (eq .root.Values.global.cloud "aws") }}
+  {{- if or (and .reverse_proxy_enabled (eq .root.Values.global.cloud "aws")) (and (eq .root.Values.global.cloud "gcp") .internalLB) }}
   annotations:
+    {{- if and .reverse_proxy_enabled (eq .root.Values.global.cloud "aws") }}
     service.beta.kubernetes.io/aws-load-balancer-type: external
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-subnets: {{ default "us-east-2a" .root.Values.global.subnet }}
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ .primaryIP }}
+    {{- end }}
+    {{- if and (eq .root.Values.global.cloud "gcp") .internalLB }}
+    cloud.google.com/load-balancer-type: Internal
+    {{- end }}
   {{- end }}
 
 spec:
