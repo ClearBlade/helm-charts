@@ -1,0 +1,83 @@
+{{- if .Values.certMonitor.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-monitor-config
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: cert-monitor
+data:
+  targets.json: |
+    {
+      "port": {{ .Values.certMonitor.port }},
+      "checkInterval": {{ .Values.certMonitor.checkInterval }},
+      "targets": {{ .Values.certMonitor.targets | toJson }}
+    }
+  cert_monitor.py: |
+    import json
+    import shlex
+    import subprocess
+    import time
+    from datetime import datetime, timezone
+    from prometheus_client import start_http_server, Gauge
+
+    EXPIRY_SECONDS = Gauge(
+        'cert_expiry_seconds',
+        'Seconds until certificate expires',
+        ['url', 'cipher', 'name']
+    )
+    EXPIRY_TIMESTAMP = Gauge(
+        'cert_expiry_timestamp',
+        'Unix timestamp of certificate expiry',
+        ['url', 'cipher', 'name']
+    )
+    CHECK_SUCCESS = Gauge(
+        'cert_check_success',
+        'Whether last certificate check succeeded (1=success, 0=failure)',
+        ['url', 'cipher', 'name']
+    )
+
+    def check_cert(url, cipher, name):
+        """Use openssl to connect with a specific cipher and get cert expiry."""
+        if ':' in url:
+            host, port = url.rsplit(':', 1)
+        else:
+            host = url
+            port = '443'
+        try:
+            cmd = (
+                f"echo | openssl s_client -connect {shlex.quote(host)}:{shlex.quote(port)} "
+                f"-servername {shlex.quote(host)} -cipher {shlex.quote(cipher)} -tls1_2 2>/dev/null | "
+                f"openssl x509 -noout -enddate"
+            )
+            result = subprocess.run(
+                cmd, shell=True, capture_output=True, text=True, timeout=30
+            )
+            date_str = result.stdout.strip().replace('notAfter=', '')
+            expiry = datetime.strptime(
+                date_str, '%b %d %H:%M:%S %Y %Z'
+            ).replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            seconds_left = (expiry - now).total_seconds()
+
+            EXPIRY_SECONDS.labels(url=url, cipher=cipher, name=name).set(seconds_left)
+            EXPIRY_TIMESTAMP.labels(url=url, cipher=cipher, name=name).set(expiry.timestamp())
+            CHECK_SUCCESS.labels(url=url, cipher=cipher, name=name).set(1)
+        except Exception:
+            CHECK_SUCCESS.labels(url=url, cipher=cipher, name=name).set(0)
+
+    def main():
+        with open('/etc/cert-monitor/targets.json') as f:
+            config = json.load(f)
+
+        start_http_server(int(config.get('port', 9115)))
+        interval = int(config.get('checkInterval', 300))
+
+        while True:
+            for target in config['targets']:
+                check_cert(target['url'], target['cipher'], target['name'])
+            time.sleep(interval)
+
+    if __name__ == '__main__':
+        main()
+{{- end }}
