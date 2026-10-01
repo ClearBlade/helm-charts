@@ -34,7 +34,9 @@ limitCPU: 2
 limitMemory: 8G
 http:
   httpPort: :9000 # Listen port for HTTP server
+  httpTLSPort: :9002 # Listen port for HTTP TLS server. Only used when terminating TLS
   httpMTLSPort: :9001 # Listen port for HTTP mTLS server
+  mtlsBrokerALPN: clearblade_mqtt_mtls # Clients requesting this ALPN on the mTLS listener are sent to the MQTT broker. Set to "" to disable
   timeProfile: -1 # Enables time profiling of HTTP requests (in ms). Default is disabled (-1)
   gzipResponses: true # gzip http responses if http client supports it
   enableExtendedWebhookURLs: true
@@ -49,7 +51,9 @@ mqtt:
   brokerWSPort: :8903 # Websocket listen port for MQTT broker
   brokerWSSPort: :8904 # TLS websocket listen port for MQTT broker
   messagingAuthPort: :8905 # Listen port for MQTT Auth broker
+  messagingAuthTLSPort: :8906 # TLS listen port for MQTT Auth broker
   messagingAuthWSPort: :8907 # Websocket listen port for MQTT Auth broker
+  messagingAuthWSSPort: :8908 # TLS websocket listen port for MQTT Auth broker
   useTLSMessaging: false # Use TLS for MQTT broker
   useTLSMessagingWS: false # Use TLS for websocket MQTT broker
   useTLSMessagingAuth: false # Use TLS for MQTT Auth broker
@@ -86,6 +90,7 @@ rpc:
   dataCompression: "lz4"
   transport: tcp # Transport layer for RPC communications
   port: 8950 # Listen port for external RPC server. Used to edge to platform communication
+  tlsPort: 8951 # TLS listen port for external RPC server. Only used when terminating TLS
   portInternal: 8952 # Listen port for internal RPC server. Used to node to node communication
   useRPCServerTimeout: true # If a request takes longer than RPCTimeout, the server will not send a response and not count the request as in flight
   keepaliveInterval: 60 # Keepalive interval for RPC connections
@@ -210,6 +215,38 @@ sync:
   reaperThreshold: 1000 # How many entries an edge is allowed to have in the sync queue before the reaper deletes them all.
 triggers:
   maxExecutors: 1024
+
+# Generates the [Listeners] config in clearblade.toml from the http, mqtt and rpc ports above and
+# blueTerminateTls/greenTerminateTls. Requires a platform version with listener config support; older
+# versions ignore it and use the port flags instead.
+listeners:
+  # Set to false to leave [Listeners] out, e.g. to define it yourself in clearbladeConfig
+  enabled: true
+  # Applied to every listener that serves MQTT clients: mqtt, mqtt_tls, mqtt_ws, mqtt_ws_tls and app_mtls.
+  # Replaces the MQTT.EnabledAuthMethods, BrokerAuthService, BrokerAuthSystem, BasicAuthDefaultSystem and
+  # MaxConcurrentConnectsPerNode settings, which the platform ignores once [Listeners] is set.
+  broker:
+    authService: "" # Code service invoked to authenticate clients when "service_auth" is enabled
+    authSystem: "" # System key of the system that owns authService
+    basicAuthDefaultSystem: "" # System used for basic auth when the username does not specify one
+    enabledAuthMethods: [] # Any of "jwt", "password", "mtls", "basic", "shared_access_signature", "service_auth". Empty allows all
+    maxConcurrentConnectsPerNode: ~ # Limit on concurrent connects per listener on each node. 0 = no limit. Defaults to 0 when terminating TLS, otherwise 40
+  # Per-listener overrides, keyed by listener name and using the platform's field names. Fields are set on
+  # the generated listener. A name that isn't generated adds a new listener if it sets ListenAddress, and is
+  # otherwise skipped (e.g. mqtt_tls on a slot that doesn't terminate TLS). Set enabled: false to remove one.
+  # Example:
+  #   mqtt:
+  #     mqtt_tls:
+  #       BrokerEnabledAuthMethods: ["mtls"]
+  #     mqtt_internal:
+  #       ListenAddress: ":1885"
+  #   http:
+  #     mqtt_auth_ws:
+  #       enabled: false
+  http: {} # Generated: app, app_tls, app_mtls, mqtt_ws, mqtt_ws_tls, mqtt_auth_ws, mqtt_auth_ws_tls
+  mqtt: {} # Generated: mqtt, mqtt_tls
+  mqttAuth: {} # Generated: mqtt_auth, mqtt_auth_tls
+  rpc: {} # Generated: internal, external, external_tls
 
 internalLoadBalancer:
   enabled: true

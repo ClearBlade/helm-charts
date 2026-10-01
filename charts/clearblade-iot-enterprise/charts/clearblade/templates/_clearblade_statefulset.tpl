@@ -1,14 +1,7 @@
 {{- define "clearblade.statefulset" -}}
 {{- $pullCertsFromSecretManager := and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) -}}
 {{- $customMtlsCert := and $pullCertsFromSecretManager .root.Values.mtlsCustomCert -}}
-{{- $rootRedirectUrl := "" -}}
-{{- if ne .root.Values.rootRedirectUrl "" -}}
-{{- $rootRedirectUrl = .root.Values.rootRedirectUrl -}}
-{{- else if or .root.Values.global.iotCoreEnabled .root.Values.global.iotCoreSaasEnabled -}}
-{{- $rootRedirectUrl = "/iot-core" -}}
-{{- else if .root.Values.global.opsConsoleEnabled -}}
-{{- $rootRedirectUrl = "/ops-console" -}}
-{{- end -}}
+{{- $rootRedirectUrl := include "clearblade.rootRedirectUrl" .root -}}
 {{- $cpuLimit := .root.Values.limitCPU | toString -}}
 {{- $narenas := 0 -}}
 {{- if hasSuffix "m" $cpuLimit -}}
@@ -154,8 +147,8 @@ spec:
               # Generate clearblade host from pod ordinal index.
               [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
-              # Copy appropriate conf.d files from config-map to emptyDir.
-              cp /config-map/clearblade.toml /etc/clearblade/conf/clearblade/clearblade.toml
+              # Copy appropriate conf.d files from config-map to emptyDir. Each slot has its own listeners config.
+              cp /config-map/clearblade{{ .node_suffix }}.toml /etc/clearblade/conf/clearblade/clearblade.toml
               # Add an offset to avoid reserved server-id=0 value.
               sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               # Add blue/green slot to host address
