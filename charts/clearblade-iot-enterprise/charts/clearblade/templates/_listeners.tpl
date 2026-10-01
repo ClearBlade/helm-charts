@@ -17,144 +17,64 @@ Root redirect URL for the HTTP listeners. Keep in sync with -root-redirect-url i
 {{- end }}
 
 {{/*
-Listeners config for one slot, as JSON. Mirrors what the platform generates when it migrates the
-legacy port and TLS settings, so the listeners match the flags on the statefulset.
+[Listeners] tables for clearblade.toml. Matches what the platform's listeners migration generates from the
+settings the statefulset passes as flags, with platform defaults for ports the chart never set.
 Takes a dict with "root" and "terminateTls".
 */}}
-{{- define "clearblade.listeners" -}}
+{{- define "clearblade.listenersToml" -}}
 {{- $v := .root.Values -}}
 {{- $tls := .terminateTls -}}
-{{- $cfg := $v.listeners -}}
 {{- $rootRedirectUrl := include "clearblade.rootRedirectUrl" .root -}}
+{{- /* -max-concurrent-connects-per-node is 0 when terminating TLS, otherwise the platform default */ -}}
+{{- $broker := dict "BrokerMaxConcurrentConnectsPerNode" (ternary 0 40 $tls) -}}
+{{- $listeners := list -}}
 
-{{- $maxConnects := $cfg.broker.maxConcurrentConnectsPerNode -}}
-{{- if kindIs "invalid" $maxConnects -}}
-{{- $maxConnects = ternary 0 40 $tls -}}
-{{- end -}}
-{{- $broker := dict
-  "BrokerAuthService" $cfg.broker.authService
-  "BrokerAuthSystem" $cfg.broker.authSystem
-  "BrokerBasicAuthDefaultSystem" $cfg.broker.basicAuthDefaultSystem
-  "BrokerEnabledAuthMethods" (default (list) $cfg.broker.enabledAuthMethods)
-  "BrokerMaxConcurrentConnectsPerNode" (int $maxConnects)
--}}
-
-{{- $http := dict -}}
-{{- $_ := set $http "app" (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.http.httpPort)
-  "EnableHttpEndpoints" (not $tls)
-  "AcmeOnly" $tls
-  "EnableReverseProxy" $tls
-  "RootRedirectURL" $rootRedirectUrl
-) -}}
+{{- $app := dict "ListenAddress" $v.http.httpPort "EnableHttpEndpoints" (not $tls) "AcmeOnly" $tls "EnableReverseProxy" $tls -}}
+{{- if $rootRedirectUrl }}{{ $_ := set $app "RootRedirectURL" $rootRedirectUrl }}{{ end -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app" $app) -}}
 {{- if $tls -}}
-{{- $_ := set $http "app_tls" (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.http.httpTLSPort)
-  "UseTLS" true
-  "EnableHttpEndpoints" true
-  "EnableReverseProxy" true
-  "RootRedirectURL" $rootRedirectUrl
-) -}}
+{{- $appTls := dict "ListenAddress" ":9002" "UseTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" true -}}
+{{- if $rootRedirectUrl }}{{ $_ := set $appTls "RootRedirectURL" $rootRedirectUrl }}{{ end -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app_tls" $appTls) -}}
 {{- end -}}
 {{- if $v.global.mtlsClearBlade -}}
-{{- $_ := set $http "app_mtls" (merge (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.http.httpMTLSPort)
-  "UseMTLS" true
-  "EnableHttpEndpoints" true
-  "EnableReverseProxy" $tls
-  "BrokerALPN" $v.http.mtlsBrokerALPN
-) (ternary $broker (dict) (ne $v.http.mtlsBrokerALPN ""))) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app_mtls" (merge (dict "ListenAddress" $v.http.httpMTLSPort "UseMTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" $tls "BrokerALPN" "clearblade_mqtt_mtls") $broker)) -}}
 {{- end -}}
-{{- $mqttWsRoutes := list "/mqtt" "/edge_shell" -}}
-{{- $_ := set $http "mqtt_ws" (merge (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.brokerWSPort)
-  "EnableWebsockets" true
-  "EnabledWebsocketRoutes" $mqttWsRoutes
-) $broker) -}}
+
+{{- $mqttWs := dict "EnableWebsockets" true "EnabledWebsocketRoutes" (list "/mqtt" "/edge_shell") -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws" (merge (dict "ListenAddress" $v.mqtt.brokerWSPort) $mqttWs $broker)) -}}
 {{- if $tls -}}
-{{- $_ := set $http "mqtt_ws_tls" (merge (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.brokerWSSPort)
-  "UseTLS" true
-  "EnableWebsockets" true
-  "EnabledWebsocketRoutes" $mqttWsRoutes
-) $broker) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws_tls" (merge (dict "ListenAddress" $v.mqtt.brokerWSSPort "UseTLS" true) $mqttWs $broker)) -}}
 {{- end -}}
-{{- $_ := set $http "mqtt_auth_ws" (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.messagingAuthWSPort)
-  "EnableWebsockets" true
-  "EnabledWebsocketRoutes" (list "/mqtt_auth")
-) -}}
+{{- $mqttAuthWs := dict "EnableWebsockets" true "EnabledWebsocketRoutes" (list "/mqtt_auth") -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_auth_ws" (merge (dict "ListenAddress" $v.mqtt.messagingAuthWSPort) $mqttAuthWs)) -}}
 {{- if $tls -}}
-{{- $_ := set $http "mqtt_auth_ws_tls" (dict
-  "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.messagingAuthWSSPort)
-  "UseTLS" true
-  "EnableWebsockets" true
-  "EnabledWebsocketRoutes" (list "/mqtt_auth")
-) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_auth_ws_tls" (merge (dict "ListenAddress" ":8908" "UseTLS" true) $mqttAuthWs)) -}}
 {{- end -}}
 
-{{- $mqtt := dict "mqtt" (merge (dict "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.brokerTCPPort)) $broker) -}}
+{{- $listeners = append $listeners (list "MQTTListeners" "mqtt" (merge (dict "ListenAddress" $v.mqtt.brokerTCPPort) $broker)) -}}
 {{- if $tls -}}
-{{- $_ := set $mqtt "mqtt_tls" (merge (dict "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.brokerTLSPort) "UseTLS" true) $broker) -}}
+{{- $listeners = append $listeners (list "MQTTListeners" "mqtt_tls" (merge (dict "ListenAddress" $v.mqtt.brokerTLSPort "UseTLS" true) $broker)) -}}
 {{- end -}}
 
-{{- $mqttAuth := dict "mqtt_auth" (dict "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.messagingAuthPort)) -}}
+{{- $listeners = append $listeners (list "MQTTAuthListeners" "mqtt_auth" (dict "ListenAddress" $v.mqtt.messagingAuthPort)) -}}
 {{- if $tls -}}
-{{- $_ := set $mqttAuth "mqtt_auth_tls" (dict "ListenAddress" (include "clearblade.listenAddress" $v.mqtt.messagingAuthTLSPort) "UseTLS" true) -}}
+{{- $listeners = append $listeners (list "MQTTAuthListeners" "mqtt_auth_tls" (dict "ListenAddress" ":8906" "UseTLS" true)) -}}
 {{- end -}}
 
-{{- $rpc := dict
-  "internal" (dict "ListenAddress" (include "clearblade.listenAddress" $v.rpc.portInternal) "IsInternal" true)
-  "external" (dict "ListenAddress" (include "clearblade.listenAddress" $v.rpc.port))
--}}
+{{- $listeners = append $listeners (list "RPCListeners" "internal" (dict "ListenAddress" $v.rpc.portInternal "IsInternal" true)) -}}
+{{- $listeners = append $listeners (list "RPCListeners" "external" (dict "ListenAddress" $v.rpc.port)) -}}
 {{- if $tls -}}
-{{- $_ := set $rpc "external_tls" (dict "ListenAddress" (include "clearblade.listenAddress" $v.rpc.tlsPort) "UseTLS" true) -}}
+{{- $listeners = append $listeners (list "RPCListeners" "external_tls" (dict "ListenAddress" ":8951" "UseTLS" true)) -}}
 {{- end -}}
 
-{{- $sections := dict "HTTPListeners" $http "MQTTListeners" $mqtt "MQTTAuthListeners" $mqttAuth "RPCListeners" $rpc -}}
-{{- $overrideSections := dict "HTTPListeners" $cfg.http "MQTTListeners" $cfg.mqtt "MQTTAuthListeners" $cfg.mqttAuth "RPCListeners" $cfg.rpc -}}
-{{- range $section, $overrides := $overrideSections -}}
-{{- $listeners := get $sections $section -}}
-{{- range $name, $override := $overrides -}}
-{{- if and (hasKey $override "enabled") (not $override.enabled) -}}
-{{- $_ := unset $listeners $name -}}
-{{- /* A listener only generated for TLS slots is left alone on other slots */ -}}
-{{- else if or (hasKey $listeners $name) (hasKey $override "ListenAddress") -}}
-{{- $listener := default (dict) (get $listeners $name) -}}
-{{- /* Set key by key since mergeOverwrite skips false, 0 and "" */ -}}
-{{- range $key, $value := omit $override "enabled" -}}
-{{- $_ := set $listener $key $value -}}
-{{- end -}}
-{{- $_ := set $listeners $name $listener -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- toJson $sections -}}
-{{- end }}
+{{- range $listeners }}
+{{- $fields := index . 2 }}
 
-{{/*
-[Listeners] tables for clearblade.toml. Takes the same dict as "clearblade.listeners".
-*/}}
-{{- define "clearblade.listenersToml" -}}
-{{- range $section, $listeners := include "clearblade.listeners" . | fromJson }}
-{{- range $name, $listener := $listeners }}
-
-[Listeners.{{ $section }}.{{ $name }}]
-{{- range $key, $value := $listener }}
-{{ $key }} = {{ include "clearblade.tomlValue" $value }}
+[Listeners.{{ index . 0 }}.{{ index . 1 }}]
+ListenAddress = {{ include "clearblade.listenAddress" $fields.ListenAddress | quote }}
+{{- range $key, $value := omit $fields "ListenAddress" }}
+{{ $key }} = {{ if kindIs "string" $value }}{{ $value | quote }}{{ else if kindIs "slice" $value }}{{ toJson $value }}{{ else }}{{ $value }}{{ end }}
 {{- end }}
 {{- end }}
-{{- end }}
-{{- end }}
-
-{{- define "clearblade.tomlValue" -}}
-{{- if kindIs "float64" . -}}
-{{- if eq (floor .) . }}{{ int64 . }}{{ else }}{{ . }}{{ end -}}
-{{- else if or (kindIs "bool" .) (kindIs "int" .) (kindIs "int64" .) -}}
-{{- . -}}
-{{- else if or (kindIs "string" .) (kindIs "slice" .) -}}
-{{- toJson . -}}
-{{- else -}}
-{{- fail (printf "clearblade.listeners: unsupported value %v" .) -}}
-{{- end -}}
 {{- end }}

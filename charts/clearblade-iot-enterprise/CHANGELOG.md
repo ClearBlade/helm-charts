@@ -120,11 +120,8 @@ IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in th
 
 ## [5.0.0] - 2026-09-24
 
-Requires a platform version with listener config support for the new `clearblade.listeners` values to take effect. Older versions ignore `[Listeners]` and keep using the port flags.
+Listeners: `clearblade.toml` now includes a `[Listeners]` config generated from the existing port values, `blueTerminateTls`/`greenTerminateTls`, `global.mtlsClearBlade` and the root redirect URL. It matches what the platform's listeners migration generates from the flags the chart already passes, so the platform no longer rewrites its config file on startup. No values were added. Platform versions without listener support ignore `[Listeners]` and keep using the flags.
 
-Listeners: `clearblade.toml` now includes a `[Listeners]` config generated from the `http`, `mqtt` and `rpc` ports and `blueTerminateTls`/`greenTerminateTls`. It matches the listeners the platform would migrate from those settings, so the platform no longer tries to rewrite its config file on startup. The config secret now has a `clearblade-green.toml` key as well, since the TLS listeners can differ between slots. MAJOR bump: the init container copies a slot-specific file, and broker auth settings in `clearbladeConfig` are ignored once `[Listeners]` is set.
+The config secret now has a `clearblade-green.toml` key as well, since the TLS listeners differ between slots. If `clearbladeConfig` defines its own `[Listeners]` tables, none are generated.
 
-- `clearblade.listeners.broker` sets MQTT broker auth and the concurrent connect limit on every listener that serves MQTT clients. Once `[Listeners]` is set, the platform ignores `MQTT.EnabledAuthMethods`, `BrokerAuthService`, `BrokerAuthSystem`, `BasicAuthDefaultSystem` and `MaxConcurrentConnectsPerNode` in `clearbladeConfig`, so move those settings here.
-- `clearblade.listeners.http|mqtt|mqttAuth|rpc` override fields on a generated listener by name, add new listeners, or remove one with `enabled: false`.
-- `clearblade.listeners.enabled: false` leaves `[Listeners]` out, e.g. to define it yourself in `clearbladeConfig`.
-- New port values `http.httpTLSPort`, `mqtt.messagingAuthTLSPort`, `mqtt.messagingAuthWSSPort`, `rpc.tlsPort`, and `http.mtlsBrokerALPN`, all defaulting to the platform defaults.
+MAJOR bump: the init container copies a slot-specific config file. Once `[Listeners]` is set, the platform ignores the deprecated listener settings in `clearbladeConfig` (e.g. `MQTT.EnabledAuthMethods`, `BrokerAuthService`, `BrokerAuthSystem`, `BasicAuthDefaultSystem`, `MaxConcurrentConnectsPerNode`, `Security.MTLSMQTTALPN` and the TLS port settings). Move them into `[Listeners]` in `clearbladeConfig`.

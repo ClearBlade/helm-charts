@@ -7,10 +7,12 @@ metadata:
 {{ include "clearblade.labels" . | indent 4 }}
 data:
 {{- $config := tpl (.Files.Get "configs/clearblade.toml") . }}
+{{- /* Listeners defined in clearbladeConfig replace the generated ones */}}
+{{- $customListeners := regexMatch `(?m)^\s*\[Listeners[.\]]` (toString .Values.clearbladeConfig) }}
 {{- range $slot := list (dict "file" "clearblade.toml" "terminateTls" .Values.blueTerminateTls) (dict "file" "clearblade-green.toml" "terminateTls" .Values.greenTerminateTls) }}
   {{ $slot.file }}: |
 {{- $listeners := "" }}
-{{- if $.Values.listeners.enabled }}
+{{- if not $customListeners }}
 {{- $listeners = include "clearblade.listenersToml" (dict "root" $ "terminateTls" $slot.terminateTls) }}
 {{- end }}
 {{ printf "%s\n\n%s\n" (trim $config) (trim $listeners) | b64enc | indent 4 }}
