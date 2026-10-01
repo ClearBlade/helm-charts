@@ -15,6 +15,7 @@ data:
     }
   cert_monitor.py: |
     import json
+    import shlex
     import subprocess
     import time
     from datetime import datetime, timezone
@@ -45,8 +46,8 @@ data:
             port = '443'
         try:
             cmd = (
-                f"echo | openssl s_client -connect {host}:{port} "
-                f"-servername {host} -cipher {cipher} 2>/dev/null | "
+                f"echo | openssl s_client -connect {shlex.quote(host)}:{shlex.quote(port)} "
+                f"-servername {shlex.quote(host)} -cipher {shlex.quote(cipher)} -tls1_2 2>/dev/null | "
                 f"openssl x509 -noout -enddate"
             )
             result = subprocess.run(

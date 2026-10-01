@@ -16,23 +16,24 @@ spec:
       labels:
         app.kubernetes.io/name: cert-monitor
     spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
       nodeSelector:
         kubernetes.io/os: linux
         kubernetes.io/arch: amd64
+        {{- if .Values.global.nodePool }}
+        cloud.google.com/gke-nodepool: {{ .Values.global.nodePool }}
+        {{- end }}
       containers:
         - name: cert-monitor
-          image: python:3.12-slim
-          command:
-            - /bin/sh
-            - -c
-            - |
-              pip install --no-cache-dir prometheus_client && \
-              apt-get update && apt-get install -y --no-install-recommends openssl && \
-              rm -rf /var/lib/apt/lists/* && \
-              python /etc/cert-monitor/cert_monitor.py
+          image: {{ .Values.certMonitor.image }}:{{ .Values.certMonitor.imageTag }}
+          args:
+            - /etc/cert-monitor/cert_monitor.py
           ports:
             - name: metrics
               containerPort: {{ .Values.certMonitor.port }}
@@ -47,13 +48,13 @@ spec:
             httpGet:
               path: /metrics
               port: metrics
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /metrics
               port: metrics
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
             - name: cert-monitor-config
@@ -65,10 +66,6 @@ spec:
       {{- if .Values.global.tolerations }}
       tolerations:
 {{ .Values.global.tolerations | toYaml | indent 6 }}
-      {{- end }}
-      {{- if .Values.global.nodePool }}
-      nodeSelector:
-        cloud.google.com/gke-nodepool: {{ .Values.global.nodePool }}
       {{- end }}
 ---
 apiVersion: v1

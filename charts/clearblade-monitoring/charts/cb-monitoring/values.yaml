@@ -99,6 +99,8 @@ postgresreplicas: 1
 prometheusDiskSize: 100G
 certMonitor:
   enabled: false
+  image: gcr.io/api-project-320446546234/cert-monitor
+  imageTag: "0.0.1"
   checkInterval: 300  # seconds between cert checks
   port: 9115
   alertThresholdSeconds: 1209600  # 14 days
