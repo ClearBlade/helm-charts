@@ -11,6 +11,7 @@ Root redirect URL for the HTTP listeners.
 {{- end -}}
 {{- end }}
 
+{{- /* Template to normalize listen addresses */ -}}
 {{- define "clearblade.listenAddress" -}}
 {{- $addr := toString . -}}
 {{- if contains ":" $addr }}{{ $addr }}{{ else }}:{{ $addr }}{{ end -}}
@@ -24,6 +25,7 @@ Root redirect URL for the HTTP listeners.
 {{- $broker := dict "BrokerMaxConcurrentConnectsPerNode" (ternary 0 40 $tls) -}}
 {{- $listeners := list -}}
 
+{{- /* HTTP Listeners */ -}}
 {{- if $tls -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "app" (dict "ListenAddress" $v.http.httpPort "AcmeOnly" true)) -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "app_tls" (dict "ListenAddress" ":9002" "UseTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" true "RootRedirectURL" $rootRedirectUrl)) -}}
@@ -34,27 +36,33 @@ Root redirect URL for the HTTP listeners.
 {{- $listeners = append $listeners (list "HTTPListeners" "app_mtls" (merge (dict "ListenAddress" $v.http.httpMTLSPort "UseMTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" $tls "BrokerALPN" "clearblade_mqtt_mtls") $broker)) -}}
 {{- end -}}
 
+{{- /* MQTT WS */ -}}
 {{- $mqttWs := dict "EnableWebsockets" true "EnabledWebsocketRoutes" (list "/mqtt" "/edge_shell") -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws" (merge (dict "ListenAddress" $v.mqtt.brokerWSPort) $mqttWs $broker)) -}}
 {{- if $tls -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws_tls" (merge (dict "ListenAddress" $v.mqtt.brokerWSSPort "UseTLS" true) $mqttWs $broker)) -}}
 {{- end -}}
+
+{{- /* MQTT Auth WS */ -}}
 {{- $mqttAuthWs := dict "EnableWebsockets" true "EnabledWebsocketRoutes" (list "/mqtt_auth") -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "mqtt_auth_ws" (merge (dict "ListenAddress" $v.mqtt.messagingAuthWSPort) $mqttAuthWs)) -}}
 {{- if $tls -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "mqtt_auth_ws_tls" (merge (dict "ListenAddress" ":8908" "UseTLS" true) $mqttAuthWs)) -}}
 {{- end -}}
 
+{{- /* MQTT */ -}}
 {{- $listeners = append $listeners (list "MQTTListeners" "mqtt" (merge (dict "ListenAddress" $v.mqtt.brokerTCPPort) $broker)) -}}
 {{- if $tls -}}
 {{- $listeners = append $listeners (list "MQTTListeners" "mqtt_tls" (merge (dict "ListenAddress" $v.mqtt.brokerTLSPort "UseTLS" true) $broker)) -}}
 {{- end -}}
 
+{{- /* MQTT Auth */ -}}
 {{- $listeners = append $listeners (list "MQTTAuthListeners" "mqtt_auth" (dict "ListenAddress" $v.mqtt.messagingAuthPort)) -}}
 {{- if $tls -}}
 {{- $listeners = append $listeners (list "MQTTAuthListeners" "mqtt_auth_tls" (dict "ListenAddress" ":8906" "UseTLS" true)) -}}
 {{- end -}}
 
+{{- /* RPC */ -}}
 {{- $listeners = append $listeners (list "RPCListeners" "internal" (dict "ListenAddress" $v.rpc.portInternal "IsInternal" true)) -}}
 {{- $listeners = append $listeners (list "RPCListeners" "external" (dict "ListenAddress" $v.rpc.port)) -}}
 {{- if $tls -}}
