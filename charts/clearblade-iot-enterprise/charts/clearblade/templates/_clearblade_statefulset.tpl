@@ -155,7 +155,7 @@ spec:
               [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
               # Copy appropriate conf.d files from config-map to emptyDir.
-              cp /config-map/clearblade.toml /etc/clearblade/conf/clearblade/clearblade.toml
+              cp /config-map/clearblade{{ .node_suffix }}.toml /etc/clearblade/conf/clearblade/clearblade.toml
               # Add an offset to avoid reserved server-id=0 value.
               sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               # Add blue/green slot to host address
