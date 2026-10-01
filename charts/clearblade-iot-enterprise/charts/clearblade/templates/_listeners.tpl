@@ -16,11 +16,6 @@ Root redirect URL for the HTTP listeners.
 {{- if contains ":" $addr }}{{ $addr }}{{ else }}:{{ $addr }}{{ end -}}
 {{- end }}
 
-{{/*
-[Listeners] tables for clearblade.toml. Matches what the platform's listeners migration generated from the
-flags the chart used to pass, with platform defaults for ports the chart never set.
-Takes a dict with "root" and "terminateTls".
-*/}}
 {{- define "clearblade.listenersToml" -}}
 {{- $v := .root.Values -}}
 {{- $tls := .terminateTls -}}
@@ -29,13 +24,11 @@ Takes a dict with "root" and "terminateTls".
 {{- $broker := dict "BrokerMaxConcurrentConnectsPerNode" (ternary 0 40 $tls) -}}
 {{- $listeners := list -}}
 
-{{- $app := dict "ListenAddress" $v.http.httpPort "EnableHttpEndpoints" (not $tls) "AcmeOnly" $tls "EnableReverseProxy" $tls -}}
-{{- if $rootRedirectUrl }}{{ $_ := set $app "RootRedirectURL" $rootRedirectUrl }}{{ end -}}
-{{- $listeners = append $listeners (list "HTTPListeners" "app" $app) -}}
 {{- if $tls -}}
-{{- $appTls := dict "ListenAddress" ":9002" "UseTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" true -}}
-{{- if $rootRedirectUrl }}{{ $_ := set $appTls "RootRedirectURL" $rootRedirectUrl }}{{ end -}}
-{{- $listeners = append $listeners (list "HTTPListeners" "app_tls" $appTls) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app" (dict "ListenAddress" $v.http.httpPort "AcmeOnly" true)) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app_tls" (dict "ListenAddress" ":9002" "UseTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" true "RootRedirectURL" $rootRedirectUrl)) -}}
+{{- else -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app" (dict "ListenAddress" $v.http.httpPort "EnableHttpEndpoints" true "RootRedirectURL" $rootRedirectUrl)) -}}
 {{- end -}}
 {{- if $v.global.mtlsClearBlade -}}
 {{- $listeners = append $listeners (list "HTTPListeners" "app_mtls" (merge (dict "ListenAddress" $v.http.httpMTLSPort "UseMTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" $tls "BrokerALPN" "clearblade_mqtt_mtls") $broker)) -}}
