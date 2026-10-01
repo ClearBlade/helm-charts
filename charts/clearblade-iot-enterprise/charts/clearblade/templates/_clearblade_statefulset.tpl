@@ -1,14 +1,6 @@
 {{- define "clearblade.statefulset" -}}
 {{- $pullCertsFromSecretManager := and .root.Values.global.mtlsClearBlade (not .root.Values.useDbTlsCerts) -}}
 {{- $customMtlsCert := and $pullCertsFromSecretManager .root.Values.mtlsCustomCert -}}
-{{- $rootRedirectUrl := "" -}}
-{{- if ne .root.Values.rootRedirectUrl "" -}}
-{{- $rootRedirectUrl = .root.Values.rootRedirectUrl -}}
-{{- else if or .root.Values.global.iotCoreEnabled .root.Values.global.iotCoreSaasEnabled -}}
-{{- $rootRedirectUrl = "/iot-core" -}}
-{{- else if .root.Values.global.opsConsoleEnabled -}}
-{{- $rootRedirectUrl = "/ops-console" -}}
-{{- end -}}
 {{- $cpuLimit := .root.Values.limitCPU | toString -}}
 {{- $narenas := 0 -}}
 {{- if hasSuffix "m" $cpuLimit -}}
@@ -278,11 +270,6 @@ spec:
           #PLATFORM
             - "-registration-key={{ .root.Values.global.enterpriseRegistrationKey }}"
             - "-url={{- include "clearblade-iot-enterprise.platformURL" .root | trim }}"
-            - "-addr={{ .root.Values.http.httpPort }}"
-            - "-messaging-addr={{ .root.Values.mqtt.brokerTCPPort }}"
-            - "-websocket-messaging-addr={{ .root.Values.mqtt.brokerWSPort }}"
-            - "-message-auth-addr={{ .root.Values.mqtt.messagingAuthPort }}"
-            - "-message-auth-websocket={{ .root.Values.mqtt.messagingAuthWSPort }}"
             {{- if .root.Values.global.enterpriseMQTTURL}}
             - "-messaging-url={{ .root.Values.global.enterpriseMQTTURL }}"
             {{- else }}
@@ -301,18 +288,9 @@ spec:
             - "-cert=/etc/clearblade/ssl/clearblade-0.pem"
             {{- end }}
             {{- if .root.Values.global.mtlsClearBlade }}
-            - "-enable-mutual-tls-auth=true"
             - "-check-certificate-cn-for-mtls=true"
             {{- end }}
             {{- if .terminate_tls }}
-            - "-enable-reverse-proxy=true"
-            - "-max-concurrent-connects-per-node=0"
-            - "-use-tls-http=true"
-            - "-message-use-tls=true"
-            - "-message-auth-use-tls=true"
-            - "-message-ws-use-tls=true"
-            - "-message-auth-ws-use-tls=true"
-            - "-rpc-use-tls=true"
             - "-console-host=cb-console-service"
             - "-ia-host=cb-ia-service"
             {{- if .root.Values.global.iotCoreSaasEnabled }}
@@ -327,9 +305,6 @@ spec:
             - "-weak-ciphers=true"
             {{- end }}
             - "-min-tls-version={{ .root.Values.minTlsVersion }}"
-            {{- if ne $rootRedirectUrl "" }}
-            - "-root-redirect-url={{ $rootRedirectUrl }}"
-            {{- end }}
             - "-log-format=json"
           {{- if .madvdontneed}}
           env:

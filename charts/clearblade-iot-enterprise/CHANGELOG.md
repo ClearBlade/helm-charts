@@ -120,8 +120,10 @@ IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in th
 
 ## [5.0.0] - 2026-09-24
 
-Listeners: `clearblade.toml` now includes a `[Listeners]` config generated from the existing port values, `blueTerminateTls`/`greenTerminateTls`, `global.mtlsClearBlade` and the root redirect URL. It matches what the platform's listeners migration generates from the flags the chart already passes, so the platform no longer rewrites its config file on startup. No values were added. Platform versions without listener support ignore `[Listeners]` and keep using the flags.
+Requires a platform version with listener config support.
+
+Listeners: `clearblade.toml` now includes a `[Listeners]` config generated from the existing port values, `blueTerminateTls`/`greenTerminateTls`, `global.mtlsClearBlade` and the root redirect URL. It matches what the platform's listeners migration generated from the flags the chart used to pass. No values were added.
 
 The config secret now has a `clearblade-green.toml` key as well, since the TLS listeners differ between slots. If `clearbladeConfig` defines its own `[Listeners]` tables, none are generated.
 
-MAJOR bump: the init container copies a slot-specific config file. Once `[Listeners]` is set, the platform ignores the deprecated listener settings in `clearbladeConfig` (e.g. `MQTT.EnabledAuthMethods`, `BrokerAuthService`, `BrokerAuthSystem`, `BasicAuthDefaultSystem`, `MaxConcurrentConnectsPerNode`, `Security.MTLSMQTTALPN` and the TLS port settings). Move them into `[Listeners]` in `clearbladeConfig`.
+MAJOR bump: the listener flags (`-addr`, `-messaging-addr`, `-websocket-messaging-addr`, `-message-auth-addr`, `-message-auth-websocket`, `-enable-mutual-tls-auth`, `-enable-reverse-proxy`, `-max-concurrent-connects-per-node`, the `-*-use-tls` flags and `-root-redirect-url`) are no longer passed, so older platform versions won't start the TLS, mTLS or reverse proxy listeners. The init container also copies a slot-specific config file. Once `[Listeners]` is set, the platform ignores the deprecated listener settings in `clearbladeConfig` (e.g. `MQTT.EnabledAuthMethods`, `BrokerAuthService`, `BrokerAuthSystem`, `BasicAuthDefaultSystem`, `MaxConcurrentConnectsPerNode`, `Security.MTLSMQTTALPN` and the TLS port settings). Move them into `[Listeners]` in `clearbladeConfig`.

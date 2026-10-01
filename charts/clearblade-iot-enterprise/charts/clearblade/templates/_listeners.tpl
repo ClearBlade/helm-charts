@@ -1,5 +1,5 @@
 {{/*
-Root redirect URL for the HTTP listeners. Keep in sync with -root-redirect-url in the statefulset.
+Root redirect URL for the HTTP listeners.
 */}}
 {{- define "clearblade.rootRedirectUrl" -}}
 {{- if ne .Values.rootRedirectUrl "" -}}
@@ -17,15 +17,15 @@ Root redirect URL for the HTTP listeners. Keep in sync with -root-redirect-url i
 {{- end }}
 
 {{/*
-[Listeners] tables for clearblade.toml. Matches what the platform's listeners migration generates from the
-settings the statefulset passes as flags, with platform defaults for ports the chart never set.
+[Listeners] tables for clearblade.toml. Matches what the platform's listeners migration generated from the
+flags the chart used to pass, with platform defaults for ports the chart never set.
 Takes a dict with "root" and "terminateTls".
 */}}
 {{- define "clearblade.listenersToml" -}}
 {{- $v := .root.Values -}}
 {{- $tls := .terminateTls -}}
 {{- $rootRedirectUrl := include "clearblade.rootRedirectUrl" .root -}}
-{{- /* -max-concurrent-connects-per-node is 0 when terminating TLS, otherwise the platform default */ -}}
+{{- /* No concurrent connect limit when terminating TLS, otherwise the platform default */ -}}
 {{- $broker := dict "BrokerMaxConcurrentConnectsPerNode" (ternary 0 40 $tls) -}}
 {{- $listeners := list -}}
 
