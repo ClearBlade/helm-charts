@@ -118,7 +118,7 @@ It is mutually exclusive with the existing `cb-iotcore` subchart: both serve `/i
 
 IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in the chart-level `values.yaml`. Before, a values file that omitted it rendered `cb-iotcore-saas` anyway, because Helm treats an undefined dependency condition as enabled, and the render failed with `cb-iotcore-saas.version is required`.
 
-## [5.0.0] - 2026-10-01
+## [4.3.0] - 2026-10-01
 
 Requires a version of the platform that supports listener configs.
 
