@@ -276,3 +276,11 @@ scrape_configs:
       - blade-runner-monitoring-service-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
       {{- end}}
     {{- end }}
+
+{{- if $.Values.certMonitor.enabled }}
+  - job_name: 'cert-monitor'
+    scrape_interval: 60s
+    static_configs:
+    - targets:
+      - cert-monitor-service.{{ default "monitoring" .Values.global.namespace }}.svc.cluster.local:{{ .Values.certMonitor.port }}
+{{- end }}
