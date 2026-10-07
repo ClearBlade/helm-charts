@@ -209,7 +209,7 @@ data:
       {{- end }}
 {{- if .Values.certMonitor.enabled }}
      - alert: {{ $.Values.global.customerName }} CertificateExpiringSoon
-       expr: cert_expiry_seconds < {{ .Values.certMonitor.alertThresholdSeconds }}
+       expr: cert_expiry_seconds < {{ .Values.certMonitor.alertThresholdSeconds }} and cert_check_success == 1
        for: 5m
        labels:
          priority: {{ .Values.certMonitor.alertPriority }}
