@@ -19,8 +19,6 @@
 {{- $v := .root.Values -}}
 {{- $tls := .terminateTls -}}
 {{- $rootRedirectUrl := include "clearblade.rootRedirectUrl" .root -}}
-{{- /* No concurrent connect limit when terminating TLS, otherwise the platform default */ -}}
-{{- $broker := dict "BrokerMaxConcurrentConnectsPerNode" (ternary 0 40 $tls) -}}
 {{- $listeners := list -}}
 
 {{- /* HTTP Listeners */ -}}
@@ -31,14 +29,14 @@
 {{- $listeners = append $listeners (list "HTTPListeners" "app" (dict "ListenAddress" $v.http.httpPort "EnableHttpEndpoints" true "RootRedirectURL" $rootRedirectUrl)) -}}
 {{- end -}}
 {{- if $v.global.mtlsClearBlade -}}
-{{- $listeners = append $listeners (list "HTTPListeners" "app_mtls" (merge (dict "ListenAddress" $v.http.httpMTLSPort "UseMTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" $tls "BrokerALPN" "clearblade_mqtt_mtls") $broker)) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "app_mtls" (dict "ListenAddress" $v.http.httpMTLSPort "UseMTLS" true "EnableHttpEndpoints" true "EnableReverseProxy" $tls "BrokerALPN" "clearblade_mqtt_mtls")) -}}
 {{- end -}}
 
 {{- /* MQTT WS */ -}}
 {{- $mqttWs := dict "EnableWebsockets" true "EnabledWebsocketRoutes" (list "/mqtt" "/edge_shell") -}}
-{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws" (merge (dict "ListenAddress" $v.mqtt.brokerWSPort) $mqttWs $broker)) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws" (merge (dict "ListenAddress" $v.mqtt.brokerWSPort) $mqttWs)) -}}
 {{- if $tls -}}
-{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws_tls" (merge (dict "ListenAddress" $v.mqtt.brokerWSSPort "UseTLS" true) $mqttWs $broker)) -}}
+{{- $listeners = append $listeners (list "HTTPListeners" "mqtt_ws_tls" (merge (dict "ListenAddress" $v.mqtt.brokerWSSPort "UseTLS" true) $mqttWs)) -}}
 {{- end -}}
 
 {{- /* MQTT Auth WS */ -}}
@@ -49,9 +47,9 @@
 {{- end -}}
 
 {{- /* MQTT */ -}}
-{{- $listeners = append $listeners (list "MQTTListeners" "mqtt" (merge (dict "ListenAddress" $v.mqtt.brokerTCPPort) $broker)) -}}
+{{- $listeners = append $listeners (list "MQTTListeners" "mqtt" (dict "ListenAddress" $v.mqtt.brokerTCPPort)) -}}
 {{- if $tls -}}
-{{- $listeners = append $listeners (list "MQTTListeners" "mqtt_tls" (merge (dict "ListenAddress" $v.mqtt.brokerTLSPort "UseTLS" true) $broker)) -}}
+{{- $listeners = append $listeners (list "MQTTListeners" "mqtt_tls" (dict "ListenAddress" $v.mqtt.brokerTLSPort "UseTLS" true)) -}}
 {{- end -}}
 
 {{- /* MQTT Auth */ -}}
