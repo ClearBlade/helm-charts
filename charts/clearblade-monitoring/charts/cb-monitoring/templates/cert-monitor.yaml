@@ -1,0 +1,86 @@
+{{- if .Values.certMonitor.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-monitor
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: cert-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-monitor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cert-monitor
+    spec:
+      {{- if .Values.global.imagePullerSecret }}
+      imagePullSecrets:
+        - name: gcr-json-key
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      nodeSelector:
+        kubernetes.io/os: linux
+        kubernetes.io/arch: amd64
+        {{- if .Values.global.nodePool }}
+        cloud.google.com/gke-nodepool: {{ .Values.global.nodePool }}
+        {{- end }}
+      containers:
+        - name: cert-monitor
+          image: {{ .Values.certMonitor.image }}:{{ .Values.certMonitor.imageTag }}
+          args:
+            - /etc/cert-monitor/cert_monitor.py
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.certMonitor.port }}
+          resources:
+            requests:
+              cpu: {{ .Values.certMonitor.resources.requests.cpu }}
+              memory: {{ .Values.certMonitor.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.certMonitor.resources.limits.cpu }}
+              memory: {{ .Values.certMonitor.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: cert-monitor-config
+              mountPath: /etc/cert-monitor
+      volumes:
+        - name: cert-monitor-config
+          configMap:
+            name: cert-monitor-config
+      {{- if .Values.global.tolerations }}
+      tolerations:
+{{ .Values.global.tolerations | toYaml | indent 6 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cert-monitor-service
+  namespace: {{ default "monitoring" .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: cert-monitor
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cert-monitor
+  ports:
+    - name: metrics
+      port: {{ .Values.certMonitor.port }}
+      targetPort: {{ .Values.certMonitor.port }}
+{{- end }}

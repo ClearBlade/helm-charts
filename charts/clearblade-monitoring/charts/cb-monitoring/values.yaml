@@ -97,3 +97,26 @@ clearbladereplicas: 1
 haproxyreplicas: 1
 postgresreplicas: 1 
 prometheusDiskSize: 100G
+certMonitor:
+  enabled: false
+  image: gcr.io/api-project-320446546234/cert-monitor
+  imageTag: "0.0.1"
+  checkInterval: 300  # seconds between cert checks
+  port: 9115
+  alertThresholdSeconds: 1209600  # 14 days
+  alertPriority: high
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  targets: []
+  # Example targets:
+  # - url: "platform.example.com:443"
+  #   cipher: "ECDHE-ECDSA-AES256-GCM-SHA384"
+  #   name: "platform-ecc"
+  # - url: "platform.example.com:443"
+  #   cipher: "ECDHE-RSA-AES256-GCM-SHA384"
+  #   name: "platform-rsa"
