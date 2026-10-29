@@ -4,7 +4,7 @@
 {{- $rootRedirectUrl := "" -}}
 {{- if ne .root.Values.rootRedirectUrl "" -}}
 {{- $rootRedirectUrl = .root.Values.rootRedirectUrl -}}
-{{- else if .root.Values.global.iotCoreEnabled -}}
+{{- else if or .root.Values.global.iotCoreEnabled .root.Values.global.iotCoreSaasEnabled -}}
 {{- $rootRedirectUrl = "/iot-core" -}}
 {{- else if .root.Values.global.opsConsoleEnabled -}}
 {{- $rootRedirectUrl = "/ops-console" -}}
@@ -150,12 +150,12 @@ spec:
               {{- if eq .root.Values.global.secretManager "asm"}}
               yum install -y hostname
               {{- end}}
-              set -ex
+              set -e
               # Generate clearblade host from pod ordinal index.
               [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
               # Copy appropriate conf.d files from config-map to emptyDir.
-              cp /config-map/clearblade.toml /etc/clearblade/conf/clearblade/clearblade.toml
+              cp /config-map/clearblade{{ .node_suffix }}.toml /etc/clearblade/conf/clearblade/clearblade.toml
               # Add an offset to avoid reserved server-id=0 value.
               sed -i 's|{clearblade_node_number}|'$ordinal'|g'  /etc/clearblade/conf/clearblade/clearblade.toml
               # Add blue/green slot to host address
@@ -315,7 +315,11 @@ spec:
             - "-rpc-use-tls=true"
             - "-console-host=cb-console-service"
             - "-ia-host=cb-ia-service"
+            {{- if .root.Values.global.iotCoreSaasEnabled }}
+            - "-iotcore-host=cb-iotcore-saas-service"
+            {{- else }}
             - "-iotcore-host=cb-iotcore-service"
+            {{- end }}
             - "-ops-console-host=cb-ops-console-service"
             - "-enable-automatic-certificate-renewal=true"
             {{- end }}

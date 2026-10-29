@@ -4,3 +4,5 @@ global:
   secretManager: gsm
   # Optional Ops Console sidecar. Enable with true; the cb-ops-console block must then set version.
   opsConsoleEnabled: false
+  # Optional IoT Core SaaS sidecar. Enable with true; the cb-iotcore-saas block must then set version.
+  iotCoreSaasEnabled: false

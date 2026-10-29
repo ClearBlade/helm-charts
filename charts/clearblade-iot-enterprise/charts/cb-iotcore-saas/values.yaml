@@ -1,0 +1,49 @@
+# The IoT Core SaaS sidecar (image "iotcore-saas"). Serves the IoT Core UI and the
+# operator admin UI, and on every start applies the admin system, each region's
+# creator system and the registry template. Distinct from cb-iotcore, which runs the
+# older "iotcore" image with a different flag-based interface.
+#
+# Stateless on purpose: every roll-out's state lives in the admin system, so there is
+# no PVC here and a restart never disturbs a run in flight.
+
+requestCPU: 0.5
+requestMemory: 1G
+limitCPU: 1
+limitMemory: 2G
+checkClearbladeReadiness: true
+
+# Required. Sidecar image tag.
+version:
+
+# Optional. Overrides the whole image reference, registry included.
+# imageURL:
+
+# Optional. The platform the sidecar administers. Defaults to the enterprise base URL.
+# platformURL: https://iot.clearblade.com
+
+# Required. Key of the admin system, which must already exist — the sidecar never
+# creates it.
+adminSystemKey:
+
+# Required. Platform developer the sidecar authenticates as to create region creator
+# systems. The password comes from credentials.devPassword or the secret manager.
+devEmail:
+
+# Required. Region name -> the platform URL hosting it. This is the source of truth
+# for which regions exist: on startup the admin system's region_config is reconciled
+# against it, so dropping a region here drops it there.
+regions: {}
+#  us-central1: https://us-central1-g5.clearblade.com
+
+# Optional. Serve the UIs only, without touching the admin system, the creator
+# systems or the template. Useful to bring a pod up against a platform that is not
+# ready yet.
+skipUpdates: false
+
+# Where the developer password comes from: "values", "asm" or "gsm". With asm/gsm an
+# init container reads the secret named "{namespace}_{secretName}" and merges it over
+# the config rendered from the values above.
+credentialsSource: ""
+secretName: iotcore-saas-credentials
+credentials:
+  devPassword: ""

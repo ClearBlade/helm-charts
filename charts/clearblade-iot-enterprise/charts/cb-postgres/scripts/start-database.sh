@@ -61,6 +61,10 @@ if [ $SCALE_NUMBER -eq "0" ]; then
 
   echo "Ensuring database setup is up to date..."
   psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SET log_statement = 'none';
+    SET log_min_duration_statement = -1;
+    SET log_min_error_statement = panic;
+    SET pg_stat_statements.track_utility = off;
     DO \$\$
     BEGIN
       IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$PRIMARY_USER') THEN

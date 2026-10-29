@@ -60,6 +60,10 @@ mqtt:
   retainMessageCleanupIntervalMinutes: 1440 # How often to clean up old retained messages. Only applies if RetainMessageTTL > 0
   addRandomToClientIds: false # append random string to client Ids
   maxConcurrentConnectsPerNode: -1 # Node limit on concurrent connection processing (only applies if >0)
+  brokerAuthService: "" # Code service invoked to authenticate clients when "service_auth" is in enabledAuthMethods
+  brokerAuthSystem: "" # System key of the system that owns brokerAuthService
+  basicAuthDefaultSystem: "" # System used for basic auth when the username does not specify one
+  enabledAuthMethods: [] # Restrict allowed MQTT auth methods. Empty allows all methods
   postAuthDelayMs: 0 # Initial delay in milliseconds between sending suback and publish to client when authenticating
   maxKeepAliveSeconds: 65535 # Upper limit for MQTT keep alive. Clients requesting a greater keep alive will be forced to use this value. Cannot be greater than 65535
   allowMQTT5Clients: true # Allow MQTT5 clients to connect and interact with the broker.
@@ -199,6 +203,7 @@ security:
   accessControlAllowOrigin: "*" # Value to use for the Access-Control-Allow-Origin header on all responses
   addDefaultTopicPermissions: false # Add default topic permissions to new systems ("$trigger/#" and "$timer/#")
   disableJWTAuth: false
+  mtlsMqttAlpn: clearblade_mqtt_mtls # ALPN that routes mTLS listener clients to the MQTT broker. Empty disables it
 sync:
   syncOptimize: true # Optimizes the syncing process if set to true
   syncOptimizeExceptions: "" # Exceptions for the sync optimization process
@@ -217,6 +222,7 @@ internalLoadBalancer:
 externalLoadBalancer:
   enabled: false
   primaryIP: ""
+  internalLB: false
   reverseProxy:
     enableHttp: false
     httpPort: 80
@@ -247,6 +253,7 @@ mqttLoadBalancer:
   enabled: false
   mqttIP: ""
   annotations: {}
+  internalLB: false
   enableMqtt: true
   mqttPort: 443
   enableSecondaryMqtt: true
