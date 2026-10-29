@@ -121,3 +121,7 @@ IoT Core SaaS Sidecar: `global.iotCoreSaasEnabled` now defaults to `false` in th
 ## [4.3.0] - 2026-10-29
 
 ClearBlade: The `clearblade.toml` file now generates a `[Listeners]` section unless custom listeners are provided in the `clearbladeConfig` value. The generated MQTT listeners take their broker settings from the new `mqtt.brokerAuthService`, `mqtt.brokerAuthSystem`, `mqtt.basicAuthDefaultSystem` and `mqtt.enabledAuthMethods` values and the existing `mqtt.maxConcurrentConnectsPerNode` value. The mTLS listener's broker ALPN comes from the new `security.mtlsMqttAlpn` value.
+
+## [4.3.1] - 2026-10-29
+
+Postgres: Renamed `global.postgresMemoryLimitMB` to `global.postgresMemoryLimitGB`. Values files using the old key must be updated to specify the memory limit in gigabytes instead of megabytes.
