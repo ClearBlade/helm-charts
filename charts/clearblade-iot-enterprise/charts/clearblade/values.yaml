@@ -222,6 +222,7 @@ internalLoadBalancer:
 externalLoadBalancer:
   enabled: false
   primaryIP: ""
+  internalLB: false
   reverseProxy:
     enableHttp: false
     httpPort: 80
@@ -252,6 +253,7 @@ mqttLoadBalancer:
   enabled: false
   mqttIP: ""
   annotations: {}
+  internalLB: false
   enableMqtt: true
   mqttPort: 443
   enableSecondaryMqtt: true
