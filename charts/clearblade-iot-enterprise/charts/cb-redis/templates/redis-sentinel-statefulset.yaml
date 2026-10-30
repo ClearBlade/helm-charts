@@ -16,6 +16,15 @@ spec:
         app: cb-redis-sentinel
         app.kubernetes.io/name: managed-prom
     spec:
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: {{ coalesce .Values.nodeNotReadyTolerationSeconds .Values.global.nodeNotReadyTolerationSeconds 200 }}
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: {{ coalesce .Values.nodeUnreachableTolerationSeconds .Values.global.nodeUnreachableTolerationSeconds 200 }}
       initContainers:
       - name: config
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
