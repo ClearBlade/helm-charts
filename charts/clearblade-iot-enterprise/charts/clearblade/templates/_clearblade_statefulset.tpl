@@ -56,11 +56,11 @@ spec:
       - key: node.kubernetes.io/not-ready
         operator: Exists
         effect: NoExecute
-        tolerationSeconds: 0
+        tolerationSeconds: {{ coalesce .root.Values.nodeNotReadyTolerationSeconds .root.Values.global.nodeNotReadyTolerationSeconds 200 }}
       - key: node.kubernetes.io/unreachable
         operator: Exists
         effect: NoExecute
-        tolerationSeconds: 0
+        tolerationSeconds: {{ coalesce .root.Values.nodeUnreachableTolerationSeconds .root.Values.global.nodeUnreachableTolerationSeconds 200 }}
       initContainers:
       {{- if .root.Values.checkReadiness}}
         {{- if not .root.Values.global.gcpCloudSQLEnabled }}

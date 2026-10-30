@@ -29,11 +29,11 @@ spec:
       - key: node.kubernetes.io/not-ready
         operator: Exists
         effect: NoExecute
-        tolerationSeconds: 0
+        tolerationSeconds: {{ coalesce .Values.nodeNotReadyTolerationSeconds .Values.global.nodeNotReadyTolerationSeconds 200 }}
       - key: node.kubernetes.io/unreachable
         operator: Exists
         effect: NoExecute
-        tolerationSeconds: 0
+        tolerationSeconds: {{ coalesce .Values.nodeUnreachableTolerationSeconds .Values.global.nodeUnreachableTolerationSeconds 200 }}
       containers:
       - name: cb-redis
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"

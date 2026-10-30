@@ -32,11 +32,11 @@ spec:
       - key: node.kubernetes.io/not-ready
         operator: Exists
         effect: NoExecute
-        tolerationSeconds: 0
+        tolerationSeconds: {{ coalesce .Values.nodeNotReadyTolerationSeconds .Values.global.nodeNotReadyTolerationSeconds 200 }}
       - key: node.kubernetes.io/unreachable
         operator: Exists
         effect: NoExecute
-        tolerationSeconds: 0
+        tolerationSeconds: {{ coalesce .Values.nodeUnreachableTolerationSeconds .Values.global.nodeUnreachableTolerationSeconds 200 }}
       volumes:
         - name: file-hosting-data
           persistentVolumeClaim:
@@ -88,7 +88,7 @@ spec:
           {{- if .Values.imageURL }}
           image: "{{- .Values.imageURL }}"
           {{- else }}
-          image: "{{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/file_hosting:{{ .Values.global.enterpriseConsoleVersion }}"
+          image: "{{ default "gcr.io/api-project-320446546234" .Values.global.registry }}/file_hosting:{{ default .Values.global.enterpriseConsoleVersion .Values.global.enterpriseFileHostingVersion }}"
           {{- end }}
           ports:
             - containerPort: 80
