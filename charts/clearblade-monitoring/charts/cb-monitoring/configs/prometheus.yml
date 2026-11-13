@@ -175,6 +175,34 @@ scrape_configs:
       - clearblade-monitoring-service-green-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
       {{- end}}
 
+  - job_name: 'clearblade-billing-{{ $n.name }}'
+    metrics_path: /billing/metrics
+    scrape_interval: 3m
+    metric_relabel_configs:
+    - source_labels: [instance]
+      regex: '(.*):.*'
+      replacement: '$1'
+      target_label: instance
+    static_configs:
+    - targets:
+      {{- range $i, $e := until ($.Values.clearbladereplicas | int)}}
+      - clearblade-monitoring-service-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
+      {{- end}}
+
+  - job_name: 'clearblade-billing-green-{{ $n.name }}'
+    metrics_path: /billing/metrics
+    scrape_interval: 3m
+    metric_relabel_configs:
+    - source_labels: [instance]
+      regex: '(.*):.*'
+      replacement: '$1'
+      target_label: instance
+    static_configs:
+    - targets:
+      {{- range $i, $e := until ($.Values.clearbladereplicas | int)}}
+      - clearblade-monitoring-service-green-{{$i}}.{{ $n.name }}.svc.cluster.local:2112
+      {{- end}}
+
   - job_name: 'haproxy-{{ $n.name }}'
     scrape_interval: 15s
     metric_relabel_configs:
