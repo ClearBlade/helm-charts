@@ -44,3 +44,7 @@ AWS Support: When `global.cloud` is `aws`, Prometheus mounts an EBS volume by `p
 GCP Service Account: The `clearblade-gsm-read` service account and its GKE annotation are rendered only when `global.cloud` is not `aws`, so `global.gcpProject` and `global.gcpGSMServiceAccount` are no longer required on AWS. On AWS, Grafana runs as `clearblade-asm-read` when `global.awsHelmRoleArn` is set, otherwise as the namespace default service account.
 
 GMP Toggle: An unset `global.gmpEnabled` is treated as `false`, so the standalone Prometheus stack renders and the Google Managed Prometheus objects render only when `global.gmpEnabled` is `true`.
+
+## [4.1.1] - 2026-12-13
+
+Scrape usage metrics from Clearblade
