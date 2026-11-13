@@ -143,6 +143,53 @@ entries:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-4.2.2/clearblade-iot-enterprise-4.2.2.tgz
     version: 4.2.2
   - apiVersion: v2
+    created: "2026-11-13T15:33:26.294003107Z"
+    dependencies:
+    - condition: cb-postgres.enabled
+      name: cb-postgres
+      repository: file://charts/cb-postgres
+      version: 4.2.2
+    - condition: global.haproxyEnabled
+      name: cb-haproxy
+      repository: file://charts/cb-haproxy
+      version: 4.2.2
+    - name: clearblade
+      repository: file://charts/clearblade
+      version: 4.2.2
+    - name: cb-console
+      repository: file://charts/cb-console
+      version: 4.2.2
+    - name: cb-file-hosting
+      repository: file://charts/cb-file-hosting
+      version: 4.2.2
+    - condition: cb-redis.enabled
+      name: cb-redis
+      repository: file://charts/cb-redis
+      version: 4.2.2
+    - condition: global.iotCoreEnabled
+      name: cb-iotcore
+      repository: file://charts/cb-iotcore
+      version: 4.2.2
+    - condition: global.iaEnabled
+      name: cb-ia
+      repository: file://charts/cb-ia
+      version: 4.2.2
+    - condition: global.iotCoreSaasEnabled
+      name: cb-iotcore-saas
+      repository: file://charts/cb-iotcore-saas
+      version: 4.2.2
+    - condition: global.opsConsoleEnabled
+      name: cb-ops-console
+      repository: file://charts/cb-ops-console
+      version: 4.2.2
+    description: ClearBlade IoT Enterprise
+    digest: 83cd2460ee464c482bcb168b319a4b469b03c056d268276f46d9a91b30df470d
+    name: clearblade-iot-enterprise
+    type: application
+    urls:
+    - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-iot-enterprise-4.2.2-ia-components-test1/clearblade-iot-enterprise-4.2.2-ia-components-test1.tgz
+    version: 4.2.2-ia-components-test1
+  - apiVersion: v2
     created: "2026-09-23T21:56:37.012716332Z"
     dependencies:
     - condition: cb-postgres.enabled
@@ -4109,4 +4156,4 @@ entries:
     urls:
     - https://github.com/ClearBlade/helm-charts/releases/download/clearblade-monitoring-2.13.0/clearblade-monitoring-2.13.0.tgz
     version: 2.13.0
-generated: "2026-10-29T19:18:17.44731276Z"
+generated: "2026-11-13T15:33:26.29438232Z"
