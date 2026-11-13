@@ -177,7 +177,8 @@ scrape_configs:
 
   - job_name: 'clearblade-billing-{{ $n.name }}'
     metrics_path: /billing/metrics
-    scrape_interval: 3m
+    scrape_interval: 2m
+    scrape_timeout: 25s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'
@@ -191,7 +192,8 @@ scrape_configs:
 
   - job_name: 'clearblade-billing-green-{{ $n.name }}'
     metrics_path: /billing/metrics
-    scrape_interval: 3m
+    scrape_interval: 2m
+    scrape_timeout: 25s
     metric_relabel_configs:
     - source_labels: [instance]
       regex: '(.*):.*'

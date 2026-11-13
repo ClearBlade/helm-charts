@@ -45,6 +45,6 @@ GCP Service Account: The `clearblade-gsm-read` service account and its GKE annot
 
 GMP Toggle: An unset `global.gmpEnabled` is treated as `false`, so the standalone Prometheus stack renders and the Google Managed Prometheus objects render only when `global.gmpEnabled` is `true`.
 
-## [4.1.1] - 2026-12-13
+## [4.1.1] - 2026-11-13
 
 Scrape usage metrics from Clearblade
