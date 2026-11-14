@@ -125,3 +125,7 @@ ClearBlade: The `clearblade.toml` file now generates a `[Listeners]` section unl
 ## [4.3.1] - 2026-10-29
 
 Postgres: Renamed `global.postgresMemoryLimitMB` to `global.postgresMemoryLimitGB`. Values files using the old key must be updated to specify the memory limit in gigabytes instead of megabytes.
+
+## [4.3.2] - 2026-11-13
+
+New README.md with ClearBlade Support email

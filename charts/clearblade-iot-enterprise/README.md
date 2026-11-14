@@ -1,1 +1,1 @@
-test only
+Contact support@clearblade.com in case of issues.
